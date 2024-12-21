@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css"
+        integrity="sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2"
+        crossorigin="anonymous">
+  <title>Title</title>
+  <link rel="stylesheet" href="../static/css/style.css" th:href="@{/css/style.css}">
+  <script type="text/javascript" src="../static/js/script.js" th:src="@{/js/script.js}"></script>
+  <script src="https://kit.fontawesome.com/e17460c3d0.js" crossorigin="anonymous"></script>
+
+
+</head>
+<body>
+<h1 th:if="${!gruppe.isGeschlossen()}" th:text="${gruppe.getGruppenName()}" ></h1>
+<div class="lockContainer">
+<h1 th:unless="${!gruppe.isGeschlossen()}" th:text="${gruppe.getGruppenName()} + ' ' + '(geschlossen)'  "  > </h1>
+
+  <div th:if="${gruppe.isGeschlossen()}" class="fa-solid fa-lock"></div>
+
+</div>
+
+<form id="1" method="post" th:action="@{/gruppe/add}" th:object="${loginForm}">
+  <input type="hidden" name="id" value="id" th:value="${gruppe.id}">
+  <label for="name">Fuege Leute in deine Gruppe hinzu:</label>
+  <input class="form-control z-depth-1 w-25" id="name" type="text" name="login" th:field="*{login}">
+  <small class="text-danger" th:if="${loginMessage}" th:text="${loginMessage}" ></small>
+  <br>
+  <button class="btn btn-dark"> Zur Gruppe Hinzufügen</button>
+</form>
+
+
+
+<table class="table table-bordered table-dark w-25">
+
+  <thead>
+  <tr>
+    <th>Mitglieder</th>
+  </tr>
+  </thead>
+  <tbody>
+
+  <div th:if="${gruppe} != null">
+    <tr th:each="person : ${gruppe.getPersonen()}">
+      <td th:text="${person.getName()}"> </td>
+    </tr>
+  </div>
+
+  </tbody>
+
+</table>
+
+
+<form id="2" method="post" th:action="@{/gruppe/add/ausgaben}" th:object="${ausgabenForm}" >
+  <input type="hidden" name="id" value="id" th:value="${gruppe.id}">
+
+  <label for=aktivitaetID>Aktivität:
+  <input id="aktivitaetID" type="text" name="aktivitaet" th:field="*{aktivitaet}" >
+  </label>
+  <small class="text-danger" th:if="${aktivitaetMessage}" th:text="${aktivitaetMessage}" ></small>
+
+  <label for="zahlerID">Ausleger:
+    <br>
+    <select id="zahlerID" name="zahler" >
+      <div th:each="personen : ${gruppe.getPersonen()}" >
+        <option th:text="${personen.getName()}" ></option>
+      </div>
+    </select>
+  </label>
+
+  <label for="teilnehmerID"> Teilnehmer: </label>
+  <input id="teilnehmerID" type="text" name="teilnehmer" th:field="*{teilnehmer}" >
+  <small class="text-danger" th:if="${teilnehmerMessage}" th:text="${teilnehmerMessage}" ></small>
+
+  <label for="betragID"> Betrag: </label>
+  <input id="betragID" type="text" name="betrag" th:field="*{betrag}" >
+  <small class="text-danger" th:if="${betragMessage}" th:text="${betragMessage}" ></small>
+
+  <button class="btn btn-dark"  >Ausgabe hinzufügen</button>
+
+</form>
+
+
+<table class="table table-bordered table-dark w-25">
+
+  <thead>
+  <tr>
+    <th>Aktivität</th>
+    <th>Zahler</th>
+    <th>Teilnehmer</th>
+    <th>Betrag</th>
+  </tr>
+  </thead>
+  <tbody>
+
+  <div th:if="${gruppe} != null">
+
+    <tr th:each="ausgabe : ${gruppe.gruppenAusgaben}">
+      <div th:if="${ausgabe.personPresent(login)}" >
+      <td style="background-color: cornflowerblue"  th:text="${ausgabe.getAktivitaetName()}"> </td>
+      <td style="background-color: cornflowerblue" th:text="${ausgabe.getAuslegerName()}"> </td>
+      <td style="background-color: cornflowerblue" th:text="${ausgabe.getPersonenNamen()}"></td>
+      <td style="background-color: cornflowerblue" th:text="${ausgabe.getGesamtKosten()}"> </td>
+      </div>
+
+      <div th:unless="${ausgabe.personPresent(login)}" >
+        <td th:text="${ausgabe.getAktivitaetName()}"> </td>
+        <td th:text="${ausgabe.getAuslegerName()}"> </td>
+        <td th:text="${ausgabe.getPersonenNamen()}"></td>
+        <td th:text="${ausgabe.getGesamtKosten()}"> </td>
+      </div>
+    </tr>
+
+  </div>
+
+  </tbody>
+
+</table>
+
+
+
+
+<form id="3" method="post" th:action="@{/gruppe/add/ausgaben/transaktion}" >
+  <input type="hidden" name="id" value="id" th:value="${gruppe.id}">
+
+
+  <button class="btn btn-dark"> Transaktion berechnen </button>
+
+</form>
+
+
+<table class="table table-bordered table-dark w-25">
+
+  <thead>
+  <tr>
+    <th>Transaktionen</th>
+
+  </tr>
+  </thead>
+  <tbody th:remove="all-but-first" >
+
+  <div th:if="${gruppe} != null">
+    <tr th:each="transaktion : ${gruppe.getTransaktionsNachrichten()}">
+      <td th:text="${transaktion}"></td>
+    </tr>
+  </div>
+
+  </tbody>
+
+</table>
+
+
+<form method="post" th:action="@{/gruppe/close}">
+  <input type="hidden" name="id" value="id" th:value="${gruppe.id}">
+  <button id="4">Gruppe schließen</button>
+</form>
+
+<a href="/"> zurück zur Gruppen-Übersicht </a>
+
+
+
+
+
+</body>
+</html>

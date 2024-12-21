@@ -1,0 +1,112 @@
+= Praktikum
+:icons: font
+:icon-set: fa
+:source-highlighter: rouge
+:experimental:
+
+== Organisatorisches
+
+Die finden die URL für das Webex System auf http://propra.de/ws2223/ab899545cb7e0df[dieser Seite]. Wir hoffen, dass die Webex-URL über das ganze Praktikum über gleich bleibt, können aber nicht ausschließen, dass es Änderungen geben muss. 
+
+Wenn es wichtige Ankündigungen zum Praktikum gibt, werden wir diese sowohl im Diskussionsforum als auch auf der URL Seite online stellen. 
+
+IMPORTANT: Verwenden Sie in Webex als Display-Name Ihren Namen und in Klammern dahinter das GitHub-Login. Beispiel: `William Bruce Rose (axl62)`.
+
+Sie können Ihren Namen in der Teilnehmerliste über den „Edit Display Name”-Menüpunkt ändern. In der App finden Sie den Menüpunkt durch Rechtsklick auf Ihren Namen, im Browser über die drei Punkte neben dem Namen.
+
+=== Aufgabenstellung
+
+Die Beschreibung der Aufgabe finden Sie in link:aufgabe.adoc[diesem Dokument].
+
+=== Ergänzungen zur Aufgabenstellung
+
+Es gibt zwei geplante Ergänzungen zur Aufgabenstellung. Sie erhalten die erste Ergänzung (Beschreibung von Testszenarien) am 02.03.2023 vor Beginn der Praktikumszeit. Die zweite Ergänzung (Einbau einer neuen Funktionalität) erhalten Sie am 08.03.2023 vor Beginn der Praktikumszeit. 
+
+Die Ergänzungsaufgaben werden wir auf der http://propra.de/ws2223/ab899545cb7e0df[URL Seite] verlinken. 
+
+=== Deadlines 
+
+Wir beginnen mit einer Teilbegutachtung der Anwendung am 14.03.2023 ab 13:00 Uhr. Zu diesem Zeitpunkt muss die Anwendung bis auf die Persistenz fertig sein. Die komplette Anwendung muss am 17.03.2023 um 13:00 Uhr fertiggestellt sein. 
+
+== Fragen und Hilfestellungen
+
+Für Fragen gibt es zum einen die Diskussionsforen, die Sie unbedingt bei Fragen verwenden müssen, die auch für andere Teilnehmer:innen interessant seien könnten.
+
+* Fragen zu organisatoischen Themen stellen Sie bitte im Forum https://github.com/hhu-propra2-ws22/Organisation/discussions/categories/fragen-zur-organisation[Fragen zur Organisation].
+* Für Fragen zur Aufgabenstellung haben wir ein neues Forum https://github.com/hhu-propra2-ws22/Organisation/discussions/categories/fragen-zur-aufgabestellung[Fragen zur Aufgabenstellung] erstellt.
+* Wenn Sie Fragen zum Stoff der Vorlesung haben, stellen Sie diese bitte weiterhin im Forum https://github.com/hhu-propra2-ws22/Organisation/discussions/categories/fachliche-fragen[Fachliche Fragen]
+
+Außerdem werden Sie von unseren Tutor:innen regelmäßig besucht und haben dort ebenfalls die Gelegenheit, Fragen zu stellen. Kristin, Leonie und Jens kommen Sie auch gelegentlich besuchen oder helfen aus, wenn besonders schwierige Fragen auftreten sollten. 
+
+Bei Fragen, die Sie selber persönlich betreffen (zum Beispiel bei Krankmeldungen), wenden Sie sich bitte per Mail an mailto:propra@cs.hhu.de[propra@cs.hhu.de]. Stellen Sie dort bitte keine Fragen, die auch in den Foren geklärt werden könnten. 
+
+== USER GUIDE
+
+Schritt 1:
+
+Klonen Sie sich die Anwendung.
+
+Schritt 2:
+
+Bevor Sie das Projekt verwenden können, müssen Sie auf der GitHub Website Ihren OAuth Client-Secret und die Client-ID generieren lassen. 
+
+Hierfür füllen Sie bitte das gegebene Formular so aus:
+
+* Ihren gewünschten Namen für das Projekt als Application name
+
+* http://localhost:9000 als Homepage URL, da unsere Anwendung auf dem Port 9000 läuft
+
+* Wenn gewünscht eine Beschreibung
+
+* http://localhost:9000 als Callback URL
+
+Nun sollten Sie die Client-ID und das Client-Secret unten erhalten. Diese sollten Sie sich kopieren, da Sie im darauffolgenden Schritt verwendet werden.
+
+Schritt 3:
+
+Tragen Sie nun die Client-Secret und die Client-ID in den Umgebungsvariablen der Anwendung ein.
+
+Schritt 4:
+
+Tragen Sie nun den POSTGRES_USER und das POSTGRES_PASSWORD, welche Sie in der docker-compose.yml vorfinden können, in die Umgebungsvariablen ein.
+
+Schritt 5:
+
+Um den Docker container zu starten, müssen Sie zuerst in Ihrer GitBash "docker compose up" ausführen.
+
+Schritt 6: 
+
+Um die Anwendung zu starten müssen Sie nach diesem Schema ./gradlew bootRun aufrufen: 
+CLIENT_SECRET=SECRET CLIENT_ID=ID POSTGRES_USER=user POSTGRES_PASSWORD=password ./gradlew bootRun.
+
+Bei SECRET, ID, user und password müssen die selber in den Environment Variables gesetzten Werte benutzt werden, wobei user und password dem user und passwort in der docker-compose entsprechen müssen
+
+Nun sollte die Anwendung laufen.
+
+== Anleitung zur Seite
+
+Auf der Homepage können Sie Gruppen hinzufügen und durch den an jede Gruppe angehängten Hyperlink auf die entsprechende Gruppeninformationsseite zugreifen. Hierfür füllen Sie den Input mit dem gewünschten Namen der Gruppe aus und drücken auf den Button „Gruppe hinzufügen“
+
+Oben an der Seite gibt es außerdem die Funktion nach Gruppen zu suchen, einmal für offene und einmal für geschlossene Gruppen
+
+Wenn wir uns in der Gruppeninformation befinden, können Sie durch den obersten Input Personen/Personennamen hinzufügen, die direkt unter dem Input einzeln aufgelistet werden.
+
+Weiter unter der Personentabelle finden Sie die Eingaben für eine Ausgabe. Diese sollten Sie, wie durch die Labels gegeben, ausfüllen. 
+
+Achten Sie hier jedoch darauf die Teilnehmer immer mit einem Komma und einer Lücke zu trennen:
+
+Bsp.: Max, Lisa, Tim, Jan
+
+Wenn Sie die Inputs ausgefüllt haben und den Zahler ausgewählt haben, können Sie auf den Button „Ausgabe hinzufügen“ klicken und ihre Ausgabe wird unter den Input Feldern angezeigt. 
+
+Wenn Sie nun alle Ausgaben eingetragen haben, können Sie unten auf den Button „Transaktion berechnen“ drücken, um die erforderliche Transaktion für die Ausgaben zu erhalten. Wenn Sie eine weitere Ausgabe hinzufügen wollen, können Sie dies tun und nochmals auf den „Transaktion ausführen“ Button drücken, um eine angepasste Transaktion zu erhalten.
+
+Wenn Sie nun die Gruppe schließen wollen, können Sie auf den „Gruppe schließen“ Button drücken, wodurch die Gruppe geschlossen wird und nicht mehr veränderlich ist. 
+
+Unter dem zuvor erwähnten Button befindet sich auch ein Hyperlink, um auf die Homepage zurückzukommen, wo nun auch die von Ihnen zuvor geschlossene Gruppe unter den offenen Gruppen gelistet wird. Auf die Informationen der geschlossenen Liste können Sie durch den angehängten Hyperlink zugreifen, jedoch keine Änderungen vornehmen.
+
+
+
+== Verhaltensregeln
+
+Wir erwarten von Ihnen einen respektvollen Umgang miteinander. Es gilt grundsätzlich bei uns der https://berlincodeofconduct.org/de/[Berlin Code of Conduct]. Die Tutor:innen haben die Aufgabe, die Einhaltung der Regeln zu überwachen und können bei Verstößen gegen den Verhaltenskodex Personen aus dem Praktikum ausschließen. Ein Praktikumsausschluss hat zur Folge, dass Sie das Modul in diesem Semester nicht mehr abschließen können. 

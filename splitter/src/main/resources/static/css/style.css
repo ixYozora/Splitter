@@ -1,0 +1,28 @@
+div.navbar {
+  width: 100%;
+  background-color: #343a40;
+  overflow: auto;
+  white-space: nowrap;
+}
+
+div.navbar label{
+  color: white;
+}
+
+.geschlossen{
+  margin-right: 300px;
+}
+
+.geöffnet{
+  margin-left: 300px;
+}
+
+div.navbar a {
+  display: inline-block;
+  float: left;
+  padding: 1px;
+  color: white;
+  text-decoration: none;
+  font-size: 17px;
+
+}

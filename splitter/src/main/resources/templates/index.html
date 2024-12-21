@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css"
+          integrity="sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2"
+          crossorigin="anonymous">
+    <title>Splitter</title>
+    <link rel="stylesheet" href="../static/css/style.css" th:href="@{/css/style.css}">
+    <script type="text/javascript" src="../static/js/script.js" th:src="@{/js/script.js}"></script>
+</head>
+<body>
+
+
+<div class="navbar">
+    <div class="geöffnet" >
+    <a><i class="fa-solid fa-magnifying-glass"></i> <label for="myInput">Suche nach geöffneten Gruppen:</label>
+        <input class="inputSearch" type="text" id="myInput" onkeyup="myUserSearchGeoeffnet()" placeholder="Suche nach Gruppen"></a>
+    </div>
+    <div class="geschlossen" >
+    <a><i class="fa-solid fa-magnifying-glass"></i> <label for="myInput2">Suche nach geschlossenen Gruppen:</label>
+        <input class="inputSearch" type="text" id="myInput2" onkeyup="myUserSearchGeschlossen()" placeholder="Suche nach Gruppen"></a>
+    </div>
+</div>
+
+    <h1>Willkommen bei Splitter</h1>
+
+    <form method="post" th:action="@{/add}" th:object="${gruppenForm}">
+        <div class="form-group">
+        <label for="gName">Gruppenname:</label>
+        <input class="form-control w-25" id="gName" type="text" name="gruppenName" th:field="*{gruppenName}" >
+        <small class="text-danger" th:if="${#fields.hasErrors('gruppenName')}" th:errors="*{gruppenName}" ></small>
+        <button class="btn btn-dark">Gruppe hinzufuegen</button>
+        </div>
+    </form>
+    <br>
+    <h3>Geöffnete Gruppen</h3>
+
+    <br>
+
+    <table class="table table-bordered table-dark w-50" id="myTable">
+
+        <thead>
+            <tr>
+                <th>Gruppenname</th>
+                <th>Informationen</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            <div th:if="${gruppen != null}">
+
+            <tr th:each="gruppe : ${gruppen.details()}">
+                <div th:if="${!gruppe.geschlossen()}" >
+                <td th:text="${gruppe.gruppenName()}"></td>
+                <td> <a href="#" th:href="@{gruppe(id=*{gruppe.id()})}"> Anzeigen </a> </td>
+                </div>
+            </tr>
+            </div>
+
+        </tbody>
+
+    </table>
+
+    <br>
+
+    <h3>Geschlossene Gruppen</h3>
+
+    <table class="table table-bordered table-dark w-50" id="myTable2">
+
+        <thead>
+        <tr>
+            <th>Gruppenname</th>
+            <th>Informationen</th>
+        </tr>
+        </thead>
+
+        <tbody>
+        <div th:if="${gruppen != null}">
+
+        <tr th:each="gruppe : ${gruppen.details()}">
+            <div th:if="${gruppe.geschlossen()}" >
+            <td th:text="${gruppe.gruppenName()}"></td>
+            <td> <a href="#" th:href="@{gruppe(id=*{gruppe.id()})}"> Anzeigen </a> </td>
+            </div>
+        </tr>
+        </div>
+
+        </tbody>
+
+    </table>
+
+</body>
+</html>

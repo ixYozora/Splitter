@@ -1,0 +1,19 @@
+name: build and test
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout repo
+        uses: actions/checkout@v3
+      - name: install latest jdk
+        uses: actions/setup-java@v3
+        with:
+          java-version: 17
+          cache: 'gradle'
+          distribution: 'temurin'
+      - env:
+          path: splitter/
+        run: cd $path && chmod +x gradlew && gradle check

@@ -1,0 +1,196 @@
+= Splitter
+:icons: font
+:icon-set: fa
+:source-highlighter: rouge
+:experimental:
+ifdef::env-github[]
+:tip-caption: :bulb:
+:note-caption: :information_source:
+:important-caption: :heavy_exclamation_mark:
+:caution-caption: :fire:
+:warning-caption: :warning:
+:stem: latexmath
+endif::[]
+
+== Einführung in die Problemstellung
+
+„Bei Geld hört die Freundschaft auf” heißt es. Rund um das Geld entstehen oft Probleme zwischen Menschen. Wir wollen uns des Themas annehmen und für Gruppen von Personen, die gemeinsame Ausgaben tätigen (zum Beispiel Wohngemeinschaften und Reisegruppen), eine Software schreiben, mit deren Hilfe die Ausgaben transparent aufgeschlüsselt und die Konten möglichst einfach ausgeglichen werden können. 
+
+=== Beispielszenario: Urlaub  
+
+Eine Gruppe von sechs Freunden (A,B,C,D,E und F) macht einen gemeinsamen Städtetripp. Die Kosten für das Hotelzimmer (564 EUR) hat A vorab bezahlt. Die Reise wird in den Autos von B und C durchgeführt. D fährt mit dem Zug alleine hin, da er sowieso in der Nähe des Zielortes ist. B nimmt A auf dem Hinweg mit, auf dem Rückweg nimmt B auch D mit. Die anderen fahren hin und zurück in Cs Auto mit. Am Ende der Reise tragen B und C die Benzinkosten ein. B hat insgesamt 77,16 EUR bezahlt, die für Hin- und Rückweg einfach halbiert werden. C hatte 82,11 EUR an Benzinkosten. Am Ziel angekommen machen alle eine Städtetour, die Kosten (96 EUR) legt D aus. Am Abend wollen  B, E und F gemeinsam eine Theatervorstellung besuchen, deren Kosten (95.37 EUR) von F ausgelegt werden, die anderen drei gehen lieber gemeinsam Abendessen, zahlen ihre Rechnungen aber selber.  
+    
+Am Ende des Trips sollen nun die Konten ausgeglichen werden, dabei wollen wir, dass
+
+. eine Person immer nur selber Überweisungen an andere tätigt, oder Geld überwiesen bekommt, aber niemals beides. Es soll also zum Beispiel nicht vorkommen, dass B an A für das Hotelzimmer eine Überweisung tätigen muss, und A dann an B den Anteil am Benzinverbrauch überweist. Auch Zirkelüberweisungen sollen ausgeschlossen werden.
+. es höchstens eine Überweisung zwischen zwei Personen gibt und Niemand sich selber Geld überweist.
+. die Anzahl der Transaktionen minimal ist.
+
+Wenn Ihr Code die Kriterien 1 und 2 für unsere internen Testfälle erfüllt, erhalten Sie mindestens 70% der verfügbaren Punkte. 
+
+TIP: Es kann sich hier lohnen, sich zunächst einmal auf die Kriterien 1 und 2 zu beschränken und Kriterium 3 anzugehen, falls Sie in Woche 3 noch Zeit übrig haben. Auf keinen Fall sollten Sie sich hier festbeissen!
+
+In unserem Szenario könnte eine Rechnung am Ende so aussehen, dass A von allen Personen noch Geld bekommt:
+
+[cols="1,1"]
+|===
+|Von |  Betrag
+
+|B 
+|96,78 
+|C 
+|55,26 
+|D 
+|26,86 
+|E 
+|169,16 
+|F 
+|73,79 
+|=== 
+
+=== Praktikumsaufgabe  
+
+Da wir nur einen begrenzten Zeitraum zur Verfügung haben, werden wir ein https://de.wikipedia.org/wiki/Minimum_Viable_Product[minimal viable product] (MVP) entwickeln, also eine Version mit eingeschränktem Funktionsumfang, die aber tatsächlich schon released werden könnte und einen Nutzen bringt.
+
+Die im Praktikum entwickelte Software soll folgenden Funktionsumfang haben:
+
+* Neue Gruppen können erzeugt werden
+* Personen können über ihren GitHub-Namen hinzugefügt werden
+* Personen, die in einer Gruppe sind, können Ausgaben, die für die Gruppe (oder auch nur Teile der Gruppe!) getätigt wurden eintragen.
+* Die Nutzer:innen der Anwendung können eine Übersicht über alle Gruppen bekommen, in denen sie eingetragen sind. Von dieser Übersicht aus können sie in eine Detailansicht der einzelnen Gruppen navigieren und sehen dort:
+** Alle getätigten Ausgaben der Gruppe und welche Personen beteiligt sind. Alle Ausgaben, die in irgendeiner Weise die eigene Person betreffen sind geeignet hervorgehoben.
+** Eine Übersicht über die notwendigen Transaktionen zwischen einzelnen Personen, um die Auslagen auszugleichen.
+* Zu einem bestimmten Zeitpunkt kann die Gruppe geschlossen werden, danach sind keine Eintragungen mehr möglich. Es ist aber immer noch möglich, alle Details der Gruppe anzuschauen. Geschlossene Gruppen sind auf der Übersichtsseite von offenen getrennt aufgeführt.
+
+=== Berechtigungen
+
+Es sollen folgende Autorisierungen umgesetzt werden. Wir verwenden GitHub als OAuth-Provider zur Authentifikation. 
+
+* Gruppengründung und Schließung
+** Jede Person mit einem GitHub-Account kann eine neue Gruppe gründen. Die Person, die die Gruppe gründet, wird automatisch zur Gruppe hinzugefügt.
+** Jede Person in einer Gruppe kann neue Teilnehmer:innen hinzufügen. Dazu werden GitHub-Namen eingetragen. In unserem MVP wird nur geprüft, ob der GitHub-Name prinzipiell möglich ist, nicht, ob der Account existiert. Nachträgliche Änderungen des Accountnamens werden nicht berücksichtigt. 
+** Sobald eine Ausgabe für die Gruppe eingetragen wurde, können keine weiteren Personen mehr hinzugefügt werden. 
+** Jede Person in einer Gruppe kann die Gruppe schließen.
+
+* Ansichten 
+** Jede Person bekommt eine Liste mit allen Gruppen, in denen sie Mitglied ist, angezeigt. 
+** Jede Person kann die Übersicht über jede Gruppe, in der sie Mitglied ist, anschauen.
+** Jede Person kann die Übersicht über die zum momentanen Zeitpunkt zum Ausgleich notwendigen Transaktionen für alle Gruppen, in der sie Mitglied ist, anschauen.
+
+=== Randbedingungen 
+
+* Die Anwendung soll als Webanwendung mit Spring Boot umgesetzt werden. 
+* Die Anwendung soll auf Port 9000 
+* Als Datenbank wird PostgreSQL verwendet. Die Datenbank muss in einem Docker-Container laufen.
+* Datenbank-Tests werden mit H2 umgesetzt und müssen auch laufen, wenn Docker ausgeschaltet ist.
+* Als OAuth-Provider benutzen wir GitHub. 
+* Als Architekturmuster ist die Onion-Architektur vorgegeben. In der Domänenschicht müssen die taktischen DDD-Muster verwendet werden. 
++
+IMPORTANT: Nicht jedes Muster muss auftauchen! 
+* Sie können Gradle Submodule (oder Java Module, wenn Sie sich damit befasst haben) verwenden um einen Teil der Regeln für das Architekturmuster über die Dependencies zu erzwingen, müssen das aber nicht tun.  
+* Zur automatischen Überprüfung von Architekturregeln, die Sie explizit selber wählen, oder implizit aus den Vorgaben folgen, müssen Sie ArchUnit verwenden. Einige Beispiele: 
+** Einhaltung des Architekturmusters 
+** Zugriff auf Entitäten innerhalb eines Aggregats erfolgt korrekt
+
+TIP: Eigene Annotationen können helfen, die Tests zu schreiben
+
+* Der Produktivcode muss nach den https://google.github.io/styleguide/javaguide.html[Regeln des Google-Styleguide] geschrieben werden. Ausnahme: Es _müssen_ keine JavaDocs geschrieben werden. Bei Testmethoden dürfen Sie außerdem die Namenskonventionen außer Acht lassen. 
+
+=== Deadlines
+
+Es gibt zwei Deadlines, die Sie unbedingt einhalten müssen, da wir nach Ablauf der Deadlines einen Teil der Bewertung final durchführen. 
+
+[cols="1,1"]
+|===
+|Deadline |  Inhalt
+
+|Di., 14.03.2023, 13:00 Uhr
+|Bis auf die Persistenz muss die Anwendung vollständig funktionsbereit sein. Wir werden zu dem Zeitpunkt auch eine Teilüberprüfung der Qualität der fertiggestellten Software durchführen.
+|Fr., 17.03.2023, 13:00 Uhr
+|Die Anwendung muss komplett fertiggestellt sein
+|=== 
+
+=== Zeitplan
+
+Der Zeitplan soll Ihnen zur Orientierung dienen, wann Sie die Funktionalitäten umsetzen sollten. Sie können hier auch variieren, allerdings halten Sie bitte die Deadlines im Hinterkopf bei der Entscheidung, wann Sie welches Feature umsetzen. *Sie sollten, wenn Sie einen Teilbereich fertig haben, sofort weiterarbeiten.*
+
+TIP: Die Persistenz wird in der ersten Deadline noch nicht berücksichtigt, es ist vermutlich keine gute Idee, mit dieser zu starten!
+
+Wir werden Ihnen zu zwei Terminen weitere Informationen/Aufgaben geben, die Sie in Ihrer Entwicklung berücksichtigen müssen:
+
+[cols="1,1"]
+|===
+|Termin |  Inhalt
+
+|Do., 02.03.2023, vor 9:00 Uhr
+| Sie erhalten von uns einige Testszenarien, die Sie in automatisierte Tests überführen müssen.  
+|Mi., 08.03.2023, vor 09:00 Uhr
+| Wir geben Ihnen eine Aufgabe, eine Funktion der Anwendung hinzuzufügen. Es wird keine radikale Änderung sein, wenn Ihre Anwendung einigermaßen sinnvoll umgesetzt wurde. Es ist aber zwingend notwendig, dass diese Änderung bis zur ersten Deadline am 14.03.2023 umgesetzt wird. Sie erhalten von uns zusätzlich ein Mittel, um die ordnungsgemäße Umsetzung der Anforderung zu überprüfen. 
+|=== 
+
+////
+Erste Deadline: Eine Hand voll Testfälle, u.a. ein Zirkelausgleich
+Zweite Deadline: Rest-Schnittstelle einbaune, die JSON annimmt und ausgibt. Dazu gibt es eine Anwendung, die die Schnittstelle testen, indem sie echte Aufrufe tätigt.
+////
+
+==== Woche 1: Primär Domänen-Modellierung
+
+In der ersten Woche sollen Sie sich um die Entwicklung der Domänenlogik kümmern. Ihre Anwendung sollte am Ende der Woche in der Lage sein, dass Beträge eingetragen werden können, und es gibt Methoden, mit deren Hilfe die Berechnung des Ausgleichs durchgeführt werden kann. 
+
+*Am Ende der Woche soll die Geschäftslogik im Groben funktionieren.* 
+
+NOTE: Sie dürfen natürlich auch in der Folgezeit Anpassungen vornehmen, wenn sich das als notwendig erweisen sollte.
+
+==== Woche 2: Primär Web-Schnittstelle
+
+In der zweiten Woche sollen Sie sich um die Schnittstelle für Nutzer:innen kümmern. Am Ende der Woche sollte die Anwendung funktional fertig sein und wir sollten in der Lage sein (solange wir keinen Neustart vornehmen) alle Features zu verwenden. 
+
+*Am Ende der zweiten Woche (spätestens aber am 14.03.2023) soll die Anwendung funktional, bis auf die Persistenz, vollständig umgesetzt sein.*
+
+==== Woche 3: Persistenz
+
+In der dritten Woche sollen Sie sich darum kümmern, dass die Anwendung auch funktioniert, wenn wir sie neu starten. Die Daten müssen dazu in einer Datenbank gesichert werden.
+
+Am Ende der Woche müssen wir in der Lage sein, Daten einzutragen, die Anwendung neu zu starten und danach die Dateneingabe und die Berechnung der abschließenden Überweisungen fortzusetzen. 
+
+== Abgabe
+
+Die Abgabe muss in diesem Git-Repository im `main` Branch erfolgen und den Kriterien aus http://propra.de/ws2223/9286c6bcf999c5a/index.html#_hinweise_zur_bewertung_des_praktikums[Wochenblatt 12] genügen.
+
+Sie müssen zusätzlich folgende Dokumentation erstellen:
+
+=== Anleitung zur Konfiguration und zum Starten der Anwendung
+
+Eine kurze Anleitung zur Konfiguration, die beschreibt, wie die Anwendung konfiguriert und gestartet wird. Es soll mit der Anleitung möglich sein, die Anwendung in einem vollkommen frischen Check-out (ohne das die Datenbank läuft!) ans Laufen zu bringen. 
+
+Schreiben Sie diese Aneitung in die Datei `README.adoc` im Hauptverzeichnis des Projektes. Wir verwenden als Umgebungsvariablen analog zu Übung 6 `CLIENT_ID` und `CLIENT_SECRET`, um die Informationen zur GitHub Authentifikation für die Anwendung bereitzustellen. Sie müssen diese Umgebungsvariablen verwenden.
+
+Standardmäßig werden wir die Anwendung starten, indem wir im Verzeichnis `docker compose up` ausführen. Solltend arüber hinaus Schritte oder Konfiguratonen notwendig sein, müssen Sie diese in der `README.adoc` beschreiben. 
+
+Die Konfigurationsanleitung muss für den fertiggestellten Teil am Tage der ersten Deadline mitgleiefert werden. Die Anleitung zur Persistenz können Sie für die erste Deadline weglassen. 
+
+=== Architekturdokumentation
+
+Sie müssen eine kurze Beschreibung der wesentlichen Komponenten und ggf. Entscheidungen in Ihrer Anwendung einreichen. Verwenden Sie das arc42 Template und fassen Sie sich kurz! 
+
+Wir erwarten hier eine Kontextabgrenzung und ggf. die Komponentenstruktur. Wenn Sie ein UML Diagramm zur Absicherung mit ArchUnit verwenden, können Sie das Diagramm hier einbetten. Stakeholderanalysen und eine allgemeine Beschreibung der Anwendung sind nicht notwendig. Ergänzen Sie weitere Informationen, wenn Sie diese für das Verständnis für wichtig erachten. 
+
+IMPORTANT: Stichwort: Das soll keine Steuererklärung werden! Füllen Sie *nicht* das Template von vorne bis hinten auf. Entfernen Sie am Ende des Praktikums die leeren Kapitel. 
+
+Die Architekturdokumentation muss zur zweiten Deadline am 17.03.2023  fertiggestellt sein. 
+
+== Mitarbeit im Praktikum 
+
+Um die Klausur mitschreiben zu können, müssen Sie demonstrieren, dass Sie den Stoff beherrschen und konstruktiv und hinreichend am Projekt mitarbeiten können. Wir werden Ihre aktive Mitarbeit beurteilen und Sie auch möglicherweise zusätzlich als Gruppe oder einzeln zur Implementierung und zum Vorgehen befragen. Sie müssen jederzeit in der Lage sein, den von Ihrer Gruppe produzierten Code und die Entwurfsentscheidungen erklären zu können. Es kann auch passieren, dass wir Sie mehr als einmal befragen. 
+
+Am Ende des Praktikums muss die Anwendung im Wesentlichen funktionieren und die Qualitätsanforderungen erfüllen. Es gibt immer mal Gründe, warum eine Entwicklung auf Probleme stößt und Dinge nicht fertig werden. Wir werden das berücksichtigen, aber Sie müssen *rechtzeitig mit uns kommunizieren*, wenn es Probleme gibt! 
+
+== Abschließende Tipps
+
+* Programmieren Sie im Mob. Dadurch erreichen Sie, dass alle Personen der Gruppe über den Code Bescheid wissen. Wenn Sie sich aufteilen und separat programmieren, dann müssen Sie die Änderungen im Anschlss durchgehen, diskutieren und verstehen. Das verlangsamt die Arbeit vermutlich eher, als dass es nutzt. Mob-Programmierung bedeutet, dass Sie gemeinsam den Code schreiben, nicht, dass Sie alle paar Minuten wechseln oder das `mob`-Werkzeug verwenden. 
++
+TIP: Nutzen Sie statt des `mob`-Tools ganz normale Commits und Pushs. Auf diese Wiese können Sie die Commits korrekt strukturieren. Achten Sie darauf, dass Sie in den `main`-Branch nur dann pushen, wenn alle Tests und Formatierungsregeln geprüft wurden. Wenn Sie Code pushen wollen, bei dem die Tests nicht komplett durchlaufen, verwenden Sie einen separaten Branch. 
+
+* Testen Sie von Anfang an! Verschieben Sie die Tests nicht nach hinten, sondern schreiben Sie Tests und Implementierung zusammen. Optimalerweise schreiben Sie zuerst den Test und dann den Code, aber zumindest sollten Sie nicht zu viel Code schreiben, bevor Sie die dazugehörenden Tests schreiben. 
++
+IMPORTANT: Die Erfahrung der Vergangenheit hat gezeigt, dass bei allen Gruppen, die keine Zulassung erhalten haben, unter anderem die Tests nicht sinnvoll geschrieben waren. 
