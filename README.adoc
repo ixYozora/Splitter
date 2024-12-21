@@ -62,9 +62,3 @@ Wenn Sie nun alle Ausgaben eingetragen haben, können Sie unten auf den Button �
 Wenn Sie nun die Gruppe schließen wollen, können Sie auf den „Gruppe schließen“ Button drücken, wodurch die Gruppe geschlossen wird und nicht mehr veränderlich ist. 
 
 Unter dem zuvor erwähnten Button befindet sich auch ein Hyperlink, um auf die Homepage zurückzukommen, wo nun auch die von Ihnen zuvor geschlossene Gruppe unter den offenen Gruppen gelistet wird. Auf die Informationen der geschlossenen Liste können Sie durch den angehängten Hyperlink zugreifen, jedoch keine Änderungen vornehmen.
-
-
-
-== Verhaltensregeln
-
-Wir erwarten von Ihnen einen respektvollen Umgang miteinander. Es gilt grundsätzlich bei uns der https://berlincodeofconduct.org/de/[Berlin Code of Conduct]. Die Tutor:innen haben die Aufgabe, die Einhaltung der Regeln zu überwachen und können bei Verstößen gegen den Verhaltenskodex Personen aus dem Praktikum ausschließen. Ein Praktikumsausschluss hat zur Folge, dass Sie das Modul in diesem Semester nicht mehr abschließen können. 
