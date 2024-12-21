@@ -1,4 +1,4 @@
-== Splitter
+= Splitter
 
 A Minimal Viable Product (MVP), Splitter, is a simple tool that calculates the fair distribution of expenses among a group of people, ensuring that everyone pays their fair share based on the contributions they made during shared activities like trips or events.
 
