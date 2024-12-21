@@ -1,76 +1,66 @@
 = Splitter
 
-A Minimal Viable Product (MVP), Splitter, is a simple tool that calculates the fair distribution of expenses among a group of people, ensuring that everyone pays their fair share based on the contributions they made during shared activities like trips or events.
+A *Minimal Viable Product (MVP)*, Splitter, is a simple tool that calculates the fair distribution of expenses among a group of people, ensuring that everyone pays their fair share based on the contributions they made during shared activities like trips or events.
 
 == USER GUIDE
 
-Schritt 1:
+=== Step 1:
+Clone the application.
 
-Klonen Sie sich die Anwendung.
+=== Step 2:
+Before using the project, you need to generate your OAuth Client-Secret and Client-ID on the GitHub website.
 
-Schritt 2:
+To do this, fill out the given form as follows:
 
-Bevor Sie das Projekt verwenden können, müssen Sie auf der GitHub Website Ihren OAuth Client-Secret und die Client-ID generieren lassen. 
+* Your desired name for the project as the *Application name*.
+* Use *http://localhost:9000* as the *Homepage URL*, as our application runs on port 9000.
+* Optionally, provide a description.
+* Use *http://localhost:9000* as the *Callback URL*.
 
-Hierfür füllen Sie bitte das gegebene Formular so aus:
+You should now receive the Client-ID and the Client-Secret. Copy these as you will need them in the next step.
 
-* Ihren gewünschten Namen für das Projekt als Application name
+=== Step 3:
+Enter the Client-Secret and Client-ID into the environment variables of the application.
 
-* http://localhost:9000 als Homepage URL, da unsere Anwendung auf dem Port 9000 läuft
+=== Step 4:
+Enter the *POSTGRES_USER* and *POSTGRES_PASSWORD*, which can be found in the `docker-compose.yml` file, into the environment variables.
 
-* Wenn gewünscht eine Beschreibung
+=== Step 5:
+To start the Docker container, first execute `docker compose up` in your Git Bash.
 
-* http://localhost:9000 als Callback URL
+=== Step 6:
+To start the application, use the following command:
+`CLIENT_SECRET=SECRET CLIENT_ID=ID POSTGRES_USER=user POSTGRES_PASSWORD=password ./gradlew bootRun`
 
-Nun sollten Sie die Client-ID und das Client-Secret unten erhalten. Diese sollten Sie sich kopieren, da Sie im darauffolgenden Schritt verwendet werden.
+Replace `SECRET`, `ID`, `user`, and `password` with the values you set in the environment variables. Ensure that `user` and `password` match the values in the `docker-compose` file.
 
-Schritt 3:
+The application should now be running.
 
-Tragen Sie nun die Client-Secret und die Client-ID in den Umgebungsvariablen der Anwendung ein.
+== Guide to the Web Interface
 
-Schritt 4:
+* On the homepage, you can add groups by entering the desired group name into the input field and clicking the *Add Group* button. Each group will have a hyperlink that directs you to the corresponding group information page.
 
-Tragen Sie nun den POSTGRES_USER und das POSTGRES_PASSWORD, welche Sie in der docker-compose.yml vorfinden können, in die Umgebungsvariablen ein.
+* At the top of the page, you can search for groups, either open or closed ones.
 
-Schritt 5:
+=== In the Group Information Page:
 
-Um den Docker container zu starten, müssen Sie zuerst in Ihrer GitBash "docker compose up" ausführen.
+* You can add members by entering their names into the input field at the top of the page. These names will then be listed individually below the input field.
 
-Schritt 6: 
+* Below the member table, you'll find fields to input expenses. Fill out these fields as indicated by the labels.
 
-Um die Anwendung zu starten müssen Sie nach diesem Schema ./gradlew bootRun aufrufen: 
-CLIENT_SECRET=SECRET CLIENT_ID=ID POSTGRES_USER=user POSTGRES_PASSWORD=password ./gradlew bootRun.
+* When specifying participants, always separate names with a comma and a space:
+**Example:** Max, Lisa, Tim, Jan
 
-Bei SECRET, ID, user und password müssen die selber in den Environment Variables gesetzten Werte benutzt werden, wobei user und password dem user und passwort in der docker-compose entsprechen müssen
+* After filling out the inputs and selecting the payer, you can click the *Add Expense* button, and your expense will be displayed below the input fields.
 
-Nun sollte die Anwendung laufen.
+* Once all expenses have been added, click the *Calculate Transactions* button to compute the required transactions for balancing the expenses. If you want to add another expense, you can do so and click *Calculate Transactions* again to get an updated calculation.
 
-== Anleitung zur Seite
+* If you wish to close the group, click the *Close Group* button. This will lock the group, making it no longer editable.
 
-Auf der Homepage können Sie Gruppen hinzufügen und durch den an jede Gruppe angehängten Hyperlink auf die entsprechende Gruppeninformationsseite zugreifen. Hierfür füllen Sie den Input mit dem gewünschten Namen der Gruppe aus und drücken auf den Button „Gruppe hinzufügen“
-
-Oben an der Seite gibt es außerdem die Funktion nach Gruppen zu suchen, einmal für offene und einmal für geschlossene Gruppen
-
-Wenn wir uns in der Gruppeninformation befinden, können Sie durch den obersten Input Personen/Personennamen hinzufügen, die direkt unter dem Input einzeln aufgelistet werden.
-
-Weiter unter der Personentabelle finden Sie die Eingaben für eine Ausgabe. Diese sollten Sie, wie durch die Labels gegeben, ausfüllen. 
-
-Achten Sie hier jedoch darauf die Teilnehmer immer mit einem Komma und einer Lücke zu trennen:
-
-Bsp.: Max, Lisa, Tim, Jan
-
-Wenn Sie die Inputs ausgefüllt haben und den Zahler ausgewählt haben, können Sie auf den Button „Ausgabe hinzufügen“ klicken und ihre Ausgabe wird unter den Input Feldern angezeigt. 
-
-Wenn Sie nun alle Ausgaben eingetragen haben, können Sie unten auf den Button „Transaktion berechnen“ drücken, um die erforderliche Transaktion für die Ausgaben zu erhalten. Wenn Sie eine weitere Ausgabe hinzufügen wollen, können Sie dies tun und nochmals auf den „Transaktion ausführen“ Button drücken, um eine angepasste Transaktion zu erhalten.
-
-Wenn Sie nun die Gruppe schließen wollen, können Sie auf den „Gruppe schließen“ Button drücken, wodurch die Gruppe geschlossen wird und nicht mehr veränderlich ist. 
-
-Unter dem zuvor erwähnten Button befindet sich auch ein Hyperlink, um auf die Homepage zurückzukommen, wo nun auch die von Ihnen zuvor geschlossene Gruppe unter den offenen Gruppen gelistet wird. Auf die Informationen der geschlossenen Liste können Sie durch den angehängten Hyperlink zugreifen, jedoch keine Änderungen vornehmen.
+* Below the *Close Group* button, there's a hyperlink to return to the homepage. The group you just closed will now appear under closed groups. You can access the group's information via its hyperlink, but no further changes can be made.
 
 == Authors
 
-Iraj Masoudian (ixYozora)
-
-Erik Gal (PTamoynesis)
-
-Jamie Gerlach (JamieGFL)
+* *Iraj Masoudian (ixYozora)*
+* *Erik Gal (PTamoynesis)*
+* *Jamie Gerlach (JamieGFL)*
