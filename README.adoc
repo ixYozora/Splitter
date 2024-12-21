@@ -64,6 +64,9 @@ Wenn Sie nun die Gruppe schließen wollen, können Sie auf den „Gruppe schlie�
 Unter dem zuvor erwähnten Button befindet sich auch ein Hyperlink, um auf die Homepage zurückzukommen, wo nun auch die von Ihnen zuvor geschlossene Gruppe unter den offenen Gruppen gelistet wird. Auf die Informationen der geschlossenen Liste können Sie durch den angehängten Hyperlink zugreifen, jedoch keine Änderungen vornehmen.
 
 == Authors
+
 Iraj Masoudian (ixYozora)
+
 Erik Gal (PTamoynesis)
+
 Jamie Gerlach (JamieGFL)
