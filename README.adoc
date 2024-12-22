@@ -61,6 +61,6 @@ The application should now be running.
 
 == Authors
 
-* *Iraj Masoudian (ixYozora)*
 * *Erik Gal (PTamoynesis)*
 * *Jamie Gerlach (JamieGFL)*
+* *Iraj Masoudian (ixYozora)*
