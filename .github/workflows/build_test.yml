@@ -12,7 +12,7 @@ jobs:
       - name: install latest jdk
         uses: actions/setup-java@v4
         with:
-          java-version: 17
+          java-version: 25
           cache: 'gradle'
           distribution: 'temurin'
       - name: make gradlew executable

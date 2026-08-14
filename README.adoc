@@ -4,6 +4,10 @@ A *Minimal Viable Product (MVP)*, Splitter, is a simple tool that calculates the
 
 == USER GUIDE
 
+=== Prerequisites:
+A *JDK 25* and Docker. The Gradle wrapper (9.7.0) is included, so no separate Gradle installation is
+needed.
+
 === Step 1:
 Clone the application.
 
