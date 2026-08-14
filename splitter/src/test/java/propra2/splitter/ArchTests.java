@@ -17,6 +17,7 @@ import propra2.splitter.stereotypes.AggregateRoot;
 import propra2.splitter.stereotypes.Entity;
 import propra2.splitter.stereotypes.Wertobjekt;
 
+import static com.tngtech.archunit.base.DescribedPredicate.describe;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noFields;
@@ -61,7 +62,9 @@ public class ArchTests {
       .should().dependOnClassesThat().resideInAPackage("..database..");
 
   @ArchTest
-  static final ArchRule rule7 = slices().matching("..domain..").should(ONE_AGGREGATE_ROOT_EXISTS);
+  static final ArchRule rule7 = slices().matching("propra2.splitter.(*)..")
+      .that(describe("are the domain slice", slice -> slice.getNamePart(1).equals("domain")))
+      .should(ONE_AGGREGATE_ROOT_EXISTS);
 
   @ArchTest
   static final ArchRule rule8 = noClasses().should().beAnnotatedWith(Deprecated.class);

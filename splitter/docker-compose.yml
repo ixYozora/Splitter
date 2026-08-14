@@ -8,3 +8,28 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    healthcheck:
+      # The app runs Flyway on startup, so it must not start before Postgres
+      # actually accepts connections.
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    ports:
+      # Bound to the loopback interface: an SSH tunnel still reaches it, but the
+      # unauthenticated /api/** endpoints are not published to the LAN.
+      - "127.0.0.1:9000:9000"
+    depends_on:
+      database:
+        condition: service_healthy
+    environment:
+      # Inside the compose network Postgres is reachable under its service name,
+      # not on localhost. This overrides spring.datasource.url from application.yaml.
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://database:5432/${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - CLIENT_ID=${CLIENT_ID}
+      - CLIENT_SECRET=${CLIENT_SECRET}
