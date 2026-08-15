@@ -2,6 +2,7 @@ package propra2.splitter.domain;
 
 import org.javamoney.moneta.Money;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import propra2.splitter.stereotypes.Entity;
@@ -13,12 +14,20 @@ class Ausgabe {
   final Person ausleger;
   final List<Person> personen;
   final Money kosten;
+  final Instant erfasstAm;
 
+  // Ohne Zeitpunkt: eine neu angelegte Ausgabe entsteht jetzt.
   Ausgabe(Aktivitaet aktivitaet, Person ausleger, List<Person> personen, Money kosten) {
+    this(aktivitaet, ausleger, personen, kosten, Instant.now());
+  }
+
+  Ausgabe(Aktivitaet aktivitaet, Person ausleger, List<Person> personen, Money kosten,
+      Instant erfasstAm) {
     this.aktivitaet = aktivitaet;
     this.ausleger = ausleger;
     this.personen = personen;
     this.kosten = kosten;
+    this.erfasstAm = erfasstAm;
   }
 
   Money getKosten() {
@@ -90,5 +99,11 @@ class Ausgabe {
 
   public Money getGesamtKosten() {
     return kosten;
+  }
+
+  // Bewusst nicht in equals/hashCode: der Zeitpunkt ist kein Teil der Identitaet
+  // einer Ausgabe, und die Gleichheitspruefungen der Tests wuerden sonst brechen.
+  Instant getErfasstAm() {
+    return erfasstAm;
   }
 }

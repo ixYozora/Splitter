@@ -43,7 +43,8 @@ public class GruppenRepositoryImpl implements GruppenRepository {
         dto.ausgabeGetaetigt());
     dto.personen().forEach(p -> gruppe.addPersonAlways(p.name()));
     dto.ausgaben().forEach(a -> gruppe.addAusgabe(a.aktivitaet().name(), a.ausleger().name(),
-        a.personen().stream().map(TeilnehmerDTO::name).toList(), Money.of(a.kosten(), "EUR")));
+        a.personen().stream().map(TeilnehmerDTO::name).toList(), Money.of(a.kosten(), "EUR"),
+        a.erfasstAm()));
     dto.transaktionen().forEach(
         t -> gruppe.addTransaktion(t.zahler().name(), t.zahlungsempfaenger().name(),
             Money.of(t.nettoBetrag(), "EUR")));
@@ -59,7 +60,8 @@ public class GruppenRepositoryImpl implements GruppenRepository {
         .stream()
         .map(a -> new AusgabeDTO(null, new AktivitaetDTO(a.aktivitaet()),
             new AuslegerDTO(a.ausleger()), a.personen().stream().map(
-            TeilnehmerDTO::new).toList(), a.kosten().getNumberStripped().doubleValue())).toList();
+            TeilnehmerDTO::new).toList(), a.kosten().getNumberStripped().doubleValue(),
+            a.erfasstAm())).toList();
 
     List<TransaktionDTO> transaktionen = gruppe.getTransaktionDetails()
         .stream()

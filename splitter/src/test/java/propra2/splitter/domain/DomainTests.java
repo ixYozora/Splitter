@@ -5,6 +5,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -507,5 +508,36 @@ public class DomainTests {
         .containsExactlyInAnyOrder(transaktion1, transaktion2);
   }
 
+@Test
+  @DisplayName("Eine erfasste Ausgabe traegt einen Zeitpunkt, spaetere sind nicht frueher")
+  void test_29() {
+    UUID id = UUID.randomUUID();
+    Gruppe gruppe = Gruppe.erstelleGruppe(id, "MaxHub", "Reisegruppe");
+    gruppe.addPerson("GitLisa");
+
+    Instant vorher = Instant.now();
+    gruppe.addAusgabeToPerson("Pizza", "MaxHub", List.of("MaxHub", "GitLisa"), Money.of(10, "EUR"));
+    gruppe.addAusgabeToPerson("Kino", "GitLisa", List.of("MaxHub", "GitLisa"), Money.of(20, "EUR"));
+
+    List<AusgabenDetails> bons = gruppe.getAusgabenDetails();
+
+    assertThat(bons).hasSize(2);
+    assertThat(bons.get(0).erfasstAm()).isAfterOrEqualTo(vorher);
+    assertThat(bons.get(1).erfasstAm()).isAfterOrEqualTo(bons.get(0).erfasstAm());
+    assertThat(bons.get(0).erfasstAmFormatiert()).matches("\\d{2}\\.\\d{2}\\.\\d{4}");
+  }
+
+  @Test
+  @DisplayName("Der Anteil eines Bons ist der Betrag geteilt durch die Teilnehmer")
+  void test_30() {
+    UUID id = UUID.randomUUID();
+    Gruppe gruppe = Gruppe.erstelleGruppe(id, "MaxHub", "Reisegruppe");
+    gruppe.addPerson("GitLisa");
+    gruppe.addPerson("ErixHub");
+    gruppe.addAusgabeToPerson("Pizza", "MaxHub", List.of("MaxHub", "GitLisa", "ErixHub"),
+        Money.of(30, "EUR"));
+
+    assertThat(gruppe.getAusgabenDetails().get(0).anteil()).isEqualTo(Money.of(10, "EUR"));
+  }
 
 }
