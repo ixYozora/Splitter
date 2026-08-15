@@ -1,0 +1,505 @@
+// Gruppenseite: Mitglieder auf den Beleg legen, Kassenbons oeffnen.
+// Der Server bekommt weiterhin nur zwei Strings - "zahler" und "teilnehmer",
+// letzterer mit ", " getrennt, genau so wie GruppenService ihn zerlegt.
+(function () {
+  "use strict";
+
+  var TRENNER = ", ";
+
+  var roster = document.getElementById("roster");
+  var komposer = document.getElementById("komposerForm");
+
+  // ---------- Avatare ----------
+  // Unbekannte GitHub-Namen liefern 404. Der Roster wird aus Freitext gefuellt,
+  // ein Tippfehler zeigt sonst ein kaputtes Bild.
+  function avatarErsatz(img, buchstabe, klasse) {
+    img.addEventListener("error", function () {
+      var ersatz = document.createElement("span");
+      ersatz.className = klasse + " token__initial";
+      ersatz.textContent = buchstabe || "?";
+      ersatz.setAttribute("aria-hidden", "true");
+      img.replaceWith(ersatz);
+    });
+  }
+
+  Array.prototype.forEach.call(document.querySelectorAll(".token__avatar"), function (img) {
+    avatarErsatz(img, img.getAttribute("data-initial"), "token__avatar");
+  });
+
+  if (!komposer || !roster) {
+    return;
+  }
+
+  // ---------- Formular scharf schalten ----------
+  var zahlerValue = document.getElementById("zahlerValue");
+  var teilnehmerValue = document.getElementById("teilnehmerValue");
+  var auslegerListe = document.getElementById("auslegerListe");
+  var teilnehmerListe = document.getElementById("teilnehmerListe");
+  var betragFeld = document.getElementById("betragID");
+  var anteilVorschau = document.getElementById("anteilVorschau");
+
+  [zahlerValue, teilnehmerValue].forEach(function (el) {
+    el.name = el.getAttribute("data-name");
+  });
+  Array.prototype.forEach.call(
+      komposer.querySelectorAll(".komposer__fallback input, .komposer__fallback select"),
+      function (el) {
+        el.disabled = true;
+      });
+
+  var ablagen = Array.prototype.slice.call(document.querySelectorAll(".ablage"));
+  var marken = Array.prototype.slice.call(roster.querySelectorAll(".token"));
+
+  // Vom Server zurueckgegeben, wenn das Formular abgelehnt wurde. Nur Namen,
+  // die auch wirklich in der Gruppe stehen.
+  function bekannt(name) {
+    return markeVon(name) !== null;
+  }
+
+  var ausleger = null;
+  var teilnehmer = [];
+  var inHand = null;
+
+  function markeVon(name) {
+    for (var i = 0; i < marken.length; i++) {
+      if (marken[i].getAttribute("data-name") === name) {
+        return marken[i];
+      }
+    }
+    return null;
+  }
+
+  // ---------- Bausteine ----------
+
+  function avatarFuer(name) {
+    var img = document.createElement("img");
+    img.className = "chip__avatar";
+    img.alt = "";
+    img.width = 22;
+    img.height = 22;
+    img.src = "https://github.com/" + encodeURIComponent(name) + ".png?size=64";
+    avatarErsatz(img, name.charAt(0).toUpperCase(), "chip__avatar");
+    return img;
+  }
+
+  function chip(name, ziel) {
+    var li = document.createElement("li");
+    li.className = "chip";
+    li.appendChild(avatarFuer(name));
+
+    var span = document.createElement("span");
+    span.className = "chip__name";
+    span.textContent = name;
+    li.appendChild(span);
+
+    var weg = document.createElement("button");
+    weg.type = "button";
+    weg.className = "chip__weg";
+    weg.setAttribute("aria-label", name + " aus " + ziel + " entfernen");
+    weg.innerHTML = '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">'
+        + '<line x1="4" y1="4" x2="12" y2="12"></line>'
+        + '<line x1="12" y1="4" x2="4" y2="12"></line></svg>';
+    weg.addEventListener("click", function () {
+      entfernen(name, ziel);
+    });
+    li.appendChild(weg);
+    return li;
+  }
+
+  // Betrag steht als Freitext im Feld: "12,50" genauso wie "12.50".
+  function betragLesen() {
+    var roh = (betragFeld && betragFeld.value ? betragFeld.value : "").trim();
+    if (!roh) {
+      return NaN;
+    }
+    if (roh.indexOf(",") !== -1) {
+      roh = roh.replace(/\./g, "").replace(",", ".");
+    }
+    return parseFloat(roh);
+  }
+
+  function anteilZeichnen() {
+    if (!anteilVorschau) {
+      return;
+    }
+    var betrag = betragLesen();
+    if (!teilnehmer.length || isNaN(betrag) || betrag <= 0) {
+      anteilVorschau.hidden = true;
+      anteilVorschau.textContent = "";
+      return;
+    }
+    // Dieselbe Division wie AusgabenDetails.anteil(): Kosten durch Teilnehmer.
+    var je = betrag / teilnehmer.length;
+    anteilVorschau.textContent = "je " + je.toLocaleString("de-DE", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }) + " €";
+    anteilVorschau.hidden = false;
+  }
+
+  function zeichnen() {
+    auslegerListe.textContent = "";
+    if (ausleger) {
+      auslegerListe.appendChild(chip(ausleger, "Ausleger"));
+    }
+
+    teilnehmerListe.textContent = "";
+    teilnehmer.forEach(function (name) {
+      teilnehmerListe.appendChild(chip(name, "Teilnehmer"));
+    });
+
+    zahlerValue.value = ausleger || "";
+    teilnehmerValue.value = teilnehmer.join(TRENNER);
+
+    marken.forEach(function (marke) {
+      var name = marke.getAttribute("data-name");
+      marke.classList.toggle("is-verplant",
+          name === ausleger || teilnehmer.indexOf(name) !== -1);
+      marke.setAttribute("aria-pressed", name === inHand ? "true" : "false");
+    });
+
+    // Ruhend stellt der Knopf die Frage, in der Hand ist er der Ablegeplatz.
+    ablagen.forEach(function (ablage) {
+      var ziel = ablage.querySelector(".ablage__ziel");
+      var frage = ablage.querySelector(".ablage__frage");
+      var hier = ablage.querySelector(".ablage__hier");
+      ablage.classList.toggle("is-bereit", inHand !== null);
+      if (!ziel) {
+        return;
+      }
+      ziel.disabled = inHand === null;
+      frage.hidden = inHand !== null;
+      hier.hidden = inHand === null;
+      hier.textContent = inHand ? inHand + " ablegen" : "";
+    });
+
+    anteilZeichnen();
+  }
+
+  function zuweisen(name, ziel) {
+    if (!name) {
+      return;
+    }
+    if (ziel === "ausleger") {
+      ausleger = name;
+    } else if (teilnehmer.indexOf(name) === -1) {
+      teilnehmer.push(name);
+    }
+    zeichnen();
+  }
+
+  function entfernen(name, ziel) {
+    if (ziel === "Ausleger") {
+      ausleger = null;
+    } else {
+      teilnehmer = teilnehmer.filter(function (n) {
+        return n !== name;
+      });
+    }
+    zeichnen();
+  }
+
+  // ---------- Aufnehmen und ablegen ----------
+  // WCAG 2.2 AA 2.5.7 verlangt einen Weg ohne Ziehen. Antippen nimmt die Marke
+  // auf, antippen einer Ablage legt sie hin - mit einem Zeiger und mit der
+  // Tastatur, ohne dass an jeder Marke ein Knopf klebt.
+
+  function greifen(name) {
+    inHand = inHand === name ? null : name;
+    zeichnen();
+  }
+
+  function hinlegen() {
+    if (inHand !== null) {
+      inHand = null;
+      zeichnen();
+    }
+  }
+
+  var nachZiehen = false;
+
+  document.addEventListener("click", function (event) {
+    if (nachZiehen) {
+      nachZiehen = false;
+      return;
+    }
+
+    var marke = event.target.closest(".token");
+    if (marke && !marke.disabled) {
+      greifen(marke.getAttribute("data-name"));
+      // Per Tastatur ausgeloest (detail === 0): der Fokus muss zu den Ablagen,
+      // sonst liegt die Marke zwar in der Hand, aber zwischen ihr und dem
+      // Ablegeplatz stehen alle uebrigen Mitglieder im Tab-Weg.
+      if (event.detail === 0 && inHand !== null) {
+        var erstes = document.querySelector(".ablage__ziel:not(:disabled)");
+        if (erstes) {
+          erstes.focus();
+        }
+      }
+      return;
+    }
+
+    var ziel = event.target.closest(".ablage__ziel");
+    if (ziel && !ziel.disabled) {
+      var name = inHand;
+      zuweisen(name, ziel.getAttribute("data-ablage-ziel"));
+      hinlegen();
+      // Der Knopf verschwindet unter dem Finger - der Fokus muss mit.
+      var zurueck = markeVon(name);
+      if (zurueck) {
+        zurueck.focus();
+      }
+      return;
+    }
+
+    // Innerhalb einer Ablage (etwa das Kreuz an einem Chip) bleibt die Hand voll.
+    if (!event.target.closest(".ablage")) {
+      hinlegen();
+    }
+  });
+
+  document.addEventListener("keydown", function (event) {
+    if (event.key === "Escape" && inHand !== null) {
+      var zurueck = markeVon(inHand);
+      hinlegen();
+      if (zurueck) {
+        zurueck.focus();
+      }
+    }
+  });
+
+  if (betragFeld) {
+    betragFeld.addEventListener("input", anteilZeichnen);
+  }
+
+  // ---------- Ziehen ----------
+
+  var gezogen = null;
+  var geist = null;
+  var griff = { x: 0, y: 0 };
+  var start = { x: 0, y: 0 };
+  var schwelle = 10;
+  var zieht = false;
+
+  roster.addEventListener("pointerdown", function (event) {
+    nachZiehen = false;
+    var token = event.target.closest(".token");
+    if (event.button !== 0 || !token || token.disabled) {
+      return;
+    }
+    gezogen = token;
+    zieht = false;
+    start.x = event.clientX;
+    start.y = event.clientY;
+    var kasten = token.getBoundingClientRect();
+    // Der Griffpunkt bleibt, wo angefasst wurde - sonst springt die Marke.
+    griff.x = event.clientX - kasten.left;
+    griff.y = event.clientY - kasten.top;
+    token.setPointerCapture(event.pointerId);
+  });
+
+  roster.addEventListener("pointermove", function (event) {
+    if (!gezogen) {
+      return;
+    }
+    var dx = event.clientX - start.x;
+    var dy = event.clientY - start.y;
+
+    if (!zieht) {
+      if (Math.abs(dx) + Math.abs(dy) < schwelle) {
+        return;
+      }
+      zieht = true;
+      geist = gezogen.cloneNode(true);
+      geist.classList.add("token--geist");
+      geist.style.width = gezogen.getBoundingClientRect().width + "px";
+      document.body.appendChild(geist);
+      gezogen.classList.add("is-quelle");
+      // Wer zieht, hat die Marke schon in der Hand - beide Wege zeigen dasselbe.
+      inHand = gezogen.getAttribute("data-name");
+      zeichnen();
+    }
+
+    geist.style.transform = "translate3d(" + (event.clientX - griff.x) + "px,"
+        + (event.clientY - griff.y) + "px,0)";
+
+    var unten = document.elementFromPoint(event.clientX, event.clientY);
+    var ablage = unten && unten.closest ? unten.closest(".ablage") : null;
+    ablagen.forEach(function (a) {
+      a.classList.toggle("is-ziel", a === ablage);
+    });
+  });
+
+  function ablegen(event) {
+    if (!gezogen) {
+      return;
+    }
+    var token = gezogen;
+    gezogen = null;
+
+    if (zieht) {
+      var unten = document.elementFromPoint(event.clientX, event.clientY);
+      var ablage = unten && unten.closest ? unten.closest(".ablage") : null;
+      if (ablage) {
+        zuweisen(token.getAttribute("data-name"), ablage.getAttribute("data-ablage"));
+      }
+      if (geist) {
+        geist.remove();
+        geist = null;
+      }
+      token.classList.remove("is-quelle");
+      ablagen.forEach(function (a) {
+        a.classList.remove("is-ziel");
+      });
+      // Der Klick nach dem Ziehen darf die Marke nicht gleich wieder aufnehmen.
+      nachZiehen = true;
+      hinlegen();
+    }
+    zieht = false;
+  }
+
+  roster.addEventListener("pointerup", ablegen);
+  roster.addEventListener("pointercancel", ablegen);
+
+  // ---------- Absenden ----------
+  komposer.addEventListener("submit", function () {
+    var knopf = komposer.querySelector('button[type="submit"]');
+    if (knopf) {
+      knopf.disabled = true;
+      knopf.textContent = "Wird erfasst…";
+    }
+  });
+
+  // ---------- Nach einer abgelehnten Eingabe ----------
+  // Der Server rendert die Seite im Fehlerfall neu und gibt zahler und
+  // teilnehmer in den versteckten Feldern zurueck. Daraus werden die Marken
+  // wieder aufgebaut, sonst waere die Zuordnung nach einem Tippfehler im
+  // Betrag verloren.
+  ausleger = bekannt(zahlerValue.value) ? zahlerValue.value : null;
+  teilnehmer = teilnehmerValue.value.split(TRENNER)
+      .map(function (n) {
+        return n.trim();
+      })
+      .filter(function (n, i, alle) {
+        return n && bekannt(n) && alle.indexOf(n) === i;
+      });
+
+  zeichnen();
+
+  // ---------- Lange Mitgliederliste ----------
+  // Ab data-sichtbar Eintraegen bleibt die Liste stehen und rollt auf Knopfdruck
+  // aus. Die Hoehe wird gemessen statt geraten, damit die Kurve stimmt und
+  // alles darunter sauber mitgeschoben wird.
+  var mehrKnopf = document.getElementById("rosterMehr");
+  var sichtbar = parseInt(roster.getAttribute("data-sichtbar"), 10) || 6;
+
+  if (mehrKnopf && marken.length > sichtbar) {
+    var offen = false;
+    var zeilen = Array.prototype.slice.call(roster.children);
+    var versteckt = zeilen.slice(sichtbar);
+
+    function gefalteteHoehe() {
+      var letzte = zeilen[sichtbar - 1];
+      return letzte.offsetTop + letzte.offsetHeight - roster.offsetTop;
+    }
+
+    function beschriften() {
+      mehrKnopf.textContent = offen
+          ? "weniger anzeigen"
+          : "+" + versteckt.length + " weitere";
+      mehrKnopf.setAttribute("aria-expanded", offen ? "true" : "false");
+    }
+
+    function starr(zustand) {
+      // Eingeklappte Zeilen sind sichtbar abgeschnitten - ohne inert wuerde der
+      // Tabulator in den unsichtbaren Teil laufen.
+      versteckt.forEach(function (li) {
+        li.inert = zustand;
+      });
+    }
+
+    var laufend = null;
+
+    function falten(sofort) {
+      // Schnelles Doppelklicken darf den alten Abschluss nicht auf die neue
+      // Bewegung feuern lassen.
+      if (laufend) {
+        roster.removeEventListener("transitionend", laufend);
+        laufend = null;
+      }
+      var von = roster.getBoundingClientRect().height;
+      roster.classList.add("is-gefaltet");
+      roster.style.height = "";
+      var offeneHoehe = roster.scrollHeight;
+      var zu = gefalteteHoehe();
+      var nach = offen ? offeneHoehe : zu;
+
+      if (sofort || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        roster.style.height = offen ? "" : zu + "px";
+        roster.classList.toggle("is-gefaltet", !offen);
+        starr(!offen);
+        return;
+      }
+
+      roster.style.height = von + "px";
+      roster.classList.add("is-bewegt");
+      if (offen) {
+        starr(false);
+      }
+      // Ein erzwungener Reflow, sonst springt der Browser direkt auf den Zielwert.
+      void roster.offsetHeight;
+      roster.style.height = nach + "px";
+
+      laufend = function (event) {
+        if (event.propertyName !== "height") {
+          return;
+        }
+        roster.removeEventListener("transitionend", laufend);
+        laufend = null;
+        roster.classList.remove("is-bewegt");
+        if (offen) {
+          // Auf auto zurueck, damit ein spaeter zugefuegtes Mitglied passt.
+          roster.style.height = "";
+          roster.classList.remove("is-gefaltet");
+        } else {
+          starr(true);
+        }
+      };
+      roster.addEventListener("transitionend", laufend);
+    }
+
+    mehrKnopf.hidden = false;
+    beschriften();
+    falten(true);
+
+    mehrKnopf.addEventListener("click", function () {
+      offen = !offen;
+      beschriften();
+      falten(false);
+    });
+  }
+
+  // ---------- Bonmappe ----------
+  var mappe = document.getElementById("bonmappe");
+  var mehr = document.getElementById("bonsMehr");
+  var zu = document.getElementById("bonmappeZu");
+
+  if (mappe && mehr) {
+    mehr.addEventListener("click", function () {
+      mappe.showModal();
+    });
+  }
+  if (mappe && zu) {
+    zu.addEventListener("click", function () {
+      mappe.close();
+    });
+  }
+  if (mappe) {
+    // Klick auf den Hintergrund schliesst - der Dialog selbst faengt seinen eigenen.
+    mappe.addEventListener("click", function (event) {
+      if (event.target === mappe) {
+        mappe.close();
+      }
+    });
+  }
+})();

@@ -97,6 +97,7 @@ public class WebController {
     Gruppe gruppe = service.getSingleGruppe(id);
     model.addAttribute("gruppe", gruppe);
     model.addAttribute("login", token.getPrincipal().getAttribute("login"));
+    model.addAttribute("avatarUrl", token.getPrincipal().getAttribute("avatar_url"));
 
     return "gruppe";
   }

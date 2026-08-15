@@ -20,8 +20,13 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(controllers = WebController.class)
@@ -106,8 +111,10 @@ public class SingleGruppeAnzeigeTest {
             .param("error", error))
         .andExpect(content().string(containsString("pizza")))
         .andExpect(content().string(containsString("MaxHub")))
-        .andExpect(content().string(containsString("[GitLisa]")))
-        .andExpect(content().string(containsString("400")));
+        // Teilnehmer stehen jetzt als eigene Zeilen im Kassenbon, nicht mehr als
+        // rohes List.toString() der Form "[GitLisa]".
+        .andExpect(content().string(containsString("GitLisa")))
+        .andExpect(content().string(containsString("400,00 €")));
 
   }
 
@@ -127,7 +134,13 @@ public class SingleGruppeAnzeigeTest {
             .param("id", gruppe.getId().toString())
             .param("loginForm", "MaxHub")
             .param("error", error))
-        .andExpect(content().string(containsString("GitLisa muss EUR 400.00 an MaxHub zahlen")));
+        // Die Seite schreibt den Ausgleich in deutscher Schreibweise aus den
+        // Transaktionsdaten. getTransaktionsNachricht() bleibt unveraendert und
+        // wird weiterhin von der REST-Schnittstelle und den Domaenentests geprueft.
+        .andExpect(content().string(containsString("ausgleich__betrag")))
+        .andExpect(content().string(containsString("400,00 €")))
+        .andExpect(content().string(containsString("GitLisa")))
+        .andExpect(content().string(containsString("MaxHub")));
 
   }
 
@@ -147,9 +160,12 @@ public class SingleGruppeAnzeigeTest {
         .andReturn();
     String html = result.getResponse().getContentAsString();
 
-    assertThat(html).contains("<form id=\"1\" method=\"post\" action=\"/gruppe/add\">");
-    assertThat(html).contains(
-        "<input class=\"form-control z-depth-1 w-25\" id=\"name\" type=\"text\" name=\"login\" value=\"MaxHub\">");
+    // Auf Fragmente statt auf ganze Tags pruefen, damit der naechste Umbau des
+    // Aussehens diese Zusicherungen nicht wieder bricht.
+    assertThat(html).contains("action=\"/gruppe/add\"");
+    assertThat(html).contains("id=\"name\"");
+    assertThat(html).contains("name=\"login\"");
+    assertThat(html).contains("value=\"MaxHub\"");
 
   }
 
@@ -170,7 +186,8 @@ public class SingleGruppeAnzeigeTest {
         .andReturn();
     String html = result.getResponse().getContentAsString();
 
-    assertThat(html).contains("<a href=\"/\"> zurück zur Gruppen-Übersicht </a>");
+    assertThat(html).contains("href=\"/\"");
+    assertThat(html).contains("zurück zur Gruppen-Übersicht");
 
   }
 
@@ -191,8 +208,8 @@ public class SingleGruppeAnzeigeTest {
         .andReturn();
     String html = result.getResponse().getContentAsString();
 
-    assertThat(html).contains("<form method=\"post\" action=\"/gruppe/close\">");
-    assertThat(html).contains("<button id=\"4\">Gruppe schließen</button>");
+    assertThat(html).contains("action=\"/gruppe/close\"");
+    assertThat(html).contains("Gruppe schließen");
 
   }
 
@@ -213,9 +230,97 @@ public class SingleGruppeAnzeigeTest {
         .andReturn();
     String html = result.getResponse().getContentAsString();
 
-    assertThat(html).contains("<form method=\"post\" action=\"/gruppe/close\">");
-    assertThat(html).contains("<button id=\"4\">Gruppe schließen</button>");
+    assertThat(html).contains("action=\"/gruppe/close\"");
+    assertThat(html).contains("Gruppe schließen");
 
+  }
+
+  @Test
+  @WithMockOAuth2User(login = "MaxHub")
+  @DisplayName("Jedes Mitglied bekommt eine Marke mit seinem GitHub-Bild")
+  void test_10() throws Exception {
+    UUID id = UUID.randomUUID();
+    Gruppe gruppe = Gruppe.erstelleGruppe(id, "MaxHub", "Reisegruppe");
+    gruppe.addPerson("GitLisa");
+    when(service.getSingleGruppe(gruppe.getId())).thenReturn(gruppe);
+
+    MvcResult result = mvc.perform(get("/gruppe")
+            .param("id", gruppe.getId().toString())
+            .param("loginForm", "MaxHub"))
+        .andReturn();
+    String html = result.getResponse().getContentAsString();
+
+    assertThat(html).contains("https://github.com/MaxHub.png?size=64");
+    assertThat(html).contains("https://github.com/GitLisa.png?size=64");
+    assertThat(html).contains("data-name=\"GitLisa\"");
+  }
+
+  @Test
+  @WithMockOAuth2User(login = "MaxHub")
+  @DisplayName("Eine geschlossene Gruppe zeigt weder Komposer noch Mitglieder-Formular")
+  void test_11() throws Exception {
+    UUID id = UUID.randomUUID();
+    Gruppe gruppe = Gruppe.erstelleGruppe(id, "MaxHub", "Reisegruppe");
+    gruppe.addPerson("GitLisa");
+    gruppe.closeGroup();
+    when(service.getSingleGruppe(gruppe.getId())).thenReturn(gruppe);
+
+    MvcResult result = mvc.perform(get("/gruppe")
+            .param("id", gruppe.getId().toString())
+            .param("loginForm", "MaxHub"))
+        .andReturn();
+    String html = result.getResponse().getContentAsString();
+
+    assertThat(html).doesNotContain("action=\"/gruppe/add\"");
+    assertThat(html).doesNotContain("action=\"/gruppe/add/ausgaben\"");
+    assertThat(html).doesNotContain("Gruppe schließen");
+    // Die Mitglieder bleiben sichtbar, nur bearbeiten laesst sich nichts mehr.
+    assertThat(html).contains("GitLisa");
+    assertThat(html).contains("Geschlossen");
+  }
+
+  @Test
+  @WithMockOAuth2User(login = "MaxHub")
+  @DisplayName("Die Marke selbst ist der Knopf, es haengen keine Zuweisungs-Knoepfe daran")
+  void test_12() throws Exception {
+    UUID id = UUID.randomUUID();
+    Gruppe gruppe = Gruppe.erstelleGruppe(id, "MaxHub", "Reisegruppe");
+    gruppe.addPerson("GitLisa");
+    when(service.getSingleGruppe(gruppe.getId())).thenReturn(gruppe);
+
+    MvcResult result = mvc.perform(get("/gruppe")
+            .param("id", gruppe.getId().toString())
+            .param("loginForm", "MaxHub"))
+        .andReturn();
+    String html = result.getResponse().getContentAsString();
+
+    assertThat(html).doesNotContain("zuweisung__knopf");
+    assertThat(html).contains("class=\"token\"");
+    assertThat(html).contains("aria-pressed=\"false\"");
+  }
+
+  @Test
+  @WithMockOAuth2User(login = "MaxHub")
+  @DisplayName("Ausleger und Teilnehmer sind zwei Ablagen mit eigenem Ablegeplatz")
+  void test_13() throws Exception {
+    UUID id = UUID.randomUUID();
+    Gruppe gruppe = Gruppe.erstelleGruppe(id, "MaxHub", "Reisegruppe");
+    gruppe.addPerson("GitLisa");
+    when(service.getSingleGruppe(gruppe.getId())).thenReturn(gruppe);
+
+    MvcResult result = mvc.perform(get("/gruppe")
+            .param("id", gruppe.getId().toString())
+            .param("loginForm", "MaxHub"))
+        .andReturn();
+    String html = result.getResponse().getContentAsString();
+
+    assertThat(html).contains("data-ablage=\"ausleger\"");
+    assertThat(html).contains("data-ablage=\"teilnehmer\"");
+    // Der Ablegeplatz ist der Weg ohne Ziehen (WCAG 2.2 AA 2.5.7).
+    assertThat(html).contains("data-ablage-ziel=\"ausleger\"");
+    assertThat(html).contains("data-ablage-ziel=\"teilnehmer\"");
+    assertThat(html).contains("Wer hat bezahlt?");
+    assertThat(html).contains("Wer war dabei?");
   }
 
 }

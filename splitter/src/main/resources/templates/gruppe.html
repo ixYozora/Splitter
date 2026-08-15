@@ -1,166 +1,329 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta charset="UTF-8">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css"
-        integrity="sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2"
-        crossorigin="anonymous">
-  <title>Title</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title th:text="${gruppe != null} ? ${gruppe.getGruppenName()} + ' · Splitter' : 'Gruppe · Splitter'">Gruppe · Splitter</title>
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+        href="../static/fonts/ibm-plex-sans-400.woff2" th:href="@{/fonts/ibm-plex-sans-400.woff2}">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+        href="../static/fonts/ibm-plex-sans-500.woff2" th:href="@{/fonts/ibm-plex-sans-500.woff2}">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+        href="../static/fonts/ibm-plex-sans-600.woff2" th:href="@{/fonts/ibm-plex-sans-600.woff2}">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+        href="../static/fonts/ibm-plex-mono-400.woff2" th:href="@{/fonts/ibm-plex-mono-400.woff2}">
   <link rel="stylesheet" href="../static/css/style.css" th:href="@{/css/style.css}">
-  <script type="text/javascript" src="../static/js/script.js" th:src="@{/js/script.js}"></script>
-  <script src="https://kit.fontawesome.com/e17460c3d0.js" crossorigin="anonymous"></script>
-
-
+  <noscript>
+    <style>
+      .nur-js { display: none; }
+      .komposer__fallback { display: block; }
+    </style>
+  </noscript>
 </head>
-<body>
-<h1 th:if="${!gruppe.isGeschlossen()}" th:text="${gruppe.getGruppenName()}" ></h1>
-<div class="lockContainer">
-<h1 th:unless="${!gruppe.isGeschlossen()}" th:text="${gruppe.getGruppenName()} + ' ' + '(geschlossen)'  "  > </h1>
+<body class="page page-gruppe">
 
-  <div th:if="${gruppe.isGeschlossen()}" class="fa-solid fa-lock"></div>
+<header class="topbar">
+  <a class="wordmark" href="/" th:href="@{/}">Splitter</a>
+
+  <details class="account">
+    <summary class="account__trigger">
+      <span class="account__name" th:text="${login} ?: 'Konto'">MaxHub</span>
+      <img class="account__avatar" alt="" width="36" height="36"
+           th:if="${avatarUrl != null}" th:src="${avatarUrl}">
+      <span class="account__avatar account__avatar--initial" th:unless="${avatarUrl != null}"
+            th:text="${login != null} ? ${#strings.toUpperCase(#strings.substring(login,0,1))} : '?'">M</span>
+      <span class="account__disclosure" aria-hidden="true">
+        <svg class="account__chevron" viewBox="0 0 12 12" focusable="false">
+          <polyline points="2.5,4.5 6,8 9.5,4.5"></polyline>
+        </svg>
+      </span>
+      <span class="visually-hidden">Konto-Menü öffnen</span>
+    </summary>
+    <svg class="account__connector" viewBox="0 -20 72 70" aria-hidden="true" focusable="false">
+      <path d="M0 0 C 20 -20, 46 -16, 56 6 C 62 20, 62 32, 62 50"></path>
+    </svg>
+    <div class="account__menu">
+      <p class="account__handle" th:text="${login} ?: ''">MaxHub</p>
+      <form method="post" th:action="@{/logout}">
+        <button class="button button--quiet" type="submit">Abmelden</button>
+      </form>
+    </div>
+  </details>
+</header>
+
+<div class="werkbank"
+     th:with="geschlossen=${gruppe.isGeschlossen()},
+              mitglieder=${gruppe.getPersonenNamen()},
+              bons=${gruppe.getAusgabenDetails()},
+              ausgleich=${gruppe.getTransaktionDetails()}">
+
+  <div class="gruppe__head">
+    <a class="gruppe__back" href="/" th:href="@{/}">
+      <svg class="gruppe__back-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+        <polyline points="9.5,3.5 5,8 9.5,12.5"></polyline>
+      </svg>
+      <span>zurück zur Gruppen-Übersicht</span>
+    </a>
+    <h1 class="gruppe__title" id="gruppeTitle" th:text="${gruppe.getGruppenName()}">Reisegruppe</h1>
+    <p class="gruppe__status" th:if="${geschlossen}">Geschlossen</p>
+  </div>
+
+  <!-- ---------- Linke Spalte: die Leute ---------- -->
+  <div class="werkbank__leute">
+
+    <section class="sheet sheet--klein" aria-labelledby="hinzufuegenTitel" th:unless="${geschlossen}">
+      <h2 class="sheet__label" id="hinzufuegenTitel">Mitglied hinzufügen</h2>
+      <form method="post" th:action="@{/gruppe/add}" th:object="${loginForm}" class="mitglied__form">
+        <input type="hidden" name="id" th:value="${gruppe.id}">
+        <label class="visually-hidden" for="name">GitHub-Name</label>
+        <input class="mitglied__input" id="name" type="text" name="login" th:field="*{login}"
+               autocomplete="off" placeholder="GitHub-Name"
+               th:attr="aria-invalid=${loginMessage != null} ? 'true' : null">
+        <button class="button" type="submit">Hinzufügen</button>
+        <p class="compose__error" th:if="${loginMessage}">
+          <svg class="compose__error-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+            <circle cx="8" cy="8" r="6.25"></circle>
+            <line x1="8" y1="4.75" x2="8" y2="8.5"></line>
+            <line x1="8" y1="11" x2="8" y2="11.01"></line>
+          </svg>
+          <span th:text="${loginMessage}">Invalider GitHub Name</span>
+        </p>
+      </form>
+    </section>
+
+    <section class="sheet sheet--roster" aria-labelledby="mitgliederTitel">
+      <h2 class="sheet__label" id="mitgliederTitel">
+        Mitglieder<span class="sheet__zahl" th:text="${#lists.size(mitglieder)}">3</span>
+      </h2>
+
+      <!-- Ohne die Marken-Knoepfe von frueher muss der Weg einmal dastehen. -->
+      <p class="roster__hinweis nur-js" id="rosterHinweis" th:unless="${geschlossen}">
+        Zum Zuordnen antippen oder in ein Feld ziehen.
+      </p>
+
+      <ul class="roster" id="roster" th:attr="data-sichtbar=6">
+        <li th:each="mitglied : ${mitglieder}">
+          <button type="button" class="token" aria-pressed="false"
+                  th:attr="data-name=${mitglied},
+                           disabled=${geschlossen} ? 'disabled' : null,
+                           aria-describedby=${geschlossen} ? null : 'rosterHinweis'">
+            <img class="token__avatar" alt="" width="28" height="28"
+                 th:src="'https://github.com/' + ${mitglied} + '.png?size=64'"
+                 th:attr="data-initial=${#strings.toUpperCase(#strings.substring(mitglied,0,1))}">
+            <span class="token__name" th:text="${mitglied}">MaxHub</span>
+            <span class="token__du" th:if="${mitglied == login}">du</span>
+          </button>
+        </li>
+      </ul>
+
+      <!-- Blendet sich selbst ein, sobald die Liste laenger ist als data-sichtbar. -->
+      <button type="button" class="mehr nur-js" id="rosterMehr"
+              aria-controls="roster" aria-expanded="false" hidden></button>
+
+      <p class="note" th:if="${#lists.isEmpty(mitglieder)}">Noch niemand in dieser Gruppe.</p>
+    </section>
+  </div>
+
+  <!-- ---------- Rechte Spalte: die Arbeit ---------- -->
+  <div class="werkbank__arbeit">
+
+    <section class="sheet sheet--komposer" aria-labelledby="ausgabeTitel" th:unless="${geschlossen}">
+      <h2 class="sheet__label" id="ausgabeTitel">Ausgabe erfassen</h2>
+
+      <form method="post" th:action="@{/gruppe/add/ausgaben}" th:object="${ausgabenForm}"
+            class="komposer" id="komposerForm">
+        <input type="hidden" name="id" th:value="${gruppe.id}">
+
+        <div class="feld">
+          <label class="feld__label" for="aktivitaetID">Aktivität</label>
+          <input class="feld__input" id="aktivitaetID" type="text" name="aktivitaet"
+                 th:field="*{aktivitaet}" autocomplete="off" placeholder="z. B. Pizza"
+                 th:attr="aria-invalid=${aktivitaetMessage != null} ? 'true' : null">
+          <p class="feld__fehler" th:if="${aktivitaetMessage}" th:text="${aktivitaetMessage}"></p>
+        </div>
+
+        <!-- Die beiden Ablagen. Der Server bekommt weiterhin nur zwei Strings.
+             Einer gegen viele: die Form der Ablage sagt schon, welche welche ist. -->
+        <div class="ablagen nur-js">
+          <div class="ablage ablage--einer" data-ablage="ausleger">
+            <span class="feld__label" id="auslegerLabel">Ausleger</span>
+            <ul class="ablage__inhalt" id="auslegerListe" aria-labelledby="auslegerLabel"></ul>
+            <button type="button" class="ablage__ziel" id="auslegerZiel"
+                    data-ablage-ziel="ausleger" aria-describedby="auslegerLabel" disabled>
+              <span class="ablage__frage">Wer hat bezahlt?</span>
+              <span class="ablage__hier" hidden></span>
+            </button>
+            <p class="feld__fehler" th:if="${zahlerMessage}" th:text="${zahlerMessage}"></p>
+          </div>
+
+          <div class="ablage ablage--viele" data-ablage="teilnehmer">
+            <span class="feld__label" id="teilnehmerLabel">Teilnehmer</span>
+            <ul class="ablage__inhalt" id="teilnehmerListe" aria-labelledby="teilnehmerLabel"></ul>
+            <button type="button" class="ablage__ziel" id="teilnehmerZiel"
+                    data-ablage-ziel="teilnehmer" aria-describedby="teilnehmerLabel" disabled>
+              <span class="ablage__frage">Wer war dabei?</span>
+              <span class="ablage__hier" hidden></span>
+            </button>
+            <!-- Dieselbe Division wie im Aggregat: Kosten durch Teilnehmer. -->
+            <p class="ablage__anteil" id="anteilVorschau" aria-live="polite" hidden></p>
+            <p class="feld__fehler" th:if="${teilnehmerMessage}"
+               th:text="${teilnehmerMessage}"></p>
+          </div>
+        </div>
+
+        <!-- Ohne name werden sie nicht abgeschickt. Erst das Skript vergibt den
+             Namen und schaltet dafuer die Ersatzfelder ab - sonst traegen beide
+             denselben Parameter und der leere gewinnt.
+             Der Wert kommt vom Server zurueck, wenn das Formular abgelehnt
+             wurde: das Skript baut die Marken daraus wieder auf. -->
+        <input type="hidden" id="zahlerValue" data-name="zahler"
+               th:value="${ausgabenForm.zahler()} ?: ''">
+        <input type="hidden" id="teilnehmerValue" data-name="teilnehmer"
+               th:value="${ausgabenForm.teilnehmer()} ?: ''">
+
+        <!-- Ohne JavaScript bleiben die ursprünglichen Felder bedienbar. -->
+        <div class="komposer__fallback">
+          <div class="feld">
+            <label class="feld__label" for="zahlerID">Ausleger</label>
+            <select class="feld__input" id="zahlerID" name="zahler">
+              <option th:each="mitglied : ${mitglieder}" th:text="${mitglied}"
+                      th:value="${mitglied}"
+                      th:selected="${mitglied == ausgabenForm.zahler()}"></option>
+            </select>
+          </div>
+          <div class="feld">
+            <label class="feld__label" for="teilnehmerFallback">Teilnehmer</label>
+            <input class="feld__input" id="teilnehmerFallback" type="text" name="teilnehmer"
+                   placeholder="MaxHub, GitLisa"
+                   th:value="${ausgabenForm.teilnehmer()} ?: ''">
+          </div>
+        </div>
+
+        <div class="komposer__fuss">
+          <div class="feld feld--betrag">
+            <label class="feld__label" for="betragID">Betrag</label>
+            <span class="feld__geld">
+              <input class="feld__input" id="betragID" type="text" inputmode="decimal"
+                     name="betrag" th:field="*{betrag}" autocomplete="off" placeholder="0,00"
+                     th:attr="aria-invalid=${betragMessage != null} ? 'true' : null">
+              <span class="feld__einheit" aria-hidden="true">€</span>
+            </span>
+            <p class="feld__fehler" th:if="${betragMessage}" th:text="${betragMessage}"></p>
+          </div>
+          <button class="button" type="submit">Erfassen</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="sheet sheet--bons" aria-labelledby="bonsTitel">
+      <h2 class="sheet__label" id="bonsTitel">
+        Kassenbons<span class="sheet__zahl" th:text="${#lists.size(bons)}">0</span>
+      </h2>
+
+      <!-- Sechs statt drei: die Bons packen sich jetzt in Spalten, kurze rutschen
+           unter lange. Bei drei Stueck haette jede Spalte genau einen und die
+           Packung braechte nichts. -->
+      <div class="bons" th:if="${!#lists.isEmpty(bons)}">
+        <article class="bon" th:each="bon, iter : ${bons}" th:if="${iter.index < 6}">
+          <p class="bon__aktivitaet" th:text="${bon.aktivitaet()}">Pizza</p>
+          <p class="bon__datum" th:text="${bon.erfasstAmFormatiert()}">14.08.2026</p>
+          <p class="bon__ausleger">
+            <span th:text="${bon.ausleger()}">MaxHub</span> hat ausgelegt
+          </p>
+          <ul class="bon__zeilen">
+            <li th:each="p : ${bon.personen()}">
+              <span th:text="${p}">GitLisa</span>
+              <span class="bon__betrag"
+                    th:text="${#numbers.formatDecimal(bon.anteil().getNumber().doubleValue(), 1, 'POINT', 2, 'COMMA')} + ' €'">6,00 €</span>
+            </li>
+          </ul>
+          <p class="bon__summe">
+            <span>Gesamt</span>
+            <span class="bon__betrag"
+                  th:text="${#numbers.formatDecimal(bon.kosten().getNumber().doubleValue(), 1, 'POINT', 2, 'COMMA')} + ' €'">30,00 €</span>
+          </p>
+        </article>
+      </div>
+
+      <button type="button" class="mehr" id="bonsMehr"
+              th:if="${#lists.size(bons) > 6}"
+              th:text="'+' + (${#lists.size(bons)} - 6) + ' weitere'">+8 weitere</button>
+
+      <p class="note" th:if="${#lists.isEmpty(bons)}">Noch keine Ausgabe erfasst.</p>
+    </section>
+  </div>
+
+  <!-- ---------- Fuß: der Ausgleich ---------- -->
+  <section class="sheet sheet--ausgleich" aria-labelledby="ausgleichTitel">
+    <h2 class="sheet__label" id="ausgleichTitel">Ausgleich</h2>
+
+    <!-- Nicht getTransaktionsNachrichten(): die liefert "EUR 12.00" und widerspraeche
+         der deutschen Schreibweise auf dem Rest der Seite. Die Nachricht bleibt
+         unveraendert fuer die REST-Schnittstelle und die Domaenentests. -->
+    <ul class="ausgleich" th:if="${!#lists.isEmpty(ausgleich)}">
+      <li th:each="t : ${ausgleich}">
+        <span class="ausgleich__von" th:text="${t.person1()}">GitLisa</span>
+        <span class="ausgleich__wort">zahlt</span>
+        <span class="ausgleich__betrag"
+              th:text="${#numbers.formatDecimal(t.betrag().getNumber().doubleValue(), 1, 'POINT', 2, 'COMMA')} + ' €'">12,00 €</span>
+        <span class="ausgleich__wort">an</span>
+        <span class="ausgleich__an" th:text="${t.person2()}">MaxHub</span>
+      </li>
+    </ul>
+    <p class="note" th:if="${#lists.isEmpty(ausgleich)}">
+      Noch nicht berechnet.
+    </p>
+
+    <div class="ausgleich__aktionen">
+      <form method="post" th:action="@{/gruppe/add/ausgaben/transaktion}" th:unless="${geschlossen}">
+        <input type="hidden" name="id" th:value="${gruppe.id}">
+        <button class="button" type="submit">Ausgleich berechnen</button>
+      </form>
+      <form method="post" th:action="@{/gruppe/close}" th:unless="${geschlossen}">
+        <input type="hidden" name="id" th:value="${gruppe.id}">
+        <button class="button button--rand" type="submit">Gruppe schließen</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- ---------- Alle Bons ---------- -->
+  <dialog class="bonmappe" id="bonmappe" aria-labelledby="bonmappeTitel">
+    <div class="bonmappe__kopf">
+      <h2 class="sheet__label" id="bonmappeTitel">
+        Alle Kassenbons<span class="sheet__zahl" th:text="${#lists.size(bons)}">0</span>
+      </h2>
+      <button type="button" class="bonmappe__zu" id="bonmappeZu" aria-label="Schließen">
+        <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+          <line x1="4" y1="4" x2="12" y2="12"></line>
+          <line x1="12" y1="4" x2="4" y2="12"></line>
+        </svg>
+      </button>
+    </div>
+    <div class="bonmappe__inhalt">
+      <article class="bon" th:each="bon : ${bons}">
+        <p class="bon__aktivitaet" th:text="${bon.aktivitaet()}">Pizza</p>
+        <p class="bon__datum" th:text="${bon.erfasstAmFormatiert()}">14.08.2026</p>
+        <p class="bon__ausleger">
+          <span th:text="${bon.ausleger()}">MaxHub</span> hat ausgelegt
+        </p>
+        <ul class="bon__zeilen">
+          <li th:each="p : ${bon.personen()}">
+            <span th:text="${p}">GitLisa</span>
+            <span class="bon__betrag"
+                  th:text="${#numbers.formatDecimal(bon.anteil().getNumber().doubleValue(), 1, 'POINT', 2, 'COMMA')} + ' €'">6,00 €</span>
+          </li>
+        </ul>
+        <p class="bon__summe">
+          <span>Gesamt</span>
+          <span class="bon__betrag"
+                th:text="${#numbers.formatDecimal(bon.kosten().getNumber().doubleValue(), 1, 'POINT', 2, 'COMMA')} + ' €'">30,00 €</span>
+        </p>
+      </article>
+    </div>
+  </dialog>
 
 </div>
 
-<form id="1" method="post" th:action="@{/gruppe/add}" th:object="${loginForm}">
-  <input type="hidden" name="id" value="id" th:value="${gruppe.id}">
-  <label for="name">Fuege Leute in deine Gruppe hinzu:</label>
-  <input class="form-control z-depth-1 w-25" id="name" type="text" name="login" th:field="*{login}">
-  <small class="text-danger" th:if="${loginMessage}" th:text="${loginMessage}" ></small>
-  <br>
-  <button class="btn btn-dark"> Zur Gruppe Hinzufügen</button>
-</form>
-
-
-
-<table class="table table-bordered table-dark w-25">
-
-  <thead>
-  <tr>
-    <th>Mitglieder</th>
-  </tr>
-  </thead>
-  <tbody>
-
-  <div th:if="${gruppe} != null">
-    <tr th:each="person : ${gruppe.getPersonen()}">
-      <td th:text="${person.getName()}"> </td>
-    </tr>
-  </div>
-
-  </tbody>
-
-</table>
-
-
-<form id="2" method="post" th:action="@{/gruppe/add/ausgaben}" th:object="${ausgabenForm}" >
-  <input type="hidden" name="id" value="id" th:value="${gruppe.id}">
-
-  <label for=aktivitaetID>Aktivität:
-  <input id="aktivitaetID" type="text" name="aktivitaet" th:field="*{aktivitaet}" >
-  </label>
-  <small class="text-danger" th:if="${aktivitaetMessage}" th:text="${aktivitaetMessage}" ></small>
-
-  <label for="zahlerID">Ausleger:
-    <br>
-    <select id="zahlerID" name="zahler" >
-      <div th:each="personen : ${gruppe.getPersonen()}" >
-        <option th:text="${personen.getName()}" ></option>
-      </div>
-    </select>
-  </label>
-
-  <label for="teilnehmerID"> Teilnehmer: </label>
-  <input id="teilnehmerID" type="text" name="teilnehmer" th:field="*{teilnehmer}" >
-  <small class="text-danger" th:if="${teilnehmerMessage}" th:text="${teilnehmerMessage}" ></small>
-
-  <label for="betragID"> Betrag: </label>
-  <input id="betragID" type="text" name="betrag" th:field="*{betrag}" >
-  <small class="text-danger" th:if="${betragMessage}" th:text="${betragMessage}" ></small>
-
-  <button class="btn btn-dark"  >Ausgabe hinzufügen</button>
-
-</form>
-
-
-<table class="table table-bordered table-dark w-25">
-
-  <thead>
-  <tr>
-    <th>Aktivität</th>
-    <th>Zahler</th>
-    <th>Teilnehmer</th>
-    <th>Betrag</th>
-  </tr>
-  </thead>
-  <tbody>
-
-  <div th:if="${gruppe} != null">
-
-    <tr th:each="ausgabe : ${gruppe.gruppenAusgaben}">
-      <div th:if="${ausgabe.personPresent(login)}" >
-      <td style="background-color: cornflowerblue"  th:text="${ausgabe.getAktivitaetName()}"> </td>
-      <td style="background-color: cornflowerblue" th:text="${ausgabe.getAuslegerName()}"> </td>
-      <td style="background-color: cornflowerblue" th:text="${ausgabe.getPersonenNamen()}"></td>
-      <td style="background-color: cornflowerblue" th:text="${ausgabe.getGesamtKosten()}"> </td>
-      </div>
-
-      <div th:unless="${ausgabe.personPresent(login)}" >
-        <td th:text="${ausgabe.getAktivitaetName()}"> </td>
-        <td th:text="${ausgabe.getAuslegerName()}"> </td>
-        <td th:text="${ausgabe.getPersonenNamen()}"></td>
-        <td th:text="${ausgabe.getGesamtKosten()}"> </td>
-      </div>
-    </tr>
-
-  </div>
-
-  </tbody>
-
-</table>
-
-
-
-
-<form id="3" method="post" th:action="@{/gruppe/add/ausgaben/transaktion}" >
-  <input type="hidden" name="id" value="id" th:value="${gruppe.id}">
-
-
-  <button class="btn btn-dark"> Transaktion berechnen </button>
-
-</form>
-
-
-<table class="table table-bordered table-dark w-25">
-
-  <thead>
-  <tr>
-    <th>Transaktionen</th>
-
-  </tr>
-  </thead>
-  <tbody th:remove="all-but-first" >
-
-  <div th:if="${gruppe} != null">
-    <tr th:each="transaktion : ${gruppe.getTransaktionsNachrichten()}">
-      <td th:text="${transaktion}"></td>
-    </tr>
-  </div>
-
-  </tbody>
-
-</table>
-
-
-<form method="post" th:action="@{/gruppe/close}">
-  <input type="hidden" name="id" value="id" th:value="${gruppe.id}">
-  <button id="4">Gruppe schließen</button>
-</form>
-
-<a href="/"> zurück zur Gruppen-Übersicht </a>
-
-
-
-
-
+<script src="../static/js/gruppe.js" th:src="@{/js/gruppe.js}" defer></script>
 </body>
 </html>
