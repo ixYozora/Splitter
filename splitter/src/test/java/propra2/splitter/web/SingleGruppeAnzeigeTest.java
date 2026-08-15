@@ -398,4 +398,54 @@ public class SingleGruppeAnzeigeTest {
     verify(service, never()).addPersonToGruppe(any(), any());
   }
 
+  @Test
+  @WithMockOAuth2User(login = "MaxHub")
+  @DisplayName("Namen bis 39 Zeichen werden angenommen, laengere nicht")
+  void test_17() throws Exception {
+    UUID id = UUID.randomUUID();
+    Gruppe gruppe = Gruppe.erstelleGruppe(id, "MaxHub", "Reisegruppe");
+    when(service.getSingleGruppe(id)).thenReturn(gruppe);
+
+    // GitHub laesst 39 Zeichen zu - das Muster hier stand vorher auf 15 und
+    // sperrte solche Konten komplett aus.
+    String neununddreissig = "a".repeat(39);
+    mvc.perform(post("/gruppe/add").with(csrf())
+            .param("id", id.toString())
+            .param("login", neununddreissig))
+        .andExpect(status().is3xxRedirection());
+    verify(service).addPersonToGruppe(id, neununddreissig);
+
+    mvc.perform(post("/gruppe/add").with(csrf())
+            .param("id", id.toString())
+            .param("login", "a".repeat(40)))
+        .andExpect(status().isOk());
+    verify(service, never()).addPersonToGruppe(id, "a".repeat(40));
+  }
+
+  @Test
+  @WithMockOAuth2User(login = "MaxHub")
+  @DisplayName("Die uebrigen GitHub-Regeln gelten: keine doppelten oder aeusseren Bindestriche")
+  void test_18() throws Exception {
+    UUID id = UUID.randomUUID();
+    Gruppe gruppe = Gruppe.erstelleGruppe(id, "MaxHub", "Reisegruppe");
+    when(service.getSingleGruppe(id)).thenReturn(gruppe);
+
+    for (String gut : List.of("ab", "a", "Max-Hub", "a1-b2-c3")) {
+      mvc.perform(post("/gruppe/add").with(csrf())
+              .param("id", id.toString())
+              .param("login", gut))
+          .andExpect(status().is3xxRedirection());
+      verify(service).addPersonToGruppe(id, gut);
+    }
+
+    // Unterstriche kennt GitHub bei Konten nicht, das alte Muster liess sie zu.
+    for (String schlecht : List.of("-max", "max-", "ma--x", "max_hub", "ma x")) {
+      mvc.perform(post("/gruppe/add").with(csrf())
+              .param("id", id.toString())
+              .param("login", schlecht))
+          .andExpect(status().isOk());
+      verify(service, never()).addPersonToGruppe(id, schlecht);
+    }
+  }
+
 }

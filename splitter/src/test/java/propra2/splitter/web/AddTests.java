@@ -78,7 +78,7 @@ public class AddTests {
 
     mvc.perform(post("/gruppe/add")
         .param("id", gruppe.getId().toString())
-        .param("loginForm", "ad")
+        .param("loginForm", "-ad--hub-")
         .with(csrf())).andExpect(status().isOk());
 
     verify(service, never()).addPersonToGruppe(any(), anyString());
