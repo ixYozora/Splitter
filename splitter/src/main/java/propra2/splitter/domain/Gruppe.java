@@ -118,7 +118,23 @@ public class Gruppe {
     transaktionen(nettoBetraege);
   }
 
-private void transaktionen(ArrayList<Person> nettoBetraege) {
+  // Netto-Position einer Person: was sie ausgelegt hat, minus was sie schuldet.
+  // Rechnet nur und veraendert nichts - anders als berechneTransaktionen, das die
+  // Betraege in die Personen schreibt und die Transaktionsliste aufbaut.
+  public Money getNettoBetrag(String person) {
+    Money[] sumAusgaben = berechneAusgaben();
+    Money[] sumSchulden = berechneSchulden();
+
+    for (int i = 0; i < personen.size(); i++) {
+      if (personen.get(i).getName().equals(person)) {
+        return sumAusgaben[i].subtract(sumSchulden[i]);
+      }
+    }
+    return Money.of(0, "EUR");
+  }
+
+
+  private void transaktionen(ArrayList<Person> nettoBetraege) {
     //Person mit maximalem Netto-Betrag
     Person personMaxGutschrift = getPersonWithMaxNettoBetrag(nettoBetraege);
     //Person mit minimalem Netto-Betrag

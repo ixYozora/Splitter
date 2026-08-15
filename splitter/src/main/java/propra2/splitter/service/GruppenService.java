@@ -35,6 +35,12 @@ public class GruppenService {
         gruppe.getPersonenNamen(), gruppe.isGeschlossen());
   }
 
+  // Wie oben, aber mit der Netto-Position der angemeldeten Person.
+  private GruppenDetails toGruppenDetails(Gruppe gruppe, String person) {
+    return new GruppenDetails(gruppe.getId(), gruppe.getGruppenName(),
+        gruppe.getPersonenNamen(), gruppe.isGeschlossen(), gruppe.getNettoBetrag(person));
+  }
+
   public GruppenOnPage getGruppen() {
     List<Gruppe> gruppen = repository.findAll();
     List<GruppenDetails> gruppenDetails = gruppen.stream().map(this::toGruppenDetails).toList();
@@ -65,11 +71,15 @@ public class GruppenService {
     repository.save(gruppe);
   }
 
+  // Filtert auf der Gruppe statt auf den Details, damit der Netto-Betrag der
+  // angemeldeten Person direkt mitberechnet werden kann.
   public GruppenOnPage personToGruppeMatch(OAuth2User principle) {
-    List<GruppenDetails> currentDetails = getGruppen().details();
-    return new GruppenOnPage(currentDetails.stream()
-        .filter(details -> details.personen().stream()
-            .anyMatch(p -> Objects.equals(p, principle.getAttribute("login")))).toList());
+    String login = principle.getAttribute("login");
+    return new GruppenOnPage(repository.findAll().stream()
+        .filter(gruppe -> gruppe.getPersonenNamen().stream()
+            .anyMatch(p -> Objects.equals(p, login)))
+        .map(gruppe -> toGruppenDetails(gruppe, login))
+        .toList());
   }
 
 

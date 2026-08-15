@@ -508,7 +508,43 @@ public class DomainTests {
         .containsExactlyInAnyOrder(transaktion1, transaktion2);
   }
 
-@Test
+  @Test
+  @DisplayName("Der Netto-Betrag einer Person ist Ausgelegtes minus Geschuldetes")
+  void test_26() {
+    UUID id = UUID.randomUUID();
+    Gruppe gruppe = Gruppe.erstelleGruppe(id, "MaxHub", "Reisegruppe");
+    gruppe.addPerson("GitLisa");
+    gruppe.addPerson("ErixHub");
+    gruppe.addAusgabeToPerson("Pizza", "MaxHub", List.of("MaxHub", "GitLisa", "ErixHub"),
+        Money.of(30, "EUR"));
+
+    assertThat(gruppe.getNettoBetrag("MaxHub")).isEqualTo(Money.of(20, "EUR"));
+    assertThat(gruppe.getNettoBetrag("GitLisa")).isEqualTo(Money.of(-10, "EUR"));
+    assertThat(gruppe.getNettoBetrag("ErixHub")).isEqualTo(Money.of(-10, "EUR"));
+  }
+
+  @Test
+  @DisplayName("Der Netto-Betrag veraendert die Gruppe nicht und ist wiederholt abrufbar")
+  void test_27() {
+    UUID id = UUID.randomUUID();
+    Gruppe gruppe = Gruppe.erstelleGruppe(id, "MaxHub", "Reisegruppe");
+    gruppe.addPerson("GitLisa");
+    gruppe.addAusgabeToPerson("Pizza", "MaxHub", List.of("MaxHub", "GitLisa"),
+        Money.of(10, "EUR"));
+
+    // Mehrfach abrufen darf nichts aufsummieren
+    assertThat(gruppe.getNettoBetrag("MaxHub")).isEqualTo(Money.of(5, "EUR"));
+    assertThat(gruppe.getNettoBetrag("MaxHub")).isEqualTo(Money.of(5, "EUR"));
+
+    // Und der Ausgleich danach muss unveraendert stimmen
+    gruppe.berechneTransaktionen();
+    transaktionen = gruppe.getTransaktionen();
+
+    assertThat(transaktionen.stream().map(Transaktion::getTransaktionsNachricht))
+        .containsExactly("GitLisa muss EUR 5.00 an MaxHub zahlen");
+  }
+
+  @Test
   @DisplayName("Eine erfasste Ausgabe traegt einen Zeitpunkt, spaetere sind nicht frueher")
   void test_29() {
     UUID id = UUID.randomUUID();
@@ -539,5 +575,15 @@ public class DomainTests {
 
     assertThat(gruppe.getAusgabenDetails().get(0).anteil()).isEqualTo(Money.of(10, "EUR"));
   }
+
+  @Test
+  @DisplayName("Eine unbekannte Person hat den Netto-Betrag null")
+  void test_28() {
+    UUID id = UUID.randomUUID();
+    Gruppe gruppe = Gruppe.erstelleGruppe(id, "MaxHub", "Reisegruppe");
+
+    assertThat(gruppe.getNettoBetrag("Fremder")).isEqualTo(Money.of(0, "EUR"));
+  }
+
 
 }
