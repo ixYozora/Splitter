@@ -323,4 +323,79 @@ public class SingleGruppeAnzeigeTest {
     assertThat(html).contains("Wer war dabei?");
   }
 
+  @Test
+  @WithMockOAuth2User(login = "MaxHub")
+  @DisplayName("Ein abgelehntes Ausgabenformular behaelt Ausleger, Teilnehmer und Aktivitaet")
+  void test_14() throws Exception {
+    UUID id = UUID.randomUUID();
+    Gruppe gruppe = Gruppe.erstelleGruppe(id, "MaxHub", "Reisegruppe");
+    gruppe.addPerson("GitLisa");
+    when(service.getSingleGruppe(id)).thenReturn(gruppe);
+
+    // Betrag ist kein gueltiger Double - vorher warf der Redirect die ganze
+    // Zuordnung weg.
+    MvcResult result = mvc.perform(post("/gruppe/add/ausgaben").with(csrf())
+            .param("id", id.toString())
+            .param("aktivitaet", "Pizza")
+            .param("zahler", "MaxHub")
+            .param("teilnehmer", "MaxHub, GitLisa")
+            .param("betrag", "keine Zahl"))
+        .andExpect(status().isOk())
+        .andExpect(view().name("gruppe"))
+        .andReturn();
+    String html = result.getResponse().getContentAsString();
+
+    assertThat(html).contains("value=\"MaxHub, GitLisa\"");
+    assertThat(html).contains("value=\"Pizza\"");
+    assertThat(html).contains("id=\"zahlerValue\"");
+    // Der abgelehnte Rohtext steht wieder im Betragsfeld.
+    assertThat(html).contains("value=\"keine Zahl\"");
+    assertThat(html).contains("Bitte einen Betrag");
+  }
+
+  @Test
+  @WithMockOAuth2User(login = "MaxHub")
+  @DisplayName("Eine fehlende Aktivitaet meldet sich, ohne die Ausgabe anzulegen")
+  void test_15() throws Exception {
+    UUID id = UUID.randomUUID();
+    Gruppe gruppe = Gruppe.erstelleGruppe(id, "MaxHub", "Reisegruppe");
+    gruppe.addPerson("GitLisa");
+    when(service.getSingleGruppe(id)).thenReturn(gruppe);
+
+    MvcResult result = mvc.perform(post("/gruppe/add/ausgaben").with(csrf())
+            .param("id", id.toString())
+            .param("aktivitaet", "")
+            .param("zahler", "MaxHub")
+            .param("teilnehmer", "GitLisa")
+            .param("betrag", "12.5"))
+        .andExpect(status().isOk())
+        .andReturn();
+    String html = result.getResponse().getContentAsString();
+
+    assertThat(html).contains("Bitte eine Aktivität eintragen");
+    assertThat(html).contains("value=\"GitLisa\"");
+    verify(service, never()).addAusgabeToGruppe(any(), any(), any(), any(), any());
+  }
+
+  @Test
+  @WithMockOAuth2User(login = "MaxHub")
+  @DisplayName("Ein invalider GitHub-Name laesst den getippten Namen stehen")
+  void test_16() throws Exception {
+    UUID id = UUID.randomUUID();
+    Gruppe gruppe = Gruppe.erstelleGruppe(id, "MaxHub", "Reisegruppe");
+    when(service.getSingleGruppe(id)).thenReturn(gruppe);
+
+    MvcResult result = mvc.perform(post("/gruppe/add").with(csrf())
+            .param("id", id.toString())
+            .param("login", "!!"))
+        .andExpect(status().isOk())
+        .andExpect(view().name("gruppe"))
+        .andReturn();
+    String html = result.getResponse().getContentAsString();
+
+    assertThat(html).contains("Invalider GitHub Name");
+    assertThat(html).contains("value=\"!!\"");
+    verify(service, never()).addPersonToGruppe(any(), any());
+  }
+
 }

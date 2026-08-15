@@ -74,11 +74,12 @@ public class AddTests {
   void test_03() throws Exception {
 
     Gruppe gruppe = Gruppe.erstelleGruppe(UUID.randomUUID(), "MaxHub", "Reisegruppe");
+    when(service.getSingleGruppe(gruppe.getId())).thenReturn(gruppe);
 
     mvc.perform(post("/gruppe/add")
         .param("id", gruppe.getId().toString())
         .param("loginForm", "ad")
-        .with(csrf())).andExpect(status().is3xxRedirection());
+        .with(csrf())).andExpect(status().isOk());
 
     verify(service, never()).addPersonToGruppe(any(), anyString());
 
@@ -91,6 +92,7 @@ public class AddTests {
 
     Gruppe gruppe = Gruppe.erstelleGruppe(UUID.randomUUID(), "MaxHub", "Reisegruppe");
     gruppe.addPerson("GitLisa");
+    when(service.getSingleGruppe(gruppe.getId())).thenReturn(gruppe);
 
     mvc.perform(post("/gruppe/add/ausgaben")
         .param("id", gruppe.getId().toString())
@@ -111,6 +113,7 @@ public class AddTests {
 
     Gruppe gruppe = Gruppe.erstelleGruppe(UUID.randomUUID(), "MaxHub", "Reisegruppe");
     gruppe.addPerson("GitLisa");
+    when(service.getSingleGruppe(gruppe.getId())).thenReturn(gruppe);
 
     mvc.perform(post("/gruppe/add/ausgaben")
         .param("id", gruppe.getId().toString())
@@ -118,7 +121,7 @@ public class AddTests {
         .param("zahler", "MaxHub")
         .param("teilnehmer", "GitLisa")
         .param("betrag", "40.00")
-        .with(csrf())).andExpect(status().is3xxRedirection());
+        .with(csrf())).andExpect(status().isOk());
 
     verify(service, never()).addAusgabeToGruppe(any(), anyString(), anyString(), anyString(),
         anyDouble());
@@ -132,6 +135,7 @@ public class AddTests {
 
     Gruppe gruppe = Gruppe.erstelleGruppe(UUID.randomUUID(), "MaxHub", "Reisegruppe");
     gruppe.addPerson("GitLisa");
+    when(service.getSingleGruppe(gruppe.getId())).thenReturn(gruppe);
 
     mvc.perform(post("/gruppe/add/ausgaben")
         .param("id", gruppe.getId().toString())
@@ -139,7 +143,7 @@ public class AddTests {
         .param("zahler", "MaxHub")
         .param("teilnehmer", "")
         .param("betrag", "40.00")
-        .with(csrf())).andExpect(status().is3xxRedirection());
+        .with(csrf())).andExpect(status().isOk());
 
     verify(service, never()).addAusgabeToGruppe(any(), anyString(), anyString(), anyString(),
         anyDouble());
@@ -153,6 +157,7 @@ public class AddTests {
 
     Gruppe gruppe = Gruppe.erstelleGruppe(UUID.randomUUID(), "MaxHub", "Reisegruppe");
     gruppe.addPerson("GitLisa");
+    when(service.getSingleGruppe(gruppe.getId())).thenReturn(gruppe);
 
     mvc.perform(post("/gruppe/add/ausgaben")
         .param("id", gruppe.getId().toString())
@@ -160,7 +165,7 @@ public class AddTests {
         .param("zahler", "MaxHub")
         .param("teilnehmer", "GitLisa")
         .param("betrag", "sdfg")
-        .with(csrf())).andExpect(status().is3xxRedirection());
+        .with(csrf())).andExpect(status().isOk());
 
     verify(service, never()).addAusgabeToGruppe(any(), anyString(), anyString(), anyString(),
         anyDouble());
@@ -174,6 +179,7 @@ public class AddTests {
 
     Gruppe gruppe = Gruppe.erstelleGruppe(UUID.randomUUID(), "MaxHub", "Reisegruppe");
     gruppe.addPerson("GitLisa");
+    when(service.getSingleGruppe(gruppe.getId())).thenReturn(gruppe);
 
     mvc.perform(post("/gruppe/add/ausgaben")
         .param("id", gruppe.getId().toString())
@@ -181,7 +187,7 @@ public class AddTests {
         .param("zahler", "MaxHub")
         .param("teilnehmer", "GitLisa")
         .param("betrag", "-20")
-        .with(csrf())).andExpect(status().is3xxRedirection());
+        .with(csrf())).andExpect(status().isOk());
 
     verify(service, never()).addAusgabeToGruppe(any(), anyString(), anyString(), anyString(),
         anyDouble());

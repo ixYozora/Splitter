@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import propra2.splitter.domain.Gruppe;
 import propra2.splitter.service.GruppenDetails;
 import propra2.splitter.service.GruppenOnPage;
@@ -71,29 +70,15 @@ public class WebController {
       @RequestParam(name = "id", value = "id", required = false) UUID id,
       @ModelAttribute("loginForm") LoginForm loginForm,
       @ModelAttribute("ausgabenForm") AusgabenForm ausgabenForm,
-      String error,
-      String aktivitaetError,
-      String zahlerError,
-      String teilnehmerError,
-      String betragError,
       OAuth2AuthenticationToken token) {
 
-    if (error != null) {
-      model.addAttribute("loginMessage", error);
-    }
-    if (aktivitaetError != null) {
-      model.addAttribute("aktivitaetMessage", aktivitaetError);
-    }
-    if (zahlerError != null) {
-      model.addAttribute("zahlerMessage", zahlerError);
-    }
-    if (teilnehmerError != null) {
-      model.addAttribute("teilnehmerMessage", teilnehmerError);
-    }
-    if (betragError != null) {
-      model.addAttribute("betragMessage", betragError);
-    }
+    return gruppenSeiteFuellen(model, id, token);
+  }
 
+  // Gemeinsam fuer die GET-Seite und die Fehlerwege der beiden POSTs. Ueber
+  // einen Redirect kaeme das Formular leer zurueck, also wird die Seite im
+  // Fehlerfall direkt gerendert - so wie es addGruppen oben schon macht.
+  private String gruppenSeiteFuellen(Model model, UUID id, OAuth2AuthenticationToken token) {
     Gruppe gruppe = service.getSingleGruppe(id);
     model.addAttribute("gruppe", gruppe);
     model.addAttribute("login", token.getPrincipal().getAttribute("login"));
@@ -103,16 +88,17 @@ public class WebController {
   }
 
   @PostMapping("/gruppe/add")
-  public String addPersonToSingleGruppe(
+  public String addPersonToSingleGruppe(Model model,
       @RequestParam(name = "id", value = "id", required = false) UUID id,
-      @Valid LoginForm loginForm,
+      @Valid @ModelAttribute("loginForm") LoginForm loginForm,
       BindingResult bindingResult,
-      RedirectAttributes attributes) {
+      @ModelAttribute("ausgabenForm") AusgabenForm ausgabenForm,
+      OAuth2AuthenticationToken token) {
 
     if (bindingResult.hasErrors()) {
-      attributes.addAttribute("error", "Invalider GitHub Name");
+      model.addAttribute("loginMessage", "Invalider GitHub Name");
 
-      return "redirect:/gruppe?id=" + id;
+      return gruppenSeiteFuellen(model, id, token);
     }
 
     service.addPersonToGruppe(id, loginForm.login());
@@ -122,50 +108,36 @@ public class WebController {
 
 
   @PostMapping("/gruppe/add/ausgaben")
-  public String addAusgabeToGruppe(
+  public String addAusgabeToGruppe(Model model,
       @RequestParam(name = "id", value = "id", required = false) UUID id,
-      @Valid AusgabenForm ausgabenForm,
+      @Valid @ModelAttribute("ausgabenForm") AusgabenForm ausgabenForm,
       BindingResult bindingResult,
-      RedirectAttributes attributes) {
+      @ModelAttribute("loginForm") LoginForm loginForm,
+      OAuth2AuthenticationToken token) {
 
-    boolean akt = false;
-    boolean zah = false;
-    boolean teil = false;
-    boolean bet = false;
+    if (bindingResult.hasErrors()) {
+      // Kein Redirect: Formular und BindingResult bleiben im Model, damit die
+      // Seite Aktivitaet, Ausleger, Teilnehmer und den abgelehnten Betragstext
+      // unveraendert zurueckgibt statt alles zu verwerfen.
+      if (bindingResult.hasFieldErrors("aktivitaet")) {
+        model.addAttribute("aktivitaetMessage", "Bitte eine Aktivität eintragen");
+      }
+      if (bindingResult.hasFieldErrors("zahler")) {
+        model.addAttribute("zahlerMessage", "Bitte einen Ausleger ablegen");
+      }
+      if (bindingResult.hasFieldErrors("teilnehmer")) {
+        model.addAttribute("teilnehmerMessage", "Bitte mindestens einen Teilnehmer ablegen");
+      }
+      if (bindingResult.hasFieldErrors("betrag")) {
+        model.addAttribute("betragMessage", "Bitte einen Betrag wie 12,50 eintragen");
+      }
 
-    if (bindingResult.hasFieldErrors("aktivitaet")) {
-      akt = true;
-      attributes.addAttribute("aktivitaetError", "Invalide Aktivitaet");
-    }
-    if (bindingResult.hasFieldErrors("zahler")) {
-      zah = true;
-      attributes.addAttribute("zahlerError", "Invalider Zahler");
-    }
-    if (bindingResult.hasFieldErrors("teilnehmer")) {
-      teil = true;
-      attributes.addAttribute("teilnehmerError", "Invalide Teilnehmer");
-    }
-    if (bindingResult.hasFieldErrors("betrag")) {
-      bet = true;
-      attributes.addAttribute("betragError", "Invalider Betrag");
-    }
-
-    if (akt) {
-      return "redirect:/gruppe?id=" + id;
-    }
-    if (zah) {
-      return "redirect:/gruppe?id=" + id;
-    }
-    if (teil) {
-      return "redirect:/gruppe?id=" + id;
-    }
-    if (bet) {
-      return "redirect:/gruppe?id=" + id;
+      return gruppenSeiteFuellen(model, id, token);
     }
 
     service.addAusgabeToGruppe(id, ausgabenForm.aktivitaet(), ausgabenForm.zahler(),
         ausgabenForm.teilnehmer(),
-        ausgabenForm.betrag());
+        ausgabenForm.betragAlsZahl());
 
     return "redirect:/gruppe?id=" + id;
   }
