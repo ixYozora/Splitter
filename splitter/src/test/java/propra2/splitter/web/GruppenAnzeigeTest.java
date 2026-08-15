@@ -1,5 +1,6 @@
 package propra2.splitter.web;
 
+import org.javamoney.moneta.Money;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +14,7 @@ import propra2.splitter.helper.WithMockOAuth2User;
 import propra2.splitter.service.GruppenDetails;
 import propra2.splitter.service.GruppenOnPage;
 import propra2.splitter.service.GruppenService;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
@@ -40,6 +42,7 @@ public class GruppenAnzeigeTest {
   @WithMockOAuth2User(login = "MaxHub")
   @DisplayName("Die Gruppen Startseite ist erreichbar")
   void test_01() throws Exception {
+    when(service.personToGruppeMatch(any())).thenReturn(new GruppenOnPage(List.of()));
 
     mvc.perform(get("/"))
         .andExpect(status().isOk())
@@ -73,7 +76,7 @@ public class GruppenAnzeigeTest {
 
     MvcResult result = mvc.perform(get("/")).andReturn();
 
-    assertThat(result.getResponse().getContentAsString()).contains("Anzeigen");
+    assertThat(result.getResponse().getContentAsString()).contains("/gruppe?id=" + id);
 
   }
 
@@ -89,9 +92,9 @@ public class GruppenAnzeigeTest {
     MvcResult result = mvc.perform(get("/")).andReturn();
     String html = result.getResponse().getContentAsString();
 
-    assertThat(html).contains("<form method=\"post\" action=\"/add\">");
-    assertThat(html).contains(
-        "<input class=\"form-control w-25\" id=\"gName\" type=\"text\" name=\"gruppenName\" value=\"\" >");
+    assertThat(html).contains("action=\"/add\"");
+    assertThat(html).contains("id=\"gName\"");
+    assertThat(html).contains("name=\"gruppenName\"");
 
 
   }
@@ -108,14 +111,14 @@ public class GruppenAnzeigeTest {
     MvcResult result = mvc.perform(get("/")).andReturn();
     String html = result.getResponse().getContentAsString();
 
-    assertThat(html).contains("<a href=\"gruppe?id=" + id + "\"> Anzeigen </a>");
+    assertThat(html).contains("href=\"/gruppe?id=" + id + "\"");
 
   }
 
 
   @Test
   @WithMockOAuth2User(login = "MaxHub")
-  @DisplayName("Geschlossene Gruppen in denen man Mitglied war werden einem Seperat angezeigt")
+  @DisplayName("Geschlossene Gruppen werden in der Liste als geschlossen gekennzeichnet")
   void test_06() throws Exception {
     UUID id = UUID.randomUUID();
     when(service.personToGruppeMatch(any()))
@@ -125,9 +128,64 @@ public class GruppenAnzeigeTest {
     MvcResult result = mvc.perform(get("/")).andReturn();
     String html = result.getResponse().getContentAsString();
 
-    assertThat(html).contains("Geschlossene Gruppen");
     assertThat(html).contains("Reisegruppe");
     assertThat(html).contains("Geschlossen");
+    assertThat(html).contains("is-closed");
+
+  }
+
+  @Test
+  @WithMockOAuth2User(login = "MaxHub")
+  @DisplayName("Ein Guthaben wird mit Pluszeichen und der Abschluss darunter angezeigt")
+  void test_07() throws Exception {
+    UUID id = UUID.randomUUID();
+    when(service.personToGruppeMatch(any()))
+        .thenReturn(new GruppenOnPage(List.of(
+            new GruppenDetails(id, "Reisegruppe", List.of("MaxHub"), false,
+                Money.of(new BigDecimal("18.40"), "EUR")))));
+
+    MvcResult result = mvc.perform(get("/")).andReturn();
+    String html = result.getResponse().getContentAsString();
+
+    assertThat(html).contains("+18,40 €");
+    assertThat(html).contains("Dein Stand");
+    assertThat(html).contains("abschluss__betrag");
+
+  }
+
+  @Test
+  @WithMockOAuth2User(login = "MaxHub")
+  @DisplayName("Eine Schuld wird mit Minuszeichen ausgewiesen")
+  void test_08() throws Exception {
+    UUID id = UUID.randomUUID();
+    when(service.personToGruppeMatch(any()))
+        .thenReturn(new GruppenOnPage(List.of(
+            new GruppenDetails(id, "Reisegruppe", List.of("MaxHub"), false,
+                Money.of(new BigDecimal("-12.00"), "EUR")))));
+
+    MvcResult result = mvc.perform(get("/")).andReturn();
+    String html = result.getResponse().getContentAsString();
+
+    assertThat(html).contains("−12,00 €");
+    assertThat(html).contains("is-schuld");
+
+  }
+
+  @Test
+  @WithMockOAuth2User(login = "MaxHub")
+  @DisplayName("Ein ausgeglichener Stand wird ohne Vorzeichen angezeigt")
+  void test_09() throws Exception {
+    UUID id = UUID.randomUUID();
+    when(service.personToGruppeMatch(any()))
+        .thenReturn(new GruppenOnPage(List.of(
+            new GruppenDetails(id, "Reisegruppe", List.of("MaxHub"), false,
+                Money.of(BigDecimal.ZERO, "EUR")))));
+
+    MvcResult result = mvc.perform(get("/")).andReturn();
+    String html = result.getResponse().getContentAsString();
+
+    assertThat(html).contains("0,00 €");
+    assertThat(html).contains("is-glatt");
 
   }
 

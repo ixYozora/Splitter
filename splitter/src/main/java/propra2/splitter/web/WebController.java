@@ -1,6 +1,7 @@
 package propra2.splitter.web;
 
 
+import org.javamoney.moneta.Money;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import propra2.splitter.domain.Gruppe;
+import propra2.splitter.service.GruppenDetails;
 import propra2.splitter.service.GruppenOnPage;
 import propra2.splitter.service.GruppenService;
 
@@ -31,17 +33,30 @@ public class WebController {
   public String gruppenSeite(Model model, @ModelAttribute("gruppenForm") GruppenForm gruppenForm,
       OAuth2AuthenticationToken token) {
     GruppenOnPage liste = service.personToGruppeMatch(token.getPrincipal());
+    long geschlossene = liste.details().stream().filter(GruppenDetails::geschlossen).count();
+
+    // Der Abschluss unter der Liste: alle Netto-Positionen zusammengezaehlt.
+    Money gesamtBetrag = liste.details().stream()
+        .map(GruppenDetails::nettoBetrag)
+        .reduce(Money.of(0, "EUR"), Money::add);
+
     model.addAttribute("gruppen", liste);
+    model.addAttribute("login", token.getPrincipal().getAttribute("login"));
+    model.addAttribute("avatarUrl", token.getPrincipal().getAttribute("avatar_url"));
+    model.addAttribute("offeneAnzahl", liste.details().size() - geschlossene);
+    model.addAttribute("geschlosseneAnzahl", geschlossene);
+    model.addAttribute("gesamtBetrag", gesamtBetrag);
     return "index";
   }
 
   @PostMapping("/add")
-  public String addGruppen(@Valid GruppenForm gruppenForm,
+  public String addGruppen(Model model,
+      @Valid GruppenForm gruppenForm,
       BindingResult bindingResult,
       OAuth2AuthenticationToken token) {
 
     if (bindingResult.hasErrors()) {
-      return "index";
+      return gruppenSeite(model, gruppenForm, token);
     }
 
     Gruppe gruppe = service.addGruppe(token.getPrincipal(), gruppenForm.gruppenName());
