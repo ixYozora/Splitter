@@ -33,10 +33,6 @@ class Transaktion {
     this.transaktionsNachricht = transaktionsNachricht1;
   }
 
-  Transaktion() {
-    this.transaktionsNachricht = "Es sind keine Ausgleichszahlungen notwendig.";
-  }
-
   // Immer zwei Nachkommastellen: Money.toString() formatiert je nach Moneta-Version anders,
   // und die Nachricht geht so an die REST-Schnittstelle.
   private static String ausschreiben(Money betrag) {

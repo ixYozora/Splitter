@@ -1,10 +1,7 @@
 package propra2.splitter.domain;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -21,7 +18,6 @@ public class Gruppe {
   private final ArrayList<Person> nettoBetraege = new ArrayList<>();
   private final String gruppenName;
 
-  private boolean ausgleich = false;
   private boolean ausgabeGetaetigt = false;
   private boolean geschlossen = false;
 
@@ -114,15 +110,12 @@ public class Gruppe {
   }
 
   public void berechneTransaktionen() {
-    // Rechnet die Ausgaben jeder Person aus und speichert sie im Ausgabenarray sumAusgaben
     Money[] sumAusgaben = berechneAusgaben();
-
-    // Rechnet die Schulden jeder Person aus und speichert sie im Schuldenarray sumSchulden
     Money[] sumSchulden = berechneSchulden();
 
+    nettoBetraege.clear();
     for (int i = 0; i < personen.size(); i++) {
-      Money betrag = sumAusgaben[i].subtract(sumSchulden[i]);
-      personen.get(i).setNettoBetrag(betrag);
+      personen.get(i).setNettoBetrag(sumAusgaben[i].subtract(sumSchulden[i]));
       nettoBetraege.add(personen.get(i));
     }
     transaktionen(nettoBetraege);
@@ -142,58 +135,43 @@ public class Gruppe {
     return Money.of(0, "EUR");
   }
 
-  private void transaktionen(ArrayList<Person> nettoBetraege) {
-    // Person mit maximalem Netto-Betrag
-    Person personMaxGutschrift = getPersonWithMaxNettoBetrag(nettoBetraege);
-    // Person mit minimalem Netto-Betrag
-    Person personMaxSchulden = getPersonWithMinNettoBetrag(nettoBetraege);
-
-    // Falls alle Netto-Beträge 0 sind, ist bereits alles ausgeglichen
-    for (var entry : nettoBetraege) {
-      if (entry.getNettoBetrag().isZero()) {
-        ausgleich = true;
-      }
-      if (!entry.getNettoBetrag().isZero()) {
-        ausgleich = false;
-        break;
-      }
-    }
-    if (ausgleich && transaktionen.isEmpty()) {
-      transaktionen.add(
-          new Transaktion(personMaxSchulden, personMaxGutschrift, Money.of(0, "EUR")));
-    }
-
-    // Rekursionsabbruch bei fertigem Ausgleich
-    if (istAusgeglichen(personMaxGutschrift.getNettoBetrag())
-        && istAusgeglichen(personMaxSchulden.getNettoBetrag())) {
+  private void transaktionen(List<Person> alleSalden) {
+    List<Person> offen =
+        alleSalden.stream().filter(person -> Cent.von(person.getNettoBetrag()) != 0).toList();
+    if (offen.isEmpty()) {
       return;
     }
 
-    // Minimum der NettoBeträge von personMaxSchulden und personMaxGutschrift wird gespeichert
-    // personMaxSchulden's NettoBetrag muss für diesen Prozess negiert werden, damit Rechnung später
-    // korrekt ausgleicht
-    personMaxSchulden.setNettoBetrag(personMaxSchulden.getNettoBetrag().negate());
-    List<Person> list = List.of(personMaxSchulden, personMaxGutschrift);
-    Person minPerson = getPersonWithMinNettoBetrag(list);
-    Money min = minPerson.getNettoBetrag();
-    personMaxSchulden.setNettoBetrag(personMaxSchulden.getNettoBetrag().negate());
-
-    // NettoBetraege werden verrechnet > Ausgleich
-    personMaxGutschrift.setNettoBetrag(personMaxGutschrift.getNettoBetrag().subtract(min));
-    personMaxSchulden.setNettoBetrag(personMaxSchulden.getNettoBetrag().add(min));
-
-    // Bearbeitete Person wird aus der Liste genommen
-    if (personMaxGutschrift.getNettoBetrag().isEqualTo(Money.of(0.00, "EUR"))) {
-      nettoBetraege.remove(personMaxGutschrift);
-    } else if (personMaxSchulden.getNettoBetrag().isEqualTo(Money.of(0.00, "EUR"))) {
-      nettoBetraege.remove(personMaxSchulden);
+    long[] salden = offen.stream().mapToLong(person -> Cent.von(person.getNettoBetrag())).toArray();
+    for (List<Integer> gruppe : Ausgleichsrechner.nullsummenGruppen(salden)) {
+      gleicheGruppeAus(offen, salden.clone(), gruppe);
     }
+  }
 
-    // Transaktion wird erstellt und gespeichert
-    Transaktion newTransaktion = new Transaktion(personMaxSchulden, personMaxGutschrift, min);
-    transaktionen.add(newTransaktion);
+  // Innerhalb einer Nullsummengruppe ist jede Reihenfolge gleich gut: jede
+  // Ueberweisung stellt mindestens einen Saldo glatt, also bleiben k-1 uebrig.
+  private void gleicheGruppeAus(List<Person> offen, long[] salden, List<Integer> gruppe) {
+    List<Integer> glaeubiger = gruppe.stream().filter(i -> salden[i] > 0).toList();
+    List<Integer> schuldner = gruppe.stream().filter(i -> salden[i] < 0).toList();
 
-    transaktionen(nettoBetraege);
+    int naechsterGlaeubiger = 0;
+    int naechsterSchuldner = 0;
+    while (naechsterGlaeubiger < glaeubiger.size() && naechsterSchuldner < schuldner.size()) {
+      int g = glaeubiger.get(naechsterGlaeubiger);
+      int s = schuldner.get(naechsterSchuldner);
+      long betrag = Math.min(salden[g], -salden[s]);
+
+      transaktionen.add(new Transaktion(offen.get(s), offen.get(g), Cent.zu(betrag)));
+      salden[g] -= betrag;
+      salden[s] += betrag;
+
+      if (salden[g] == 0) {
+        naechsterGlaeubiger++;
+      }
+      if (salden[s] == 0) {
+        naechsterSchuldner++;
+      }
+    }
   }
 
   List<Transaktion> getTransaktionen() {
@@ -260,27 +238,6 @@ public class Gruppe {
       arr[i] = Money.of(0, "EUR");
     }
     return arr;
-  }
-
-  // Ein Restbetrag unterhalb eines Cents gilt als ausgeglichen: geteilt wird mit voller
-  // Genauigkeit, 100 EUR durch drei lassen also einen Bruchteil stehen.
-  private static boolean istAusgeglichen(Money betrag) {
-    return betrag
-            .getNumber()
-            .numberValue(BigDecimal.class)
-            .setScale(2, RoundingMode.HALF_UP)
-            .signum()
-        == 0;
-  }
-
-  Person getPersonWithMaxNettoBetrag(List<Person> nettoBetraege) {
-    PersonComparator personComparator = new PersonComparator();
-    return Collections.max(nettoBetraege, personComparator);
-  }
-
-  Person getPersonWithMinNettoBetrag(List<Person> nettoBetraege) {
-    PersonComparator personComparator = new PersonComparator();
-    return Collections.min(nettoBetraege, personComparator);
   }
 
   List<Person> getPersonenFromNames(List<String> personen2) {

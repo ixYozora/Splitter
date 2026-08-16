@@ -201,36 +201,6 @@ public class DomainTests {
   }
 
   @Test
-  @DisplayName("Person mit maximalem Netto-Betrag wird gefunden")
-  void test_12() {
-    Person personA = new Person("MaxHub");
-    Person personB = new Person("GitLisa");
-    personA.setNettoBetrag(Money.of(20, "EUR"));
-    personB.setNettoBetrag(Money.of(-20, "EUR"));
-    UUID id = UUID.randomUUID();
-    Gruppe gruppe = Gruppe.erstelleGruppe(id, "MaxHub", "Reisegruppe");
-
-    Person maxPerson = gruppe.getPersonWithMaxNettoBetrag(List.of(personA, personB));
-
-    assertThat(maxPerson).isEqualTo(personA);
-  }
-
-  @Test
-  @DisplayName("Person mit minimalem Netto-Betrag wird gefunden")
-  void test_13() {
-    Person personA = new Person("MaxHub");
-    Person personB = new Person("GitLisa");
-    personA.setNettoBetrag(Money.of(20, "EUR"));
-    personB.setNettoBetrag(Money.of(-20, "EUR"));
-    UUID id = UUID.randomUUID();
-    Gruppe gruppe = Gruppe.erstelleGruppe(id, "MaxHub", "Reisegruppe");
-
-    Person minPerson = gruppe.getPersonWithMinNettoBetrag(List.of(personA, personB));
-
-    assertThat(minPerson).isEqualTo(personB);
-  }
-
-  @Test
   @DisplayName(
       "isValid Utility Methode bestimmt richtig, wenn Kriterium 1 nicht erfüllt ist:"
           + "eine Personen darf immer nur selber Überweisungen an andere tätigen oder Geld"
@@ -348,10 +318,8 @@ public class DomainTests {
     gruppe.addAusgabeToPerson("Kino", "ErixHub", List.of("ErixHub", "MaxHub"), Money.of(10, "EUR"));
 
     gruppe.berechneTransaktionen();
-    List<Transaktion> transaktionen = gruppe.getTransaktionen();
 
-    assertThat(transaktionen.get(0).getTransaktionsNachricht())
-        .isEqualTo("Es sind keine Ausgleichszahlungen notwendig.");
+    assertThat(gruppe.getTransaktionen()).isEmpty();
   }
 
   @Test
@@ -453,8 +421,6 @@ public class DomainTests {
 
   @Test
   @DisplayName("Szenario 7: Minimierung")
-  // Hier wird ein möglicher Ausgleich ausgerechnet (nicht der, der gegeben wurde), ist jedoch nicht
-  // minimal
   void test_24() {
     Person personA = new Person("A");
     Person personB = new Person("B");
@@ -479,19 +445,20 @@ public class DomainTests {
     gruppe.addAusgabeToPerson("Theatervorstellung", "F", List.of("B", "F"), Money.of(40, "EUR"));
     gruppe.addAusgabeToPerson("Club", "F", List.of("C"), Money.of(5, "EUR"));
     gruppe.addAusgabeToPerson("Juan", "G", List.of("A"), Money.of(30, "EUR"));
-    String transaction1 = personA.getName() + " muss EUR 80.00 an " + personE.getName() + " zahlen";
-    String transaction2 = personB.getName() + " muss EUR 30.00 an " + personF.getName() + " zahlen";
-    String transaction3 = personC.getName() + " muss EUR 30.00 an " + personG.getName() + " zahlen";
-    String transaction4 = personD.getName() + " muss EUR 10.00 an " + personE.getName() + " zahlen";
-    String transaction5 = personD.getName() + " muss EUR 10.00 an " + personF.getName() + " zahlen";
-    String transaction6 = personD.getName() + " muss EUR 10.00 an " + personG.getName() + " zahlen";
+    // Salden: A -80, B -30, C -30, D -30, E +90, F +40, G +40. Das zerfaellt in
+    // {A,F,G} und {B,C,D,E}, also 7 - 2 = 5 Ueberweisungen statt der frueheren 6.
+    String transaction1 = personA.getName() + " muss EUR 40.00 an " + personF.getName() + " zahlen";
+    String transaction2 = personA.getName() + " muss EUR 40.00 an " + personG.getName() + " zahlen";
+    String transaction3 = personB.getName() + " muss EUR 30.00 an " + personE.getName() + " zahlen";
+    String transaction4 = personC.getName() + " muss EUR 30.00 an " + personE.getName() + " zahlen";
+    String transaction5 = personD.getName() + " muss EUR 30.00 an " + personE.getName() + " zahlen";
 
     gruppe.berechneTransaktionen();
     transaktionen = gruppe.getTransaktionen();
 
     assertThat(transaktionen.stream().map(Transaktion::getTransaktionsNachricht))
         .containsExactlyInAnyOrder(
-            transaction1, transaction2, transaction3, transaction4, transaction5, transaction6);
+            transaction1, transaction2, transaction3, transaction4, transaction5);
   }
 
   @Test

@@ -255,12 +255,12 @@
   </div>
 
   <!-- ---------- Fuß: der Ausgleich ---------- -->
-  <!-- Ist alles glatt, legt das Aggregat eine einzelne Transaktion ueber 0,00 €
-       an. Die als "X zahlt 0,00 € an Y" auszuschreiben waere schlicht falsch. -->
+  <!-- Kein Ausgleich bei vorhandenen Bons heisst: es geht schon auf. Ohne Bons
+       ist schlicht noch nichts da. -->
   <section class="sheet sheet--ausgleich" aria-labelledby="ausgleichTitel"
-           th:with="glatt=${#lists.size(ausgleich) == 1 and ausgleich[0].betrag().isZero()}">
+           th:with="glatt=${#lists.isEmpty(ausgleich) and !#lists.isEmpty(bons)}">
     <h2 class="sheet__label" id="ausgleichTitel">
-      Ausgleich<span class="sheet__zahl" th:unless="${#lists.isEmpty(ausgleich) or glatt}"
+      Ausgleich<span class="sheet__zahl" th:unless="${#lists.isEmpty(ausgleich)}"
                      th:text="${#lists.size(ausgleich)}">3</span>
     </h2>
 
@@ -268,12 +268,12 @@
          Liste darunter stehen. Sie ist ausserdem die Fassung, die Screenreader
          lesen - das Diagramm selbst ist aria-hidden. -->
     <div class="graf nur-js" id="ausgleichGraf" aria-hidden="true"
-         th:if="${!#lists.isEmpty(ausgleich) and !glatt}"></div>
+         th:if="${!#lists.isEmpty(ausgleich)}"></div>
 
     <!-- Nicht getTransaktionsNachrichten(): die liefert "EUR 12.00" und widerspraeche
          der deutschen Schreibweise auf dem Rest der Seite. Die Nachricht bleibt
          unveraendert fuer die REST-Schnittstelle und die Domaenentests. -->
-    <ul class="ausgleich" id="ausgleichListe" th:if="${!#lists.isEmpty(ausgleich) and !glatt}">
+    <ul class="ausgleich" id="ausgleichListe" th:if="${!#lists.isEmpty(ausgleich)}">
       <li th:each="t : ${ausgleich}"
           th:attr="data-von=${t.person1()},
                    data-an=${t.person2()},
