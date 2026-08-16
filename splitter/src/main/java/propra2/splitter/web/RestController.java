@@ -47,7 +47,7 @@ public class RestController {
 
       return new ResponseEntity<>(service.getGruppeInformationEntity(UUID.fromString(id)),
           HttpStatus.OK);
-    } catch (NumberFormatException exception) {
+    } catch (IllegalArgumentException exception) {
       return ResponseEntity.notFound().build();
     }
   }
@@ -61,7 +61,7 @@ public class RestController {
 
       return new ResponseEntity<>(service.setRestGruppeGeschlossen(UUID.fromString(id)),
           HttpStatus.OK);
-    } catch (NumberFormatException exception) {
+    } catch (IllegalArgumentException exception) {
       return ResponseEntity.notFound().build();
     }
   }
@@ -85,7 +85,7 @@ public class RestController {
 
       service.addRestAusgabenToGruppe(UUID.fromString(id), ausgabenEntity);
       return new ResponseEntity<>(ausgabenEntity, HttpStatus.CREATED);
-    } catch (NumberFormatException exception) {
+    } catch (IllegalArgumentException exception) {
       return ResponseEntity.notFound().build();
     }
   }
@@ -98,7 +98,7 @@ public class RestController {
       }
       return new ResponseEntity<>(service.getRestTransaktionen(UUID.fromString(id)),
           HttpStatus.OK);
-    } catch (NumberFormatException exception) {
+    } catch (IllegalArgumentException exception) {
       return ResponseEntity.notFound().build();
     }
   }
