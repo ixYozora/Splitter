@@ -203,4 +203,42 @@ public class RestGruppenServiceTests {
     verify(repository, times(2)).save(any(Gruppe.class));
     verify(repository, times(2)).findById(any(UUID.class));
   }
+
+  @Test
+  @DisplayName("Cent-Betraege gehen in beide Richtungen unveraendert durch")
+  void test_09() {
+    RestGruppenService service = new RestGruppenService(repository);
+    UUID id = UUID.randomUUID();
+    Gruppe gruppe =
+        Gruppe.erstelleRestGruppe(id, "Reisegruppe", List.of("MaxHub", "GitLisa", "ErixHub"));
+    when(repository.findById(id)).thenReturn(Optional.of(gruppe));
+    when(repository.save(any(Gruppe.class))).thenReturn(gruppe);
+
+    service.addRestAusgabenToGruppe(
+        id, new AusgabeEntity("Pizza", "MaxHub", List.of("GitLisa", "ErixHub"), 1099));
+
+    assertThat(service.getGruppeInformationEntity(id).ausgaben().get(0).cent()).isEqualTo(1099);
+  }
+
+  @Test
+  @DisplayName("Der Ausgleich wird in ganzen Cent gemeldet")
+  void test_10() {
+    RestGruppenService service = new RestGruppenService(repository);
+    UUID id = UUID.randomUUID();
+    Gruppe gruppe = Gruppe.erstelleRestGruppe(id, "Reisegruppe", List.of("MaxHub", "GitLisa"));
+    when(repository.findById(id)).thenReturn(Optional.of(gruppe));
+    when(repository.save(any(Gruppe.class))).thenReturn(gruppe);
+
+    service.addRestAusgabenToGruppe(
+        id, new AusgabeEntity("Pizza", "MaxHub", List.of("GitLisa"), 1099));
+
+    assertThat(service.getRestTransaktionen(id))
+        .singleElement()
+        .satisfies(
+            t -> {
+              assertThat(t.von()).isEqualTo("GitLisa");
+              assertThat(t.an()).isEqualTo("MaxHub");
+              assertThat(t.cents()).isEqualTo(1099);
+            });
+  }
 }
