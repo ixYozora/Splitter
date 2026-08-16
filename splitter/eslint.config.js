@@ -6,6 +6,14 @@ const globals = require("globals");
 // Dateien haengen direkt im <script>-Tag.
 module.exports = [
   {
+    files: ["src/test/js/**/*.js"],
+    languageOptions: {
+      ecmaVersion: 2024,
+      sourceType: "commonjs",
+      globals: { require: "readonly", __dirname: "readonly", module: "writable" },
+    },
+  },
+  {
     files: ["src/main/resources/static/js/**/*.js"],
     languageOptions: {
       ecmaVersion: 5,
