@@ -31,9 +31,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Java braucht den echten Compiler-Durchlauf: build-mode none liest
-          # nur den Quelltext und loest die Typen aus den Abhaengigkeiten nicht
-          # auf. JavaScript wird ohnehin nicht uebersetzt.
+          # Java braucht den echten Compiler-Durchlauf, weil build-mode none die
+          # Abhaengigkeiten nur raet. Das kostet die Overlay-Analyse, die es nur
+          # mit none gibt - bei dieser Groesse ist daran nichts zu holen.
           - language: java-kotlin
             build-mode: manual
           - language: javascript-typescript
