@@ -12,10 +12,8 @@ import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.data.jdbc.test.autoconfigure.DataJdbcTest;
 import propra2.splitter.domain.Gruppe;
 
-@DataJdbcTest
 public class GruppeRepositoryImplTest {
 
   final SpringDataGruppeRepository repository = mock(SpringDataGruppeRepository.class);

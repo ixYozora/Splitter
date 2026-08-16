@@ -30,8 +30,10 @@ Gradle 9.1 was the first release able to *run* on Java 25 — older wrappers die
 is checksum-verified via `distributionSha256Sum` in `gradle-wrapper.properties`; regenerate both with
 `./gradlew wrapper --gradle-version <v> --gradle-distribution-sha256-sum <sum>` rather than by hand.
 
-Tests need neither Docker nor environment variables: `src/test/resources/application.properties`
-points the datasource at in-memory H2 and disables Flyway.
+Tests need Docker but no environment variables: `TestcontainersKonfiguration` starts a
+`postgres:15-alpine` container and Spring wires it in via `@ServiceConnection`, so every run
+applies the Flyway migrations. Spring caches the context, so one container serves the whole
+suite.
 
 ## Running the app
 
@@ -107,13 +109,11 @@ saved with `id == null`).
 
 Flyway is on version 11, where per-database support is a separate artifact — `flyway-core` alone
 cannot migrate Postgres, hence the `flyway-database-postgresql` runtime dependency. Tests never
-exercise this (they disable Flyway), so a missing driver module only shows up at app startup.
+exercise this too, since the tests now run the migrations against Postgres.
 
-The schema exists **twice** and both copies must be changed together:
-
-- `src/main/resources/db/migration/V1__init_tables.sql` — Postgres, applied by Flyway at runtime.
-- `src/test/resources/database/tables.sql` — H2 dialect, applied per test via `@Sql`
-  (`src/test/resources/database/gruppe_insert.sql` supplies fixtures).
+The schema lives only in `src/main/resources/db/migration/` and Flyway applies it in tests as
+well as at runtime. `src/test/resources/database/gruppe_insert.sql` supplies fixtures on top of
+it via `@Sql`.
 
 ### Web and REST
 
@@ -139,8 +139,9 @@ and speaks a different money unit: JSON uses integer **cents** (`AusgabeEntity.c
 - Several UI tests assert on **exact HTML substrings** (e.g. `GruppenAnzeigeTest` matches the literal
   `<form method="post" action="/add">` and the full `<input …>` tag). Editing `index.html` or
   `gruppe.html` markup — including attribute order or spacing — will break them.
-- Repository tests: `@SpringBootTest` against H2 with `@Sql({"classpath:database/tables.sql"})`;
-  `GruppeRepositoryImplTest` instead mocks `SpringDataGruppeRepository` to test the DTO mapping.
+- Repository tests: `@SpringBootTest` with `@Import(TestcontainersKonfiguration.class)` and
+  `@Transactional`, so each test rolls back. `GruppeRepositoryImplTest` needs no Spring at all —
+  it mocks `SpringDataGruppeRepository` to test the DTO mapping.
 - Test fixtures use GitHub-style names (`MaxHub`, `GitLisa`, `ErixHub`) and group `Reisegruppe`.
 
 ## Style

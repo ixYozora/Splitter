@@ -5,10 +5,7 @@ plugins {
 	id 'com.diffplug.spotless' version '8.9.0'
 }
 
-// Die Aufgabenstellung verlangt den Google-Styleguide und verlangt ausserdem,
-// die Formatierungsregeln vor einem Push nach main zu pruefen. Genau das macht
-// spotlessCheck, und das Plugin haengt es von sich aus an `check` - CI prueft
-// es also mit, ohne dass der Workflow etwas davon wissen muss.
+// spotlessCheck haengt sich selbst an `check`.
 spotless {
 	java {
 		target 'src/**/*.java'
@@ -39,24 +36,22 @@ dependencies {
 	implementation 'org.javamoney:moneta:1.4.5@pom'
 	implementation 'org.springdoc:springdoc-openapi-ui:1.8.0'
 	implementation 'org.springframework.boot:spring-boot-starter-data-jdbc'
-	// Spring Boot 4 liefert die Flyway-Anbindung nicht mehr im Rumpf mit. Ohne
-	// dieses Artefakt startet die Anwendung stillschweigend ohne Migration -
-	// die Tests merken davon nichts, weil sie auf H2 ohne Flyway laufen.
+	// Spring Boot 4 liefert die Flyway-Anbindung nicht mehr mit.
 	implementation 'org.springframework.boot:spring-boot-flyway'
 	implementation 'org.flywaydb:flyway-core'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
-	// Spring Boot 4 hat die Test-Schnitte aus spring-boot-test-autoconfigure
-	// in eigene Artefakte je Modul geloest; ohne sie fehlen @WebMvcTest und
-	// @DataJdbcTest, obwohl das Test-Starter-Paket eingebunden ist.
+	// Spring Boot 4 hat die Test-Schnitte in eigene Artefakte geloest.
 	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
-	testImplementation 'org.springframework.boot:spring-boot-data-jdbc-test'
 	testImplementation 'org.springframework.security:spring-security-test'
 	testImplementation 'org.springframework.boot:spring-boot-starter-security-test'
+	// Tests gegen ein echtes Postgres statt gegen H2.
+	testImplementation 'org.springframework.boot:spring-boot-testcontainers'
+	testImplementation 'org.testcontainers:testcontainers-junit-jupiter'
+	testImplementation 'org.testcontainers:testcontainers-postgresql'
 	testImplementation 'com.tngtech.archunit:archunit-junit5-engine:1.5.0'
 	runtimeOnly 'org.flywaydb:flyway-database-postgresql'
 	runtimeOnly 'org.postgresql:postgresql'
-	runtimeOnly 'com.h2database:h2'
 }
 
 tasks.named('test') {

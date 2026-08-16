@@ -10,16 +10,20 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.jdbc.Sql;
+import org.springframework.transaction.annotation.Transactional;
+import propra2.splitter.TestcontainersKonfiguration;
 
 @SpringBootTest
+@Import(TestcontainersKonfiguration.class)
+@Transactional
 public class SpringDataGruppeInMemoryTest {
 
   @Autowired SpringDataGruppeRepository repository;
 
   @Test
   @DisplayName("Teste, ob alle Felder von einer geöffneten Gruppe gespeichert werden")
-  @Sql({"classpath:database/tables.sql"})
   void test_01() {
 
     GruppeDTO dto =
@@ -72,7 +76,6 @@ public class SpringDataGruppeInMemoryTest {
 
   @Test
   @DisplayName("Teste, ob alle Felder von einer geschlossenen Gruppe gespeichert werden")
-  @Sql({"classpath:database/tables.sql"})
   void test_02() {
     GruppeDTO dto =
         new GruppeDTO(
@@ -125,7 +128,6 @@ public class SpringDataGruppeInMemoryTest {
   @Test
   @DisplayName(
       "Wenn keine Gruppe die folgende ID besitzt, dann wird ein leerer Optional zurückgegeben")
-  @Sql({"classpath:database/tables.sql"})
   void test_03() {
 
     Optional<GruppeDTO> found = repository.findById(UUID.randomUUID());
@@ -135,7 +137,7 @@ public class SpringDataGruppeInMemoryTest {
 
   @Test
   @DisplayName("Speichert Gruppe mit UUID")
-  @Sql({"classpath:database/tables.sql", "classpath:database/gruppe_insert.sql"})
+  @Sql("classpath:database/gruppe_insert.sql")
   void test_04() {
     UUID testGroupId = UUID.fromString("11111111-1111-1111-1111-111111111111");
     Optional<GruppeDTO> found = repository.findById(testGroupId);
@@ -145,7 +147,7 @@ public class SpringDataGruppeInMemoryTest {
 
   @Test
   @DisplayName("Alle Gruppen sind in der Datenbank gespeichert")
-  @Sql({"classpath:database/tables.sql", "classpath:database/gruppe_insert.sql"})
+  @Sql("classpath:database/gruppe_insert.sql")
   void test_06() {
     List<GruppeDTO> all = new ArrayList<>();
     repository.findAll().forEach(all::add);
