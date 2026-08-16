@@ -245,7 +245,7 @@ public class Gruppe {
       for (int j = 0; j < gruppenAusgaben.size(); j++) {
         if (gruppenAusgaben.get(j).getPersonen().contains(personen.get(i))) {
           if (!gruppenAusgaben.get(j).getAusleger().equals(personen.get(i))) {
-            schuldenSum = schuldenSum.add(gruppenAusgaben.get(j).getDurchschnittsKosten());
+            schuldenSum = schuldenSum.add(gruppenAusgaben.get(j).anteilVon(personen.get(i)));
             sumSchuldenListe[i] = schuldenSum;
           }
         }

@@ -2,6 +2,7 @@ package propra2.splitter.domain;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -609,5 +610,49 @@ public class DomainTests {
     assertThat(gruppe.getTransaktionDetails())
         .extracting(TransaktionDetails::betrag)
         .containsExactlyInAnyOrder(Money.of(0.99, "EUR"), Money.of(0.01, "EUR"));
+  }
+
+  @Test
+  @DisplayName("Anteile einer nicht glatt teilbaren Ausgabe ergeben zusammen wieder den Betrag")
+  void test_32() {
+    UUID id = UUID.randomUUID();
+    Gruppe gruppe =
+        Gruppe.erstelleRestGruppe(id, "Reisegruppe", List.of("MaxHub", "GitLisa", "ErixHub"));
+    gruppe.addAusgabeToPerson(
+        "Pizza", "MaxHub", List.of("MaxHub", "GitLisa", "ErixHub"), Money.of(100, "EUR"));
+
+    Money summe =
+        gruppe.getPersonenNamen().stream()
+            .map(gruppe::getNettoBetrag)
+            .reduce(Money.of(0, "EUR"), Money::add);
+
+    assertThat(summe).isEqualTo(Money.of(0, "EUR"));
+    assertThat(gruppe.getNettoBetrag("MaxHub")).isEqualTo(Money.of(66.66, "EUR"));
+    assertThat(gruppe.getNettoBetrag("GitLisa")).isEqualTo(Money.of(-33.33, "EUR"));
+    assertThat(gruppe.getNettoBetrag("ErixHub")).isEqualTo(Money.of(-33.33, "EUR"));
+  }
+
+  @Test
+  @DisplayName("Ausgleichsbetraege haben hoechstens zwei Nachkommastellen")
+  void test_33() {
+    UUID id = UUID.randomUUID();
+    Gruppe gruppe =
+        Gruppe.erstelleRestGruppe(id, "Reisegruppe", List.of("MaxHub", "GitLisa", "ErixHub"));
+    gruppe.addAusgabeToPerson(
+        "Pizza", "MaxHub", List.of("MaxHub", "GitLisa", "ErixHub"), Money.of(100, "EUR"));
+
+    gruppe.berechneTransaktionen();
+    transaktionen = gruppe.getTransaktionen();
+
+    assertThat(gruppe.getTransaktionDetails())
+        .allSatisfy(
+            t ->
+                assertThat(
+                        t.betrag()
+                            .getNumber()
+                            .numberValue(BigDecimal.class)
+                            .stripTrailingZeros()
+                            .scale())
+                    .isLessThanOrEqualTo(2));
   }
 }
