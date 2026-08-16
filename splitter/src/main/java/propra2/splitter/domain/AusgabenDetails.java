@@ -1,14 +1,13 @@
 package propra2.splitter.domain;
 
-import org.javamoney.moneta.Money;
-
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import org.javamoney.moneta.Money;
 
-public record AusgabenDetails(String aktivitaet, String ausleger, List<String> personen,
-                              Money kosten, Instant erfasstAm) {
+public record AusgabenDetails(
+    String aktivitaet, String ausleger, List<String> personen, Money kosten, Instant erfasstAm) {
 
   private static final DateTimeFormatter DATUM =
       DateTimeFormatter.ofPattern("dd.MM.yyyy").withZone(ZoneId.systemDefault());

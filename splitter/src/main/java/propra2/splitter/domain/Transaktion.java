@@ -1,8 +1,7 @@
 package propra2.splitter.domain;
 
-import org.javamoney.moneta.Money;
-
 import java.util.Objects;
+import org.javamoney.moneta.Money;
 import propra2.splitter.stereotypes.Entity;
 
 @Entity
@@ -40,8 +39,8 @@ class Transaktion {
       return false;
     }
     Transaktion that = (Transaktion) o;
-    return Objects.equals(getPerson1(), that.getPerson1()) && Objects.equals(getPerson2(),
-        that.getPerson2());
+    return Objects.equals(getPerson1(), that.getPerson1())
+        && Objects.equals(getPerson2(), that.getPerson2());
   }
 
   @Override

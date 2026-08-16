@@ -1,5 +1,15 @@
 package propra2.splitter.web;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
+
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.UUID;
 import org.javamoney.moneta.Money;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -14,29 +24,14 @@ import propra2.splitter.helper.WithMockOAuth2User;
 import propra2.splitter.service.GruppenDetails;
 import propra2.splitter.service.GruppenOnPage;
 import propra2.splitter.service.GruppenService;
-import java.math.BigDecimal;
-import java.util.List;
-import java.util.UUID;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
 @WebMvcTest(controllers = WebController.class)
 @Import(WebSecurityKonfiguration.class)
 public class GruppenAnzeigeTest {
 
+  @Autowired MockMvc mvc;
 
-  @Autowired
-  MockMvc mvc;
-
-
-  @MockitoBean
-  GruppenService service;
-
+  @MockitoBean GruppenService service;
 
   @Test
   @WithMockOAuth2User(login = "MaxHub")
@@ -44,10 +39,7 @@ public class GruppenAnzeigeTest {
   void test_01() throws Exception {
     when(service.personToGruppeMatch(any())).thenReturn(new GruppenOnPage(List.of()));
 
-    mvc.perform(get("/"))
-        .andExpect(status().isOk())
-        .andExpect(view().name("index"));
-
+    mvc.perform(get("/")).andExpect(status().isOk()).andExpect(view().name("index"));
   }
 
   @Test
@@ -56,13 +48,13 @@ public class GruppenAnzeigeTest {
   void test_02() throws Exception {
     UUID id = UUID.randomUUID();
     when(service.personToGruppeMatch(any()))
-        .thenReturn(new GruppenOnPage(List.of(
-            new GruppenDetails(id, "Reisegruppe", List.of("MaxHub"), false))));
+        .thenReturn(
+            new GruppenOnPage(
+                List.of(new GruppenDetails(id, "Reisegruppe", List.of("MaxHub"), false))));
 
     MvcResult result = mvc.perform(get("/")).andReturn();
 
     assertThat(result.getResponse().getContentAsString()).contains("Reisegruppe");
-
   }
 
   @Test
@@ -71,13 +63,13 @@ public class GruppenAnzeigeTest {
   void test_03() throws Exception {
     UUID id = UUID.randomUUID();
     when(service.personToGruppeMatch(any()))
-        .thenReturn(new GruppenOnPage(List.of(
-            new GruppenDetails(id, "Reisegruppe", List.of("MaxHub"), false))));
+        .thenReturn(
+            new GruppenOnPage(
+                List.of(new GruppenDetails(id, "Reisegruppe", List.of("MaxHub"), false))));
 
     MvcResult result = mvc.perform(get("/")).andReturn();
 
     assertThat(result.getResponse().getContentAsString()).contains("/gruppe?id=" + id);
-
   }
 
   @Test
@@ -86,8 +78,9 @@ public class GruppenAnzeigeTest {
   void test_04() throws Exception {
     UUID id = UUID.randomUUID();
     when(service.personToGruppeMatch(any()))
-        .thenReturn(new GruppenOnPage(List.of(
-            new GruppenDetails(id, "Reisegruppe", List.of("MaxHub"), false))));
+        .thenReturn(
+            new GruppenOnPage(
+                List.of(new GruppenDetails(id, "Reisegruppe", List.of("MaxHub"), false))));
 
     MvcResult result = mvc.perform(get("/")).andReturn();
     String html = result.getResponse().getContentAsString();
@@ -95,8 +88,6 @@ public class GruppenAnzeigeTest {
     assertThat(html).contains("action=\"/add\"");
     assertThat(html).contains("id=\"gName\"");
     assertThat(html).contains("name=\"gruppenName\"");
-
-
   }
 
   @Test
@@ -105,16 +96,15 @@ public class GruppenAnzeigeTest {
   void test_05() throws Exception {
     UUID id = UUID.randomUUID();
     when(service.personToGruppeMatch(any()))
-        .thenReturn(new GruppenOnPage(
-            List.of(new GruppenDetails(id, "Reisegruppe", List.of("MaxHub"), false))));
+        .thenReturn(
+            new GruppenOnPage(
+                List.of(new GruppenDetails(id, "Reisegruppe", List.of("MaxHub"), false))));
 
     MvcResult result = mvc.perform(get("/")).andReturn();
     String html = result.getResponse().getContentAsString();
 
     assertThat(html).contains("href=\"/gruppe?id=" + id + "\"");
-
   }
-
 
   @Test
   @WithMockOAuth2User(login = "MaxHub")
@@ -122,8 +112,9 @@ public class GruppenAnzeigeTest {
   void test_06() throws Exception {
     UUID id = UUID.randomUUID();
     when(service.personToGruppeMatch(any()))
-        .thenReturn(new GruppenOnPage(
-            List.of(new GruppenDetails(id, "Reisegruppe", List.of("MaxHub"), true))));
+        .thenReturn(
+            new GruppenOnPage(
+                List.of(new GruppenDetails(id, "Reisegruppe", List.of("MaxHub"), true))));
 
     MvcResult result = mvc.perform(get("/")).andReturn();
     String html = result.getResponse().getContentAsString();
@@ -131,7 +122,6 @@ public class GruppenAnzeigeTest {
     assertThat(html).contains("Reisegruppe");
     assertThat(html).contains("Geschlossen");
     assertThat(html).contains("is-closed");
-
   }
 
   @Test
@@ -140,9 +130,15 @@ public class GruppenAnzeigeTest {
   void test_07() throws Exception {
     UUID id = UUID.randomUUID();
     when(service.personToGruppeMatch(any()))
-        .thenReturn(new GruppenOnPage(List.of(
-            new GruppenDetails(id, "Reisegruppe", List.of("MaxHub"), false,
-                Money.of(new BigDecimal("18.40"), "EUR")))));
+        .thenReturn(
+            new GruppenOnPage(
+                List.of(
+                    new GruppenDetails(
+                        id,
+                        "Reisegruppe",
+                        List.of("MaxHub"),
+                        false,
+                        Money.of(new BigDecimal("18.40"), "EUR")))));
 
     MvcResult result = mvc.perform(get("/")).andReturn();
     String html = result.getResponse().getContentAsString();
@@ -150,7 +146,6 @@ public class GruppenAnzeigeTest {
     assertThat(html).contains("+18,40 €");
     assertThat(html).contains("Dein Stand");
     assertThat(html).contains("abschluss__betrag");
-
   }
 
   @Test
@@ -159,16 +154,21 @@ public class GruppenAnzeigeTest {
   void test_08() throws Exception {
     UUID id = UUID.randomUUID();
     when(service.personToGruppeMatch(any()))
-        .thenReturn(new GruppenOnPage(List.of(
-            new GruppenDetails(id, "Reisegruppe", List.of("MaxHub"), false,
-                Money.of(new BigDecimal("-12.00"), "EUR")))));
+        .thenReturn(
+            new GruppenOnPage(
+                List.of(
+                    new GruppenDetails(
+                        id,
+                        "Reisegruppe",
+                        List.of("MaxHub"),
+                        false,
+                        Money.of(new BigDecimal("-12.00"), "EUR")))));
 
     MvcResult result = mvc.perform(get("/")).andReturn();
     String html = result.getResponse().getContentAsString();
 
     assertThat(html).contains("−12,00 €");
     assertThat(html).contains("is-schuld");
-
   }
 
   @Test
@@ -177,16 +177,20 @@ public class GruppenAnzeigeTest {
   void test_09() throws Exception {
     UUID id = UUID.randomUUID();
     when(service.personToGruppeMatch(any()))
-        .thenReturn(new GruppenOnPage(List.of(
-            new GruppenDetails(id, "Reisegruppe", List.of("MaxHub"), false,
-                Money.of(BigDecimal.ZERO, "EUR")))));
+        .thenReturn(
+            new GruppenOnPage(
+                List.of(
+                    new GruppenDetails(
+                        id,
+                        "Reisegruppe",
+                        List.of("MaxHub"),
+                        false,
+                        Money.of(BigDecimal.ZERO, "EUR")))));
 
     MvcResult result = mvc.perform(get("/")).andReturn();
     String html = result.getResponse().getContentAsString();
 
     assertThat(html).contains("0,00 €");
     assertThat(html).contains("is-glatt");
-
   }
-
 }

@@ -1,6 +1,7 @@
 package propra2.splitter.web;
 
-
+import jakarta.validation.Valid;
+import java.util.UUID;
 import org.javamoney.moneta.Money;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.stereotype.Controller;
@@ -15,10 +16,6 @@ import propra2.splitter.service.GruppenDetails;
 import propra2.splitter.service.GruppenOnPage;
 import propra2.splitter.service.GruppenService;
 
-import jakarta.validation.Valid;
-
-import java.util.UUID;
-
 @Controller
 public class WebController {
 
@@ -29,15 +26,18 @@ public class WebController {
   }
 
   @GetMapping("/")
-  public String gruppenSeite(Model model, @ModelAttribute("gruppenForm") GruppenForm gruppenForm,
+  public String gruppenSeite(
+      Model model,
+      @ModelAttribute("gruppenForm") GruppenForm gruppenForm,
       OAuth2AuthenticationToken token) {
     GruppenOnPage liste = service.personToGruppeMatch(token.getPrincipal());
     long geschlossene = liste.details().stream().filter(GruppenDetails::geschlossen).count();
 
     // Der Abschluss unter der Liste: alle Netto-Positionen zusammengezaehlt.
-    Money gesamtBetrag = liste.details().stream()
-        .map(GruppenDetails::nettoBetrag)
-        .reduce(Money.of(0, "EUR"), Money::add);
+    Money gesamtBetrag =
+        liste.details().stream()
+            .map(GruppenDetails::nettoBetrag)
+            .reduce(Money.of(0, "EUR"), Money::add);
 
     model.addAttribute("gruppen", liste);
     model.addAttribute("login", token.getPrincipal().getAttribute("login"));
@@ -49,7 +49,8 @@ public class WebController {
   }
 
   @PostMapping("/add")
-  public String addGruppen(Model model,
+  public String addGruppen(
+      Model model,
       @Valid GruppenForm gruppenForm,
       BindingResult bindingResult,
       OAuth2AuthenticationToken token) {
@@ -66,7 +67,8 @@ public class WebController {
   }
 
   @GetMapping("/gruppe")
-  public String getSingleGruppePage(Model model,
+  public String getSingleGruppePage(
+      Model model,
       @RequestParam(name = "id", value = "id", required = false) UUID id,
       @ModelAttribute("loginForm") LoginForm loginForm,
       @ModelAttribute("ausgabenForm") AusgabenForm ausgabenForm,
@@ -88,7 +90,8 @@ public class WebController {
   }
 
   @PostMapping("/gruppe/add")
-  public String addPersonToSingleGruppe(Model model,
+  public String addPersonToSingleGruppe(
+      Model model,
       @RequestParam(name = "id", value = "id", required = false) UUID id,
       @Valid @ModelAttribute("loginForm") LoginForm loginForm,
       BindingResult bindingResult,
@@ -106,9 +109,9 @@ public class WebController {
     return "redirect:/gruppe?id=" + id;
   }
 
-
   @PostMapping("/gruppe/add/ausgaben")
-  public String addAusgabeToGruppe(Model model,
+  public String addAusgabeToGruppe(
+      Model model,
       @RequestParam(name = "id", value = "id", required = false) UUID id,
       @Valid @ModelAttribute("ausgabenForm") AusgabenForm ausgabenForm,
       BindingResult bindingResult,
@@ -135,7 +138,10 @@ public class WebController {
       return gruppenSeiteFuellen(model, id, token);
     }
 
-    service.addAusgabeToGruppe(id, ausgabenForm.aktivitaet(), ausgabenForm.zahler(),
+    service.addAusgabeToGruppe(
+        id,
+        ausgabenForm.aktivitaet(),
+        ausgabenForm.zahler(),
         ausgabenForm.teilnehmer(),
         ausgabenForm.betragAlsZahl());
 
@@ -152,11 +158,8 @@ public class WebController {
   }
 
   @PostMapping("/gruppe/close")
-  public String schließGruppe(
-      @RequestParam(name = "id", value = "id", required = false) UUID id) {
+  public String schließGruppe(@RequestParam(name = "id", value = "id", required = false) UUID id) {
     service.closeGruppe(id);
     return "redirect:/gruppe?id=" + id;
   }
-
-
 }

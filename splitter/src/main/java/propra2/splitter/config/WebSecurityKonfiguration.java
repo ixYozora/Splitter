@@ -12,17 +12,15 @@ public class WebSecurityKonfiguration {
 
   @Bean
   public SecurityFilterChain configure(HttpSecurity chainbuilder) throws Exception {
-    chainbuilder.authorizeHttpRequests(configurer -> configurer.anyRequest().authenticated())
-            .logout(e -> e
-                    .clearAuthentication(true)
-                    .invalidateHttpSession(true)
-                    .deleteCookies("JSESSIONID"))
-            .oauth2Login(Customizer.withDefaults());
-
+    chainbuilder
+        .authorizeHttpRequests(configurer -> configurer.anyRequest().authenticated())
+        .logout(
+            e ->
+                e.clearAuthentication(true).invalidateHttpSession(true).deleteCookies("JSESSIONID"))
+        .oauth2Login(Customizer.withDefaults());
 
     return chainbuilder.build();
   }
-
 
   // /error muss mit ausgenommen werden. Eine Fehlerantwort wird intern nach
   // /error weitergereicht, und dieser zweite Durchlauf traegt nicht mehr den

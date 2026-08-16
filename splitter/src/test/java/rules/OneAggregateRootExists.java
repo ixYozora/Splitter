@@ -1,15 +1,15 @@
 package rules;
 
+import static com.tngtech.archunit.lang.SimpleConditionEvent.satisfied;
+import static com.tngtech.archunit.lang.SimpleConditionEvent.violated;
+import static java.util.stream.Collectors.toList;
+
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.lang.ArchCondition;
 import com.tngtech.archunit.lang.ConditionEvents;
 import com.tngtech.archunit.library.dependencies.Slice;
 import java.util.List;
 import propra2.splitter.stereotypes.AggregateRoot;
-
-import static com.tngtech.archunit.lang.SimpleConditionEvent.satisfied;
-import static com.tngtech.archunit.lang.SimpleConditionEvent.violated;
-import static java.util.stream.Collectors.toList;
 
 public class OneAggregateRootExists extends ArchCondition<Slice> {
 
@@ -42,6 +42,4 @@ public class OneAggregateRootExists extends ArchCondition<Slice> {
         .map(JavaClass::getName)
         .collect(toList());
   }
-
-
 }

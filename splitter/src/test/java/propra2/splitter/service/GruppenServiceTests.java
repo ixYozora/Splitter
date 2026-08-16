@@ -1,28 +1,24 @@
 package propra2.splitter.service;
 
-import java.util.Optional;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
-import propra2.splitter.domain.Gruppe;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
+import propra2.splitter.domain.Gruppe;
 
 public class GruppenServiceTests {
 
   final GruppenRepository repository = mock(GruppenRepository.class);
 
   private DefaultOAuth2User mkUser(String login) {
-    return new DefaultOAuth2User(
-        List.of(),
-        Map.of("login", login),
-        "login");
+    return new DefaultOAuth2User(List.of(), Map.of("login", login), "login");
   }
 
   @Test
@@ -61,8 +57,9 @@ public class GruppenServiceTests {
     Gruppe gruppe1 = Gruppe.erstelleGruppe(id, "James", "Reisegruppe");
     UUID id2 = UUID.randomUUID();
     Gruppe gruppe2 = Gruppe.erstelleGruppe(id2, "MaxHub", "Reisegruppe");
-    when(repository.findById(any(UUID.class))).thenReturn(Optional.of(gruppe1)).thenReturn(
-        Optional.of(gruppe2));
+    when(repository.findById(any(UUID.class)))
+        .thenReturn(Optional.of(gruppe1))
+        .thenReturn(Optional.of(gruppe2));
 
     Gruppe actualGruppe1 = service.addGruppe(mkUser("MaxHub"), "Reisegruppe1");
     Gruppe actualGruppe2 = service.addGruppe(mkUser("GitLisa"), "Reisegruppe2");
@@ -96,15 +93,17 @@ public class GruppenServiceTests {
     UUID id = UUID.randomUUID();
     UUID id2 = UUID.randomUUID();
     when(repository.findAll())
-        .thenReturn(List.of(Gruppe.erstelleGruppe(id, "James", "Reisegruppe"),
-            Gruppe.erstelleGruppe(id2, "GitLisa", "Reisegruppe2")));
+        .thenReturn(
+            List.of(
+                Gruppe.erstelleGruppe(id, "James", "Reisegruppe"),
+                Gruppe.erstelleGruppe(id2, "GitLisa", "Reisegruppe2")));
 
     Gruppe gruppe = service.addGruppe(mkUser("James"), "Reisegruppe");
     Gruppe gruppe2 = service.addGruppe(mkUser("GitLisa"), "Reisegruppe2");
     GruppenOnPage actualGruppen = service.personToGruppeMatch(mkUser("James"));
 
-    assertThat(actualGruppen.details()).containsExactly(
-        new GruppenDetails(id, "Reisegruppe", List.of("James"), false));
+    assertThat(actualGruppen.details())
+        .containsExactly(new GruppenDetails(id, "Reisegruppe", List.of("James"), false));
     verify(repository, times(1)).findAll();
   }
 
@@ -114,8 +113,8 @@ public class GruppenServiceTests {
     GruppenService service = new GruppenService(repository);
     UUID id = UUID.randomUUID();
     Gruppe gruppe = Gruppe.erstelleGruppe(id, "James", "Reisegruppe");
-    when(repository.findById(any(UUID.class))).thenReturn(
-        Optional.of(Gruppe.erstelleGruppe(id, "James", "Reisegruppe")));
+    when(repository.findById(any(UUID.class)))
+        .thenReturn(Optional.of(Gruppe.erstelleGruppe(id, "James", "Reisegruppe")));
 
     service.addGruppe(mkUser("James"), "Reisegruppe");
 
@@ -209,7 +208,7 @@ public class GruppenServiceTests {
 
   @Test
   @DisplayName("Zu einer geschlossenen Gruppe kann man keine Personen mehr hinzufügen")
-  void test_14(){
+  void test_14() {
     GruppenService service = new GruppenService(repository);
     UUID id = UUID.randomUUID();
     Gruppe gruppe = Gruppe.erstelleGruppe(id, "James", "Reisegruppe");
@@ -221,6 +220,4 @@ public class GruppenServiceTests {
 
     verify(repository, never()).save(gruppe); // -> checks save only on from addPersonToGruppe
   }
-
-
 }

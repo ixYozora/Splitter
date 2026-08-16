@@ -1,10 +1,9 @@
 package propra2.splitter.domain;
 
-import org.javamoney.moneta.Money;
-
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
+import org.javamoney.moneta.Money;
 import propra2.splitter.stereotypes.Entity;
 
 @Entity
@@ -21,7 +20,11 @@ class Ausgabe {
     this(aktivitaet, ausleger, personen, kosten, Instant.now());
   }
 
-  Ausgabe(Aktivitaet aktivitaet, Person ausleger, List<Person> personen, Money kosten,
+  Ausgabe(
+      Aktivitaet aktivitaet,
+      Person ausleger,
+      List<Person> personen,
+      Money kosten,
       Instant erfasstAm) {
     this.aktivitaet = aktivitaet;
     this.ausleger = ausleger;
@@ -59,8 +62,9 @@ class Ausgabe {
       return false;
     }
     Ausgabe ausgabe = (Ausgabe) o;
-    return Objects.equals(getAktivitaet(), ausgabe.getAktivitaet()) && Objects.equals(getAusleger(),
-        ausgabe.getAusleger()) && Objects.equals(getPersonen(), ausgabe.getPersonen())
+    return Objects.equals(getAktivitaet(), ausgabe.getAktivitaet())
+        && Objects.equals(getAusleger(), ausgabe.getAusleger())
+        && Objects.equals(getPersonen(), ausgabe.getPersonen())
         && Objects.equals(getKosten(), ausgabe.getKosten());
   }
 

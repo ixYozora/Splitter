@@ -10,8 +10,7 @@ public class GruppeEntity {
   String name;
   List<String> personen;
 
-  public GruppeEntity() {
-  }
+  public GruppeEntity() {}
 
   public GruppeEntity(String name, List<String> personen) {
     this.name = name;
@@ -57,8 +56,8 @@ public class GruppeEntity {
       return false;
     }
     GruppeEntity that = (GruppeEntity) o;
-    return Objects.equals(getName(), that.getName()) && Objects.equals(getPersonen(),
-        that.getPersonen());
+    return Objects.equals(getName(), that.getName())
+        && Objects.equals(getPersonen(), that.getPersonen());
   }
 
   @Override
