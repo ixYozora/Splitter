@@ -34,7 +34,7 @@
 
   --desk: #e7e7ea;
   --surface: #f4f4f5;
-  --surface-raised: #ffffff;
+  --surface-raised: #fff;
   --ink: #18181b;
   --ink-soft: #5c5c66;
   --rule: #dedee2;
@@ -128,7 +128,7 @@
   margin: -1px;
   padding: 0;
   overflow: hidden;
-  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
   white-space: nowrap;
   border: 0;
 }
@@ -942,7 +942,7 @@
 
 @media print {
   .page {
-    background: #ffffff;
+    background: #fff;
   }
 
   .page::after,
@@ -1010,7 +1010,7 @@
   width: 16px;
   height: 16px;
   fill: none;
-  stroke: currentColor;
+  stroke: currentcolor;
   stroke-width: 1.8;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -1643,7 +1643,6 @@
     height: auto;
     margin: 0;
     overflow: visible;
-    clip: auto;
     clip-path: none;
     white-space: normal;
   }
@@ -1819,7 +1818,6 @@
 /* Ziehen ohne Textauswahl */
 .roster {
   touch-action: pan-y;
-  -webkit-user-select: none;
   user-select: none;
 }
 
