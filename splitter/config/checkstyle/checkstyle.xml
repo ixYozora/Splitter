@@ -1,0 +1,44 @@
+<?xml version="1.0"?>
+<!DOCTYPE module PUBLIC
+    "-//Checkstyle//DTD Checkstyle Configuration 1.3//EN"
+    "https://checkstyle.org/dtds/configuration_1_3.dtd">
+
+<!--
+  Bewusst nicht google_checks.xml: das meldet hier 325 Verstoesse, und 240 davon
+  sind Entscheidungen des Projekts - die Testnamen test_01, der fehlende Javadoc
+  und das Paket propra2 mit seiner Ziffer. Uebrig bleiben die Regeln, die
+  google-java-format nicht selbst erledigt.
+-->
+<module name="Checker">
+  <property name="severity" value="error"/>
+  <property name="fileExtensions" value="java"/>
+
+  <!-- Dieselbe Grenze wie google-java-format; greift nur dort, wo der
+       Formatierer nicht umbrechen kann, also bei langen Zeichenketten. -->
+  <module name="LineLength">
+    <property name="max" value="100"/>
+    <property name="ignorePattern" value="^package.*|^import.*|https?://"/>
+  </module>
+
+  <module name="TreeWalker">
+    <!-- Der eigentliche Anlass: Spotless kann Sternchen-Importe nicht aufloesen,
+         weil dafuer die Typinformation fehlt. -->
+    <module name="AvoidStarImport"/>
+    <module name="UnusedImports"/>
+    <module name="RedundantImport"/>
+
+    <!-- MethodName fehlt absichtlich: test_01 ist die Konvention des Projekts. -->
+    <module name="LocalVariableName"/>
+    <module name="LambdaParameterName"/>
+    <module name="MemberName"/>
+    <module name="ParameterName"/>
+    <module name="TypeName"/>
+
+    <module name="NeedBraces"/>
+    <module name="EqualsHashCode"/>
+    <module name="MissingOverride"/>
+    <module name="OneTopLevelClass"/>
+    <module name="DefaultComesLast"/>
+    <module name="FallThrough"/>
+  </module>
+</module>
