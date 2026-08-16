@@ -28,10 +28,7 @@ public class RestController {
   @PostMapping("/api/gruppen")
   public ResponseEntity<UUID> addGruppen(@RequestBody GruppeEntity gruppenEntity) {
 
-    // getPersonen() ist null, wenn das JSON das Feld gar nicht mitschickt. Ohne
-    // diese Pruefung wirft size() eine NullPointerException; die Anfrage landet
-    // dann auf /error, das im Gegensatz zu /api/** von der Sicherheitskette
-    // erfasst wird, und die Antwort ist eine 302 zum Login statt einer 400.
+    // getPersonen() ist null, wenn das JSON das Feld nicht mitschickt.
     if (gruppenEntity.getName() == null) {
       return ResponseEntity.badRequest().body(null);
     } else if (gruppenEntity.getPersonen() == null || gruppenEntity.getPersonen().isEmpty()) {

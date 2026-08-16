@@ -77,9 +77,8 @@ public class WebController {
     return gruppenSeiteFuellen(model, id, token);
   }
 
-  // Gemeinsam fuer die GET-Seite und die Fehlerwege der beiden POSTs. Ueber
-  // einen Redirect kaeme das Formular leer zurueck, also wird die Seite im
-  // Fehlerfall direkt gerendert - so wie es addGruppen oben schon macht.
+  // Gemeinsam fuer die GET-Seite und die Fehlerwege der beiden POSTs; ein Redirect wuerde das
+  // Formular leeren, also wird direkt gerendert.
   private String gruppenSeiteFuellen(Model model, UUID id, OAuth2AuthenticationToken token) {
     Gruppe gruppe = service.getSingleGruppe(id);
     model.addAttribute("gruppe", gruppe);
@@ -119,9 +118,8 @@ public class WebController {
       OAuth2AuthenticationToken token) {
 
     if (bindingResult.hasErrors()) {
-      // Kein Redirect: Formular und BindingResult bleiben im Model, damit die
-      // Seite Aktivitaet, Ausleger, Teilnehmer und den abgelehnten Betragstext
-      // unveraendert zurueckgibt statt alles zu verwerfen.
+      // Kein Redirect: Formular und BindingResult bleiben im Model, damit die Eingaben stehen
+      // bleiben.
       if (bindingResult.hasFieldErrors("aktivitaet")) {
         model.addAttribute("aktivitaetMessage", "Bitte eine Aktivität eintragen");
       }

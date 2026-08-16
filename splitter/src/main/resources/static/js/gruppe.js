@@ -1,6 +1,5 @@
 // Gruppenseite: Mitglieder auf den Beleg legen, Kassenbons oeffnen.
-// Der Server bekommt weiterhin nur zwei Strings - "zahler" und "teilnehmer",
-// letzterer mit ", " getrennt, genau so wie GruppenService ihn zerlegt.
+// Der Server bekommt nur "zahler" und "teilnehmer", letzterer mit ", " getrennt.
 (function () {
   "use strict";
 
@@ -10,8 +9,7 @@
   var komposer = document.getElementById("komposerForm");
 
   // ---------- Avatare ----------
-  // Unbekannte GitHub-Namen liefern 404. Der Roster wird aus Freitext gefuellt,
-  // ein Tippfehler zeigt sonst ein kaputtes Bild.
+  // Unbekannte GitHub-Namen liefern 404, und der Roster wird aus Freitext gefuellt.
   function avatarErsatz(img, buchstabe, klasse) {
     img.addEventListener("error", function () {
       var ersatz = document.createElement("span");
@@ -207,9 +205,8 @@
   }
 
   // ---------- Aufnehmen und ablegen ----------
-  // WCAG 2.2 AA 2.5.7 verlangt einen Weg ohne Ziehen. Antippen nimmt die Marke
-  // auf, antippen einer Ablage legt sie hin - mit einem Zeiger und mit der
-  // Tastatur, ohne dass an jeder Marke ein Knopf klebt.
+  // WCAG 2.2 AA 2.5.7 verlangt einen Weg ohne Ziehen: antippen nimmt die Marke auf,
+  // antippen einer Ablage legt sie hin.
 
   function greifen(name) {
     inHand = inHand === name ? null : name;
@@ -234,9 +231,8 @@
     var marke = event.target.closest(".token");
     if (marke && !marke.disabled) {
       greifen(marke.getAttribute("data-name"));
-      // Per Tastatur ausgeloest (detail === 0): der Fokus muss zu den Ablagen,
-      // sonst liegt die Marke zwar in der Hand, aber zwischen ihr und dem
-      // Ablegeplatz stehen alle uebrigen Mitglieder im Tab-Weg.
+      // Per Tastatur ausgeloest (detail === 0): der Fokus muss zu den Ablagen, sonst steht
+      // die restliche Mitgliederliste im Tab-Weg.
       if (event.detail === 0 && inHand !== null) {
         var erstes = document.querySelector(".ablage__ziel:not(:disabled)");
         if (erstes) {
@@ -378,10 +374,8 @@
   });
 
   // ---------- Nach einer abgelehnten Eingabe ----------
-  // Der Server rendert die Seite im Fehlerfall neu und gibt zahler und
-  // teilnehmer in den versteckten Feldern zurueck. Daraus werden die Marken
-  // wieder aufgebaut, sonst waere die Zuordnung nach einem Tippfehler im
-  // Betrag verloren.
+  // Der Server gibt zahler und teilnehmer in den versteckten Feldern zurueck; daraus werden
+  // die Marken wieder aufgebaut.
   ausleger = bekannt(zahlerValue.value) ? zahlerValue.value : null;
   teilnehmer = teilnehmerValue.value.split(TRENNER)
       .map(function (n) {
@@ -394,9 +388,8 @@
   zeichnen();
 
   // ---------- Lange Mitgliederliste ----------
-  // Ab data-sichtbar Eintraegen bleibt die Liste stehen und rollt auf Knopfdruck
-  // aus. Die Hoehe wird gemessen statt geraten, damit die Kurve stimmt und
-  // alles darunter sauber mitgeschoben wird.
+  // Ab data-sichtbar Eintraegen rollt die Liste erst auf Knopfdruck aus. Die Hoehe wird
+  // gemessen statt geraten.
   var mehrKnopf = document.getElementById("rosterMehr");
   var sichtbar = parseInt(roster.getAttribute("data-sichtbar"), 10) || 6;
 
@@ -487,12 +480,8 @@
   }
 
   // ---------- Ausgleich als Graph ----------
-  // Der Ausgleich ist per Konstruktion ein gerichteter, kreisfreier Wald:
-  // transaktionen() verrechnet immer den groessten Glaeubiger gegen den
-  // groessten Schuldner, also zeigt jede Kante von einem Schuldner auf einen
-  // Glaeubiger, und niemand wechselt unterwegs die Seite. Der Wald kann in
-  // mehrere Teile zerfallen - die stehen hier untereinander, mit einer Linie
-  // dazwischen, weil sie tatsaechlich nichts miteinander zu tun haben.
+  // Der Ausgleich ist ein gerichteter, kreisfreier Wald: jede Kante zeigt von einem Schuldner
+  // auf einen Glaeubiger. Zerfaellt er, stehen die Teile untereinander.
   function aufbauenGraf() {
     var graf = document.getElementById("ausgleichGraf");
     var liste = document.getElementById("ausgleichListe");
@@ -564,9 +553,7 @@
     graf.textContent = "";
     graf.appendChild(svg);
 
-    // Die eigenen Kanten hervorzuheben hilft nur, solange es auch fremde gibt.
-    // Laufen alle ueber die angemeldete Person, faerbt das jede Linie und sagt
-    // damit nichts mehr - dann bleibt es bei der Marke.
+    // Eigene Kanten hervorzuheben hilft nur, solange es auch fremde gibt.
     function meine(k) {
       return k.von === login || k.an === login;
     }
@@ -673,9 +660,8 @@
             ? 0.5
             : 0.34 + 0.32 * (ausgehend.indexOf(k) / (ausgehend.length - 1));
 
-        // Faechern: laufen mehrere Kanten auf dieselbe Marke zu, treffen sie
-        // nicht alle denselben Punkt - sonst verschmelzen die Spitzen zu einem
-        // Klumpen. Der Versatz bleibt innerhalb des Kreises.
+        // Faechern: mehrere Kanten auf dieselbe Marke treffen versetzt auf, sonst
+        // verschmelzen die Spitzen.
         function versatz(liste, index) {
           return liste.length === 1
               ? 0
@@ -725,9 +711,8 @@
         pfad.setAttribute("stroke-width", l.dick.toFixed(2));
         svg.appendChild(pfad);
 
-        // Selbst gezeichnet statt als marker-end: ein Marker erbt die Strichfarbe
-        // der Kante nicht zuverlaessig, und so passt die Spitze immer zur Linie.
-        // Die Kurve laeuft an beiden Enden waagerecht aus, also zeigt sie nach rechts.
+        // Selbst gezeichnet statt als marker-end: ein Marker erbt die Strichfarbe nicht
+        // zuverlaessig. Die Kurve laeuft waagerecht aus, die Spitze zeigt also nach rechts.
         var spitze = document.createElementNS(svgNS, "path");
         spitze.setAttribute("class", "graf__spitze" + (l.du ? " is-du" : ""));
         spitze.setAttribute("d", "M" + ende + " " + (l.y2 - 4.5)

@@ -124,9 +124,8 @@ public class Gruppe {
     transaktionen(nettoBetraege);
   }
 
-  // Netto-Position einer Person: was sie ausgelegt hat, minus was sie schuldet.
-  // Rechnet nur und veraendert nichts - anders als berechneTransaktionen, das die
-  // Betraege in die Personen schreibt und die Transaktionsliste aufbaut.
+  // Netto-Position einer Person: ausgelegt minus geschuldet. Rechnet nur, anders als
+  // berechneTransaktionen.
   public Money getNettoBetrag(String person) {
     Money[] sumAusgaben = berechneAusgaben();
     Money[] sumSchulden = berechneSchulden();
@@ -259,14 +258,8 @@ public class Gruppe {
     return arr;
   }
 
-  // Ein Restbetrag unterhalb eines Cents gilt als ausgeglichen. Teilt sich eine
-  // Summe nicht glatt auf - 100 EUR durch drei -, bleibt nach dem Verrechnen ein
-  // Bruchteil stehen, denn geteilt wird mit voller Genauigkeit und nicht auf
-  // Cent gerundet. Bis hierher hat das ein Vergleich von toString() mit
-  // "EUR 0.00" erledigt: Moneta rundete beim Ausschreiben auf zwei Stellen, der
-  // Rest verschwand also nur in der Anzeige. Das war nie so gemeint, und mit
-  // Moneta 1.4.5 schreibt sich derselbe Betrag als "EUR 0.000...001" - die
-  // Rekursion hielt nicht mehr an. Jetzt steht die Toleranz ausdruecklich da.
+  // Ein Restbetrag unterhalb eines Cents gilt als ausgeglichen: geteilt wird mit voller
+  // Genauigkeit, 100 EUR durch drei lassen also einen Bruchteil stehen.
   private static boolean istAusgeglichen(Money betrag) {
     return betrag
             .getNumber()

@@ -22,10 +22,8 @@ public class WebSecurityKonfiguration {
     return chainbuilder.build();
   }
 
-  // /error muss mit ausgenommen werden. Eine Fehlerantwort wird intern nach
-  // /error weitergereicht, und dieser zweite Durchlauf traegt nicht mehr den
-  // Pfad /api/**, sondern /error - der von der Kette erfasst wird. Eine saubere
-  // 400 aus dem REST-Adapter kam so als 302 zum GitHub-Login beim Aufrufer an.
+  // /error muss mit ausgenommen werden: Fehlerantworten laufen intern noch einmal ueber diesen
+  // Pfad, nicht mehr ueber /api/**, und kamen sonst als 302 zum Login an.
   @Bean
   public WebSecurityCustomizer customizer() {
     return web -> web.ignoring().requestMatchers("/api/**", "/error");

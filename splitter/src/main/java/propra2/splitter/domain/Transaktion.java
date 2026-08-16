@@ -37,10 +37,8 @@ class Transaktion {
     this.transaktionsNachricht = "Es sind keine Ausgleichszahlungen notwendig.";
   }
 
-  // Immer zwei Nachkommastellen, statt Money.toString() das Format ueberlassen:
-  // Moneta 1.4.2 schrieb "EUR 15.00", 1.4.5 schreibt "EUR 15" und aus "EUR 2.50"
-  // wird "EUR 2.5". Die Nachricht geht unveraendert an die REST-Schnittstelle,
-  // also darf sie nicht davon abhaengen, welche Version gerade eingebunden ist.
+  // Immer zwei Nachkommastellen: Money.toString() formatiert je nach Moneta-Version anders,
+  // und die Nachricht geht so an die REST-Schnittstelle.
   private static String ausschreiben(Money betrag) {
     return betrag.getCurrency().getCurrencyCode()
         + " "
