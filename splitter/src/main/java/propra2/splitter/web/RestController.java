@@ -29,9 +29,13 @@ public class RestController {
   @PostMapping("/api/gruppen")
   public ResponseEntity<UUID> addGruppen(@RequestBody GruppeEntity gruppenEntity) {
 
+    // getPersonen() ist null, wenn das JSON das Feld gar nicht mitschickt. Ohne
+    // diese Pruefung wirft size() eine NullPointerException; die Anfrage landet
+    // dann auf /error, das im Gegensatz zu /api/** von der Sicherheitskette
+    // erfasst wird, und die Antwort ist eine 302 zum Login statt einer 400.
     if (gruppenEntity.getName() == null) {
       return ResponseEntity.badRequest().body(null);
-    } else if (gruppenEntity.getPersonen().size() < 1) {
+    } else if (gruppenEntity.getPersonen() == null || gruppenEntity.getPersonen().isEmpty()) {
       return ResponseEntity.badRequest().body(null);
     }
 
@@ -47,7 +51,7 @@ public class RestController {
 
       return new ResponseEntity<>(service.getGruppeInformationEntity(UUID.fromString(id)),
           HttpStatus.OK);
-    } catch (NumberFormatException exception) {
+    } catch (IllegalArgumentException exception) {
       return ResponseEntity.notFound().build();
     }
   }
@@ -61,7 +65,7 @@ public class RestController {
 
       return new ResponseEntity<>(service.setRestGruppeGeschlossen(UUID.fromString(id)),
           HttpStatus.OK);
-    } catch (NumberFormatException exception) {
+    } catch (IllegalArgumentException exception) {
       return ResponseEntity.notFound().build();
     }
   }
@@ -85,7 +89,7 @@ public class RestController {
 
       service.addRestAusgabenToGruppe(UUID.fromString(id), ausgabenEntity);
       return new ResponseEntity<>(ausgabenEntity, HttpStatus.CREATED);
-    } catch (NumberFormatException exception) {
+    } catch (IllegalArgumentException exception) {
       return ResponseEntity.notFound().build();
     }
   }
@@ -98,7 +102,7 @@ public class RestController {
       }
       return new ResponseEntity<>(service.getRestTransaktionen(UUID.fromString(id)),
           HttpStatus.OK);
-    } catch (NumberFormatException exception) {
+    } catch (IllegalArgumentException exception) {
       return ResponseEntity.notFound().build();
     }
   }
