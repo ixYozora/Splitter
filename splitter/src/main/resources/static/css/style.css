@@ -67,6 +67,11 @@
 
   /* Kräftiges ease-out; die eingebauten Kurven sind für Auftritte zu weich. */
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  /* Fuer kurze Wege. --ease-out ist so kopflastig, dass es bei sechs Pixeln
+     Strecke nach einem Sprung mit langem, unsichtbarem Nachlauf aussieht:
+     nach einem Drittel der Zeit sind schon vier Fuenftel erledigt. Diese Kurve
+     verteilt gleichmaessiger und laesst sich als Bewegung lesen. */
+  --ease-menu: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 /* Spaltenpapier: der Tisch ist der Bogen, aus dem das Blatt stammt.
@@ -180,6 +185,16 @@
   position: relative;
 }
 
+/* Chrome ueberspringt die Stile eines geschlossenen <details> vollstaendig
+   (content-visibility: hidden auf ::details-content). Dann existiert beim
+   ersten Oeffnen kein Ausgangswert, von dem aus ueberblendet werden koennte,
+   und der Auftritt springt - genau einmal, danach laeuft er. Die Stile muessen
+   also berechnet bleiben. Unsichtbar und nicht bedienbar ist das Menue ohnehin
+   schon ueber visibility, dafuer ist content-visibility nicht noetig. */
+.account::details-content {
+  content-visibility: visible;
+}
+
 .account__trigger {
   display: flex;
   align-items: center;
@@ -247,11 +262,11 @@
   stroke: var(--accent);
 }
 
-/* Der Bogen vom Kreis zum abgesetzten Menü. Er erklärt, warum das Menü nicht
+/* Der Knick vom Kreis zum abgesetzten Menü. Er erklärt, warum das Menü nicht
    unter dem Auslöser hängt, und existiert deshalb nur dort, wo das Menü auch
-   wirklich abgesetzt ist - unterhalb von 80rem entfällt er mit der Versetzung.
-   Zeichnet sich von oben nach unten, damit die Linie sichtbar aus dem Pfeil
-   kommt und nicht einfach da ist. */
+   wirklich abgesetzt ist - unterhalb von 82rem entfällt er mit der Versetzung.
+   Zwei gerade Stücke mit einer Ecke, nicht ein durchgehender Bogen; die Rundung
+   sitzt allein im Knick, damit der Winkel als Winkel lesbar bleibt. */
 .account__connector {
   display: none;
   position: absolute;
@@ -265,21 +280,30 @@
   stroke: var(--rule-strong);
   stroke-width: 1;
   stroke-linecap: round;
-  opacity: 0;
+  stroke-linejoin: round;
   visibility: hidden;
-  clip-path: inset(0 0 100% 0);
-  transition: opacity 180ms var(--ease-out),
-              clip-path 180ms var(--ease-out),
-              visibility 0s linear 180ms;
+  transition: visibility 0s linear 130ms;
 }
 
 .account[open] .account__connector {
-  opacity: 1;
   visibility: visible;
-  clip-path: inset(0 0 0 0);
-  transition: opacity 180ms var(--ease-out),
-              clip-path 180ms var(--ease-out),
-              visibility 0s;
+  transition: visibility 0s;
+}
+
+/* Die Linie zeichnet sich entlang ihres eigenen Verlaufs. Vorher wischte ein
+   clip-path den ganzen Kasten von oben herunter - das folgt dem Knick nicht,
+   sondern schiebt eine waagerechte Kante darueber. pathLength normiert die
+   Laenge auf 100, damit eine spaetere Aenderung der Geometrie diese Werte
+   nicht mitzieht. */
+.account__connector path {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  transition: stroke-dashoffset 130ms var(--ease-menu);
+}
+
+.account[open] .account__connector path {
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 160ms var(--ease-menu);
 }
 
 .account__avatar {
@@ -318,18 +342,20 @@
   transform-origin: top right;
   opacity: 0;
   visibility: hidden;
-  transform: translateY(-6px) scale(0.97);
-  transition: opacity 180ms var(--ease-out),
-              transform 180ms var(--ease-out),
-              visibility 0s linear 180ms;
+  /* Mehr Weg als vorher: sechs Pixel und drei Prozent Groesse sind zu wenig,
+     als dass das Auge daraus eine Bewegung machen koennte - es blieb ein Aufpoppen. */
+  transform: translateY(-10px) scale(0.96);
+  transition: opacity 130ms var(--ease-menu),
+              transform 130ms var(--ease-menu),
+              visibility 0s linear 130ms;
 }
 
 .account[open] .account__menu {
   opacity: 1;
   visibility: visible;
   transform: translateY(0) scale(1);
-  transition: opacity 180ms var(--ease-out),
-              transform 180ms var(--ease-out),
+  transition: opacity 180ms var(--ease-menu),
+              transform 180ms var(--ease-menu),
               visibility 0s;
 }
 
@@ -350,6 +376,16 @@
     right: auto;
     top: calc(100% + 28px);
     transform-origin: top left;
+  }
+
+  /* Nacheinander statt gleichzeitig: erst laeuft die Linie hinaus, dann kommt
+     das Menue an ihrem Ende an. Vorher liefen beide im Gleichschritt und das
+     Menue stand schon da, bevor die Linie es erreicht hatte. Die Verzoegerung
+     gilt nur hier - schmaler gibt es keine Linie, auf die zu warten waere. */
+  .account[open] .account__menu {
+    transition: opacity 180ms var(--ease-menu) 80ms,
+                transform 180ms var(--ease-menu) 80ms,
+                visibility 0s linear 80ms;
   }
 }
 
@@ -897,9 +933,10 @@
     transform: none;
   }
 
-  .account__connector,
-  .account[open] .account__connector {
-    clip-path: none;
+  /* Die Linie steht sofort ganz da, statt sich zu zeichnen. */
+  .account__connector path,
+  .account[open] .account__connector path {
+    stroke-dashoffset: 0;
   }
 }
 
