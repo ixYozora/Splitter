@@ -1,0 +1,54 @@
+version: 2
+
+updates:
+  # The workflow pins actions to exact releases so nothing is swapped out
+  # underneath us. That only stays safe if something feeds the updates back
+  # in — which is the job of this file. All actions land in one pull request;
+  # separate ones for three `actions/*` bumps would be noise.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "ci"
+    groups:
+      actions:
+        patterns: ["*"]
+
+  - package-ecosystem: "gradle"
+    directory: "/splitter"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "build"
+    groups:
+      # Small steps batched into one pull request, big ones on their own: a
+      # major bump wants reading, a patch does not.
+      minor-and-patch:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+
+  - package-ecosystem: "docker"
+    directory: "/splitter"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "build"
+    ignore:
+      # The base image has to match the toolchain in build.gradle. Moving to
+      # Java 26 is a decision with a build change attached, not something to
+      # merge on a Monday; patches within 25 still come through.
+      - dependency-name: "eclipse-temurin"
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: "docker-compose"
+    directory: "/splitter"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "build"
+    ignore:
+      # The schema is verified against Postgres 15 by the acceptance job.
+      # Going higher is its own change with its own test run.
+      - dependency-name: "postgres"
+        update-types: ["version-update:semver-major"]
