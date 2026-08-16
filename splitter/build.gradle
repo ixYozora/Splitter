@@ -27,10 +27,20 @@ dependencies {
 	implementation 'org.javamoney:moneta:1.4@pom'
 	implementation 'org.springdoc:springdoc-openapi-ui:1.6.14'
 	implementation 'org.springframework.boot:spring-boot-starter-data-jdbc'
+	// Spring Boot 4 liefert die Flyway-Anbindung nicht mehr im Rumpf mit. Ohne
+	// dieses Artefakt startet die Anwendung stillschweigend ohne Migration -
+	// die Tests merken davon nichts, weil sie auf H2 ohne Flyway laufen.
+	implementation 'org.springframework.boot:spring-boot-flyway'
 	implementation 'org.flywaydb:flyway-core'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	// Spring Boot 4 hat die Test-Schnitte aus spring-boot-test-autoconfigure
+	// in eigene Artefakte je Modul geloest; ohne sie fehlen @WebMvcTest und
+	// @DataJdbcTest, obwohl das Test-Starter-Paket eingebunden ist.
+	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+	testImplementation 'org.springframework.boot:spring-boot-data-jdbc-test'
 	testImplementation 'org.springframework.security:spring-security-test'
+	testImplementation 'org.springframework.boot:spring-boot-starter-security-test'
 	testImplementation 'com.tngtech.archunit:archunit-junit5-engine:1.5.0'
 	runtimeOnly 'org.flywaydb:flyway-database-postgresql'
 	runtimeOnly 'org.postgresql:postgresql'
