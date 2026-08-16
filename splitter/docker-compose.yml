@@ -27,8 +27,9 @@ services:
         condition: service_healthy
     environment:
       # Inside the compose network Postgres is reachable under its service name,
-      # not on localhost. This overrides spring.datasource.url from application.yaml.
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://database:5432/${POSTGRES_DB}
+      # not on localhost; application.yaml builds the URL around this.
+      - POSTGRES_HOST=database
+      - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - CLIENT_ID=${CLIENT_ID}
