@@ -155,6 +155,14 @@ violations here, of which the test naming (`test_01`), the absent JavaDoc and th
 `propra2` are all project decisions. `splitter/config/checkstyle/checkstyle.xml` keeps only the
 rules that survive that, and `maxWarnings = 0` makes any violation fail the build.
 
+The frontend has its own tooling, deliberately **outside** Gradle so that running the tests never
+requires Node: `cd splitter && npm ci && npm run lint` runs ESLint over `static/js` and Stylelint
+over `static/css`, and the `frontend` workflow enforces it. The JS is ES5 in an IIFE — no modules,
+no bundler — and the CSS is BEM with camelCase IDs, which is why both configs override the default
+naming patterns. Do not run `stylelint --fix` without checking the diff: `value-keyword-case` will
+happily rewrite `BlinkMacSystemFont` to `blinkmacsystemfont`, which is why the config exempts
+font properties.
+
 Identifiers and comments are German; keep new code in the same vocabulary:
 
 Gruppe = group · Person/Teilnehmer = member/participant · Ausgabe = expense · Ausleger/Gläubiger =
