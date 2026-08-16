@@ -505,9 +505,9 @@
     liste.classList.add("visually-hidden");
     listeKnopf.hidden = false;
     listeKnopf.addEventListener("click", function () {
-      var offen = liste.classList.toggle("visually-hidden") === false;
-      listeKnopf.setAttribute("aria-expanded", offen ? "true" : "false");
-      listeKnopf.textContent = offen ? "Liste ausblenden" : "Als Liste anzeigen";
+      var listeOffen = liste.classList.toggle("visually-hidden") === false;
+      listeKnopf.setAttribute("aria-expanded", listeOffen ? "true" : "false");
+      listeKnopf.textContent = listeOffen ? "Liste ausblenden" : "Als Liste anzeigen";
     });
 
     // ---- Zusammenhangskomponenten ----
@@ -662,10 +662,10 @@
 
         // Faechern: mehrere Kanten auf dieselbe Marke treffen versetzt auf, sonst
         // verschmelzen die Spitzen.
-        function versatz(liste, index) {
-          return liste.length === 1
+        function versatz(schar, index) {
+          return schar.length === 1
               ? 0
-              : (index - (liste.length - 1) / 2) * Math.min(7, 30 / liste.length);
+              : (index - (schar.length - 1) / 2) * Math.min(7, 30 / schar.length);
         }
 
         linien.push({
