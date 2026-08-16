@@ -26,6 +26,13 @@
     avatarErsatz(img, img.getAttribute("data-initial"), "token__avatar");
   });
 
+  var werkbank = document.querySelector(".werkbank");
+  var login = werkbank ? werkbank.getAttribute("data-login") : null;
+
+  // Vor dem Ausstieg: eine geschlossene Gruppe hat keinen Komposer mehr, aber
+  // gerade dann will man den Ausgleich sehen.
+  aufbauenGraf();
+
   if (!komposer || !roster) {
     return;
   }
@@ -476,6 +483,293 @@
       offen = !offen;
       beschriften();
       falten(false);
+    });
+  }
+
+  // ---------- Ausgleich als Graph ----------
+  // Der Ausgleich ist per Konstruktion ein gerichteter, kreisfreier Wald:
+  // transaktionen() verrechnet immer den groessten Glaeubiger gegen den
+  // groessten Schuldner, also zeigt jede Kante von einem Schuldner auf einen
+  // Glaeubiger, und niemand wechselt unterwegs die Seite. Der Wald kann in
+  // mehrere Teile zerfallen - die stehen hier untereinander, mit einer Linie
+  // dazwischen, weil sie tatsaechlich nichts miteinander zu tun haben.
+  function aufbauenGraf() {
+    var graf = document.getElementById("ausgleichGraf");
+    var liste = document.getElementById("ausgleichListe");
+    var listeKnopf = document.getElementById("ausgleichListeKnopf");
+    if (!graf || !liste) {
+      return;
+    }
+
+    var kanten = Array.prototype.map.call(liste.querySelectorAll("li"), function (li) {
+      return {
+        von: li.getAttribute("data-von"),
+        an: li.getAttribute("data-an"),
+        betrag: parseFloat(li.getAttribute("data-betrag")) || 0
+      };
+    });
+    if (!kanten.length) {
+      return;
+    }
+
+    // Die Liste bleibt fuer Screenreader stehen und laesst sich einblenden.
+    liste.classList.add("visually-hidden");
+    listeKnopf.hidden = false;
+    listeKnopf.addEventListener("click", function () {
+      var offen = liste.classList.toggle("visually-hidden") === false;
+      listeKnopf.setAttribute("aria-expanded", offen ? "true" : "false");
+      listeKnopf.textContent = offen ? "Liste ausblenden" : "Als Liste anzeigen";
+    });
+
+    // ---- Zusammenhangskomponenten ----
+    var wurzel = {};
+    function finde(a) {
+      if (wurzel[a] === undefined) {
+        wurzel[a] = a;
+      }
+      while (wurzel[a] !== a) {
+        wurzel[a] = wurzel[wurzel[a]];
+        a = wurzel[a];
+      }
+      return a;
+    }
+    function vereine(a, b) {
+      var ra = finde(a);
+      var rb = finde(b);
+      if (ra !== rb) {
+        wurzel[ra] = rb;
+      }
+    }
+    kanten.forEach(function (k) {
+      vereine(k.von, k.an);
+    });
+
+    var teile = {};
+    kanten.forEach(function (k) {
+      var r = finde(k.von);
+      (teile[r] = teile[r] || []).push(k);
+    });
+
+    // ---- Masse ----
+    var R = 22;              // Radius der Marke
+    var ZEILE = 88;          // Abstand zweier Knoten untereinander
+    var LUFT = 32;           // Abstand zweier Teile
+    var SPALTE = 132;        // halbe Breite einer Knotenspalte
+
+    var svgNS = "http://www.w3.org/2000/svg";
+    var svg = document.createElementNS(svgNS, "svg");
+    svg.setAttribute("class", "graf__linien");
+    svg.setAttribute("focusable", "false");
+
+    graf.textContent = "";
+    graf.appendChild(svg);
+
+    // Die eigenen Kanten hervorzuheben hilft nur, solange es auch fremde gibt.
+    // Laufen alle ueber die angemeldete Person, faerbt das jede Linie und sagt
+    // damit nichts mehr - dann bleibt es bei der Marke.
+    function meine(k) {
+      return k.von === login || k.an === login;
+    }
+    var eigeneHeben = login !== null
+        && kanten.some(meine)
+        && !kanten.every(meine);
+
+    function knoten(name, y, links) {
+      var el = document.createElement("div");
+      el.className = "graf__knoten" + (name === login ? " is-du" : "");
+      el.style.top = y + "px";
+      if (links) {
+        el.style.left = "0";
+      } else {
+        el.style.right = "0";
+      }
+
+      var bild = document.createElement("img");
+      bild.className = "graf__bild";
+      bild.alt = "";
+      bild.width = R * 2;
+      bild.height = R * 2;
+      bild.src = "https://github.com/" + encodeURIComponent(name) + ".png?size=96";
+      avatarErsatz(bild, name.charAt(0).toUpperCase(), "graf__bild");
+      el.appendChild(bild);
+
+      var text = document.createElement("span");
+      text.className = "graf__name";
+      text.textContent = name;
+      el.appendChild(text);
+
+      graf.appendChild(el);
+      return el;
+    }
+
+    var y = 0;
+    var linien = [];
+
+    Object.keys(teile).forEach(function (schluessel, teilIndex) {
+      var teilKanten = teile[schluessel];
+
+      // Schuldner links, Glaeubiger rechts - die Richtung steht in der Kante.
+      var schuldner = [];
+      var glaeubiger = [];
+      teilKanten.forEach(function (k) {
+        if (schuldner.indexOf(k.von) === -1) {
+          schuldner.push(k.von);
+        }
+        if (glaeubiger.indexOf(k.an) === -1) {
+          glaeubiger.push(k.an);
+        }
+      });
+
+      function summe(name, feld) {
+        return teilKanten.filter(function (k) {
+          return k[feld] === name;
+        }).reduce(function (s, k) {
+          return s + k.betrag;
+        }, 0);
+      }
+      schuldner.sort(function (a, b) {
+        return summe(b, "von") - summe(a, "von");
+      });
+      glaeubiger.sort(function (a, b) {
+        return summe(b, "an") - summe(a, "an");
+      });
+
+      if (teilIndex > 0) {
+        var trenner = document.createElement("div");
+        trenner.className = "graf__trenner";
+        trenner.style.top = (y - LUFT / 2) + "px";
+        graf.appendChild(trenner);
+      }
+
+      var hoehe = Math.max(schuldner.length, glaeubiger.length) * ZEILE;
+      var mitteY = {};
+
+      [[schuldner, true], [glaeubiger, false]].forEach(function (paar) {
+        var namen = paar[0];
+        var links = paar[1];
+        // Die kuerzere Seite sitzt mittig zur laengeren.
+        var versatz = (hoehe - namen.length * ZEILE) / 2;
+        namen.forEach(function (name, i) {
+          var oben = y + versatz + i * ZEILE;
+          knoten(name, oben, links);
+          mitteY[(links ? "L" : "R") + name] = oben + R;
+        });
+      });
+
+      var groesste = Math.max.apply(null, teilKanten.map(function (k) {
+        return k.betrag;
+      }));
+
+      teilKanten.forEach(function (k) {
+        // Mehrere Kanten am selben Schuldner bekommen unterschiedliche
+        // Beschriftungspunkte, sonst laegen die Betraege uebereinander.
+        var ausgehend = teilKanten.filter(function (a) {
+          return a.von === k.von;
+        });
+        var eingehend = teilKanten.filter(function (a) {
+          return a.an === k.an;
+        });
+        var t = ausgehend.length === 1
+            ? 0.5
+            : 0.34 + 0.32 * (ausgehend.indexOf(k) / (ausgehend.length - 1));
+
+        // Faechern: laufen mehrere Kanten auf dieselbe Marke zu, treffen sie
+        // nicht alle denselben Punkt - sonst verschmelzen die Spitzen zu einem
+        // Klumpen. Der Versatz bleibt innerhalb des Kreises.
+        function versatz(liste, index) {
+          return liste.length === 1
+              ? 0
+              : (index - (liste.length - 1) / 2) * Math.min(7, 30 / liste.length);
+        }
+
+        linien.push({
+          y1: mitteY["L" + k.von] + versatz(ausgehend, ausgehend.indexOf(k)),
+          y2: mitteY["R" + k.an] + versatz(eingehend, eingehend.indexOf(k)),
+          betrag: k.betrag,
+          dick: groesste > 0 ? 1.25 + 1.75 * (k.betrag / groesste) : 1.25,
+          du: eigeneHeben && meine(k),
+          t: t
+        });
+      });
+
+      y += hoehe + LUFT;
+    });
+
+    var gesamtHoehe = y - LUFT;
+    graf.style.height = gesamtHoehe + "px";
+
+    function zeichnenLinien() {
+      var breite = graf.clientWidth;
+      if (!breite) {
+        return;
+      }
+      svg.setAttribute("viewBox", "0 0 " + breite + " " + gesamtHoehe);
+      Array.prototype.forEach.call(svg.querySelectorAll(".graf__kante, .graf__wert,"
+          + " .graf__platte, .graf__spitze"), function (n) {
+        n.remove();
+      });
+
+      var x1 = Math.min(SPALTE, breite / 2 - 20);
+      var x2 = breite - x1;
+
+      linien.forEach(function (l) {
+        var c = (x2 - x1) * 0.45;
+        var spitzeLang = 9;
+        var ende = x2 - spitzeLang;
+        var d = "M" + x1 + " " + l.y1 + " C" + (x1 + c) + " " + l.y1
+            + ", " + (ende - c) + " " + l.y2 + ", " + ende + " " + l.y2;
+
+        var pfad = document.createElementNS(svgNS, "path");
+        pfad.setAttribute("class", "graf__kante" + (l.du ? " is-du" : ""));
+        pfad.setAttribute("d", d);
+        pfad.setAttribute("stroke-width", l.dick.toFixed(2));
+        svg.appendChild(pfad);
+
+        // Selbst gezeichnet statt als marker-end: ein Marker erbt die Strichfarbe
+        // der Kante nicht zuverlaessig, und so passt die Spitze immer zur Linie.
+        // Die Kurve laeuft an beiden Enden waagerecht aus, also zeigt sie nach rechts.
+        var spitze = document.createElementNS(svgNS, "path");
+        spitze.setAttribute("class", "graf__spitze" + (l.du ? " is-du" : ""));
+        spitze.setAttribute("d", "M" + ende + " " + (l.y2 - 4.5)
+            + " L" + (ende + spitzeLang) + " " + l.y2
+            + " L" + ende + " " + (l.y2 + 4.5) + " Z");
+        svg.appendChild(spitze);
+
+        // Punkt auf der Kurve fuer die Beschriftung.
+        var laenge = pfad.getTotalLength();
+        var p = pfad.getPointAtLength(laenge * l.t);
+
+        var text = document.createElementNS(svgNS, "text");
+        text.setAttribute("class", "graf__wert" + (l.du ? " is-du" : ""));
+        text.setAttribute("x", p.x);
+        text.setAttribute("y", p.y);
+        text.setAttribute("text-anchor", "middle");
+        text.setAttribute("dominant-baseline", "middle");
+        text.textContent = l.betrag.toLocaleString("de-DE", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        }) + " €";
+        svg.appendChild(text);
+
+        // Die Platte darunter, damit die Zahl nicht auf der Linie liegt.
+        var kasten = text.getBBox();
+        var platte = document.createElementNS(svgNS, "rect");
+        platte.setAttribute("class", "graf__platte");
+        platte.setAttribute("x", kasten.x - 5);
+        platte.setAttribute("y", kasten.y - 2);
+        platte.setAttribute("width", kasten.width + 10);
+        platte.setAttribute("height", kasten.height + 4);
+        platte.setAttribute("rx", "3");
+        svg.insertBefore(platte, text);
+      });
+    }
+
+    zeichnenLinien();
+
+    var wartet = null;
+    window.addEventListener("resize", function () {
+      window.clearTimeout(wartet);
+      wartet = window.setTimeout(zeichnenLinien, 120);
     });
   }
 

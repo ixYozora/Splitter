@@ -448,4 +448,53 @@ public class SingleGruppeAnzeigeTest {
     }
   }
 
+  @Test
+  @WithMockOAuth2User(login = "MaxHub")
+  @DisplayName("Der Ausgleich liefert die Kanten als Daten fuer das Diagramm mit")
+  void test_19() throws Exception {
+    UUID id = UUID.randomUUID();
+    Gruppe gruppe = Gruppe.erstelleGruppe(id, "MaxHub", "Reisegruppe");
+    gruppe.addPerson("GitLisa");
+    gruppe.addAusgabeToPerson("pizza", "MaxHub", List.of("GitLisa"), Money.of(400, "EUR"));
+    gruppe.berechneTransaktionen();
+    when(service.getSingleGruppe(id)).thenReturn(gruppe);
+
+    MvcResult result = mvc.perform(get("/gruppe").param("id", id.toString())).andReturn();
+    String html = result.getResponse().getContentAsString();
+
+    assertThat(html).contains("id=\"ausgleichGraf\"");
+    assertThat(html).contains("data-von=\"GitLisa\"");
+    assertThat(html).contains("data-an=\"MaxHub\"");
+    assertThat(html).contains("data-betrag=\"400.0\"");
+    // Die Liste bleibt die Fassung, die Screenreader lesen.
+    assertThat(html).contains("id=\"ausgleichListe\"");
+  }
+
+  @Test
+  @WithMockOAuth2User(login = "MaxHub")
+  @DisplayName("Eine glatte Gruppe meldet das, statt eine Zahlung ueber 0,00 € auszuschreiben")
+  void test_20() throws Exception {
+    UUID id = UUID.randomUUID();
+    Gruppe gruppe = Gruppe.erstelleGruppe(id, "MaxHub", "Reisegruppe");
+    gruppe.addPerson("GitLisa");
+    gruppe.addAusgabeToPerson("pizza", "MaxHub", List.of("MaxHub", "GitLisa"), Money.of(20, "EUR"));
+    gruppe.addAusgabeToPerson("bier", "GitLisa", List.of("MaxHub", "GitLisa"), Money.of(20, "EUR"));
+    gruppe.berechneTransaktionen();
+    when(service.getSingleGruppe(id)).thenReturn(gruppe);
+
+    MvcResult result = mvc.perform(get("/gruppe").param("id", id.toString())).andReturn();
+    String html = result.getResponse().getContentAsString();
+
+    // Das Aggregat legt fuer diesen Fall eine Transaktion ueber 0,00 € an.
+    assertThat(gruppe.getTransaktionDetails()).hasSize(1);
+    assertThat(gruppe.getTransaktionDetails().get(0).betrag().isZero()).isTrue();
+
+    assertThat(html).contains("Alles ausgeglichen");
+    assertThat(html).doesNotContain("id=\"ausgleichGraf\"");
+    // Keine Zahlungszeile - "0,00 €" allein waere kein guter Test, das steckt
+    // auch in "20,00 €" auf dem Kassenbon.
+    assertThat(html).doesNotContain("ausgleich__betrag");
+    assertThat(html).doesNotContain("id=\"ausgleichListe\"");
+  }
+
 }

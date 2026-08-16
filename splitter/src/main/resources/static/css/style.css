@@ -1545,6 +1545,110 @@
   color: var(--accent);
 }
 
+/* ---------- Ausgleich als Graph ----------
+   Die Marken sind echte HTML-Knoten ueber einer SVG-Ebene: so behalten Bild und
+   Name die normale Schrift- und Fehlerbehandlung, und das SVG traegt nur die
+   Kanten. Farbe steht nur fuer eine Sache, naemlich fuer die eigenen Kanten -
+   Betraege bleiben schwarz, wie ueberall sonst auf der Seite. */
+
+.graf {
+  position: relative;
+  margin-bottom: calc(var(--step) * 2);
+}
+
+.graf__linien {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.graf__kante {
+  fill: none;
+  stroke: var(--rule-strong);
+  stroke-linecap: round;
+}
+
+.graf__kante.is-du { stroke: var(--accent); }
+
+.graf__spitze { fill: var(--rule-strong); }
+.graf__spitze.is-du { fill: var(--accent); }
+
+.graf__platte { fill: var(--surface-raised); }
+
+.graf__wert {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+  fill: var(--ink);
+}
+
+.graf__wert.is-du { font-weight: 600; }
+
+/* Ein Knoten: Bild als Marke, Name darunter. */
+.graf__knoten {
+  position: absolute;
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  width: 8.25rem;
+}
+
+.graf__bild {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  border: 1px solid var(--rule-strong);
+  background: var(--accent-wash);
+  object-fit: cover;
+}
+
+.graf__knoten.is-du .graf__bild {
+  border-color: var(--accent);
+  border-width: 2px;
+}
+
+.graf__name {
+  max-width: 100%;
+  font-size: var(--text-xs);
+  line-height: 1.25;
+  text-align: center;
+  overflow-wrap: anywhere;
+  color: var(--ink-soft);
+}
+
+.graf__knoten.is-du .graf__name {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* Zwei Teile des Waldes haengen nicht zusammen - die Linie sagt genau das. */
+.graf__trenner {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px dashed var(--rule);
+}
+
+/* Schmal wird nicht gezeichnet: zwei Spalten mit Kurven dazwischen brauchen
+   Breite. Dort bleibt die Liste stehen. */
+@media (max-width: 40rem) {
+  .graf { display: none; }
+  .ausgleich.visually-hidden {
+    position: static;
+    width: auto;
+    height: auto;
+    margin: 0;
+    overflow: visible;
+    clip: auto;
+    clip-path: none;
+    white-space: normal;
+  }
+  #ausgleichListeKnopf { display: none; }
+}
+
 /* ---------- Ausgleich ---------- */
 
 .ausgleich {

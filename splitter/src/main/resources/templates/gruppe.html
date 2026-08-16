@@ -51,7 +51,7 @@
   </details>
 </header>
 
-<div class="werkbank"
+<div class="werkbank" th:attr="data-login=${login}"
      th:with="geschlossen=${gruppe.isGeschlossen()},
               mitglieder=${gruppe.getPersonenNamen()},
               bons=${gruppe.getAusgabenDetails()},
@@ -254,14 +254,29 @@
   </div>
 
   <!-- ---------- Fuß: der Ausgleich ---------- -->
-  <section class="sheet sheet--ausgleich" aria-labelledby="ausgleichTitel">
-    <h2 class="sheet__label" id="ausgleichTitel">Ausgleich</h2>
+  <!-- Ist alles glatt, legt das Aggregat eine einzelne Transaktion ueber 0,00 €
+       an. Die als "X zahlt 0,00 € an Y" auszuschreiben waere schlicht falsch. -->
+  <section class="sheet sheet--ausgleich" aria-labelledby="ausgleichTitel"
+           th:with="glatt=${#lists.size(ausgleich) == 1 and ausgleich[0].betrag().isZero()}">
+    <h2 class="sheet__label" id="ausgleichTitel">
+      Ausgleich<span class="sheet__zahl" th:unless="${#lists.isEmpty(ausgleich) or glatt}"
+                     th:text="${#lists.size(ausgleich)}">3</span>
+    </h2>
+
+    <!-- Das Diagramm zeichnet das Skript hier hinein; ohne Skript bleibt die
+         Liste darunter stehen. Sie ist ausserdem die Fassung, die Screenreader
+         lesen - das Diagramm selbst ist aria-hidden. -->
+    <div class="graf nur-js" id="ausgleichGraf" aria-hidden="true"
+         th:if="${!#lists.isEmpty(ausgleich) and !glatt}"></div>
 
     <!-- Nicht getTransaktionsNachrichten(): die liefert "EUR 12.00" und widerspraeche
          der deutschen Schreibweise auf dem Rest der Seite. Die Nachricht bleibt
          unveraendert fuer die REST-Schnittstelle und die Domaenentests. -->
-    <ul class="ausgleich" th:if="${!#lists.isEmpty(ausgleich)}">
-      <li th:each="t : ${ausgleich}">
+    <ul class="ausgleich" id="ausgleichListe" th:if="${!#lists.isEmpty(ausgleich) and !glatt}">
+      <li th:each="t : ${ausgleich}"
+          th:attr="data-von=${t.person1()},
+                   data-an=${t.person2()},
+                   data-betrag=${t.betrag().getNumber().doubleValue()}">
         <span class="ausgleich__von" th:text="${t.person1()}">GitLisa</span>
         <span class="ausgleich__wort">zahlt</span>
         <span class="ausgleich__betrag"
@@ -270,6 +285,11 @@
         <span class="ausgleich__an" th:text="${t.person2()}">MaxHub</span>
       </li>
     </ul>
+
+    <button type="button" class="mehr nur-js" id="ausgleichListeKnopf"
+            aria-controls="ausgleichListe" aria-expanded="false" hidden>Als Liste anzeigen</button>
+
+    <p class="note" th:if="${glatt}">Alles ausgeglichen, niemand schuldet etwas.</p>
     <p class="note" th:if="${#lists.isEmpty(ausgleich)}">
       Noch nicht berechnet.
     </p>
