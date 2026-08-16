@@ -46,12 +46,10 @@ jobs:
           name: test-reports
           path: splitter/build/reports/tests/
 
-  # Der Test-Job oben laeuft auf H2 mit abgeschaltetem Flyway. Damit wird
-  # V1__init_tables.sql nie ausgefuehrt, nie gegen die H2-Fassung in
-  # tables.sql gehalten, und flyway-database-postgresql nie geladen - alles
-  # drei faellt sonst erst beim Start der echten Anwendung auf. Dieser Job
-  # startet sie deshalb gegen ein echtes Postgres und laesst danach den
-  # Abnahmetest der Veranstaltung dagegen laufen.
+  # Die Tests oben laufen gegen ein eigenes Postgres, aber nie gegen das fertig
+  # gebaute Jar: Startskript, Konfiguration aus der Umgebung und der Weg ueber
+  # echtes HTTP bleiben dort ungeprueft. Dieser Job startet die Anwendung
+  # deshalb wie im Betrieb und laesst den Abnahmetest dagegen laufen.
   akzeptanz:
     runs-on: ubuntu-latest
     defaults:
