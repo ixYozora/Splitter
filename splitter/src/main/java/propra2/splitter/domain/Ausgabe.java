@@ -35,10 +35,18 @@ class Ausgabe {
 
   Money getKosten() {
     if (personen.contains(ausleger)) {
-      return kosten.subtract(getDurchschnittsKosten());
+      return kosten.subtract(anteilVon(ausleger));
     } else {
       return kosten;
     }
+  }
+
+  Money anteilVon(Person person) {
+    int position = personen.indexOf(person);
+    if (position < 0) {
+      return Money.of(0, "EUR");
+    }
+    return Cent.zu(Cent.anteil(Cent.von(kosten), personen.size(), position));
   }
 
   public boolean personPresent(String name) {
@@ -73,8 +81,9 @@ class Ausgabe {
     return Objects.hash(getAktivitaet(), getAusleger(), getPersonen(), getKosten());
   }
 
+  // Nur zur Anzeige: die tatsaechlichen Anteile koennen sich um einen Cent unterscheiden.
   Money getDurchschnittsKosten() {
-    return kosten.divide(personen.size());
+    return Cent.zu(Cent.von(kosten) / personen.size());
   }
 
   Aktivitaet getAktivitaet() {

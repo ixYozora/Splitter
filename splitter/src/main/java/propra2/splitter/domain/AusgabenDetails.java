@@ -23,9 +23,8 @@ public record AusgabenDetails(
     return DATUM.format(erfasstAm);
   }
 
-  // Anteil je Teilnehmer - dieselbe Division wie im Aggregat, damit der Bon nicht
-  // etwas anderes behauptet als der Ausgleich.
+  // Nur zur Anzeige: die tatsaechlichen Anteile koennen sich um einen Cent unterscheiden.
   public Money anteil() {
-    return personen.isEmpty() ? kosten : kosten.divide(personen.size());
+    return personen.isEmpty() ? kosten : Cent.zu(Cent.von(kosten) / personen.size());
   }
 }

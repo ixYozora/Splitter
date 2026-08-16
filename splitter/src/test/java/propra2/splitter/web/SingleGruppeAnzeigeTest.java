@@ -497,9 +497,8 @@ public class SingleGruppeAnzeigeTest {
     MvcResult result = mvc.perform(get("/gruppe").param("id", id.toString())).andReturn();
     String html = result.getResponse().getContentAsString();
 
-    // Das Aggregat legt fuer diesen Fall eine Transaktion ueber 0,00 € an.
-    assertThat(gruppe.getTransaktionDetails()).hasSize(1);
-    assertThat(gruppe.getTransaktionDetails().get(0).betrag().isZero()).isTrue();
+    // Bons vorhanden, aber nichts auszugleichen.
+    assertThat(gruppe.getTransaktionDetails()).isEmpty();
 
     assertThat(html).contains("Alles ausgeglichen");
     assertThat(html).doesNotContain("id=\"ausgleichGraf\"");

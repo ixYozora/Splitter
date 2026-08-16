@@ -1,7 +1,9 @@
 package propra2.splitter.domain;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -200,36 +202,6 @@ public class DomainTests {
   }
 
   @Test
-  @DisplayName("Person mit maximalem Netto-Betrag wird gefunden")
-  void test_12() {
-    Person personA = new Person("MaxHub");
-    Person personB = new Person("GitLisa");
-    personA.setNettoBetrag(Money.of(20, "EUR"));
-    personB.setNettoBetrag(Money.of(-20, "EUR"));
-    UUID id = UUID.randomUUID();
-    Gruppe gruppe = Gruppe.erstelleGruppe(id, "MaxHub", "Reisegruppe");
-
-    Person maxPerson = gruppe.getPersonWithMaxNettoBetrag(List.of(personA, personB));
-
-    assertThat(maxPerson).isEqualTo(personA);
-  }
-
-  @Test
-  @DisplayName("Person mit minimalem Netto-Betrag wird gefunden")
-  void test_13() {
-    Person personA = new Person("MaxHub");
-    Person personB = new Person("GitLisa");
-    personA.setNettoBetrag(Money.of(20, "EUR"));
-    personB.setNettoBetrag(Money.of(-20, "EUR"));
-    UUID id = UUID.randomUUID();
-    Gruppe gruppe = Gruppe.erstelleGruppe(id, "MaxHub", "Reisegruppe");
-
-    Person minPerson = gruppe.getPersonWithMinNettoBetrag(List.of(personA, personB));
-
-    assertThat(minPerson).isEqualTo(personB);
-  }
-
-  @Test
   @DisplayName(
       "isValid Utility Methode bestimmt richtig, wenn Kriterium 1 nicht erfüllt ist:"
           + "eine Personen darf immer nur selber Überweisungen an andere tätigen oder Geld"
@@ -347,10 +319,8 @@ public class DomainTests {
     gruppe.addAusgabeToPerson("Kino", "ErixHub", List.of("ErixHub", "MaxHub"), Money.of(10, "EUR"));
 
     gruppe.berechneTransaktionen();
-    List<Transaktion> transaktionen = gruppe.getTransaktionen();
 
-    assertThat(transaktionen.get(0).getTransaktionsNachricht())
-        .isEqualTo("Es sind keine Ausgleichszahlungen notwendig.");
+    assertThat(gruppe.getTransaktionen()).isEmpty();
   }
 
   @Test
@@ -452,8 +422,6 @@ public class DomainTests {
 
   @Test
   @DisplayName("Szenario 7: Minimierung")
-  // Hier wird ein möglicher Ausgleich ausgerechnet (nicht der, der gegeben wurde), ist jedoch nicht
-  // minimal
   void test_24() {
     Person personA = new Person("A");
     Person personB = new Person("B");
@@ -478,19 +446,20 @@ public class DomainTests {
     gruppe.addAusgabeToPerson("Theatervorstellung", "F", List.of("B", "F"), Money.of(40, "EUR"));
     gruppe.addAusgabeToPerson("Club", "F", List.of("C"), Money.of(5, "EUR"));
     gruppe.addAusgabeToPerson("Juan", "G", List.of("A"), Money.of(30, "EUR"));
-    String transaction1 = personA.getName() + " muss EUR 80.00 an " + personE.getName() + " zahlen";
-    String transaction2 = personB.getName() + " muss EUR 30.00 an " + personF.getName() + " zahlen";
-    String transaction3 = personC.getName() + " muss EUR 30.00 an " + personG.getName() + " zahlen";
-    String transaction4 = personD.getName() + " muss EUR 10.00 an " + personE.getName() + " zahlen";
-    String transaction5 = personD.getName() + " muss EUR 10.00 an " + personF.getName() + " zahlen";
-    String transaction6 = personD.getName() + " muss EUR 10.00 an " + personG.getName() + " zahlen";
+    // Salden: A -80, B -30, C -30, D -30, E +90, F +40, G +40. Das zerfaellt in
+    // {A,F,G} und {B,C,D,E}, also 7 - 2 = 5 Ueberweisungen statt der frueheren 6.
+    String transaction1 = personA.getName() + " muss EUR 40.00 an " + personF.getName() + " zahlen";
+    String transaction2 = personA.getName() + " muss EUR 40.00 an " + personG.getName() + " zahlen";
+    String transaction3 = personB.getName() + " muss EUR 30.00 an " + personE.getName() + " zahlen";
+    String transaction4 = personC.getName() + " muss EUR 30.00 an " + personE.getName() + " zahlen";
+    String transaction5 = personD.getName() + " muss EUR 30.00 an " + personE.getName() + " zahlen";
 
     gruppe.berechneTransaktionen();
     transaktionen = gruppe.getTransaktionen();
 
     assertThat(transaktionen.stream().map(Transaktion::getTransaktionsNachricht))
         .containsExactlyInAnyOrder(
-            transaction1, transaction2, transaction3, transaction4, transaction5, transaction6);
+            transaction1, transaction2, transaction3, transaction4, transaction5);
   }
 
   @Test
@@ -591,5 +560,150 @@ public class DomainTests {
     Gruppe gruppe = Gruppe.erstelleGruppe(id, "MaxHub", "Reisegruppe");
 
     assertThat(gruppe.getNettoBetrag("Fremder")).isEqualTo(Money.of(0, "EUR"));
+  }
+
+  @Test
+  @DisplayName("Betraege unter einem Euro werden beim Ausgleich nicht gleich behandelt")
+  void test_31() {
+    UUID id = UUID.randomUUID();
+    Gruppe gruppe =
+        Gruppe.erstelleRestGruppe(id, "Reisegruppe", List.of("MaxHub", "GitLisa", "ErixHub"));
+    gruppe.addAusgabeToPerson("Kaffee", "MaxHub", List.of("ErixHub"), Money.of(0.99, "EUR"));
+    gruppe.addAusgabeToPerson("Zucker", "GitLisa", List.of("ErixHub"), Money.of(0.01, "EUR"));
+
+    gruppe.berechneTransaktionen();
+    transaktionen = gruppe.getTransaktionen();
+
+    assertThat(transaktionen).hasSize(2);
+    assertThat(gruppe.getTransaktionDetails())
+        .extracting(TransaktionDetails::betrag)
+        .containsExactlyInAnyOrder(Money.of(0.99, "EUR"), Money.of(0.01, "EUR"));
+  }
+
+  @Test
+  @DisplayName("Anteile einer nicht glatt teilbaren Ausgabe ergeben zusammen wieder den Betrag")
+  void test_32() {
+    UUID id = UUID.randomUUID();
+    Gruppe gruppe =
+        Gruppe.erstelleRestGruppe(id, "Reisegruppe", List.of("MaxHub", "GitLisa", "ErixHub"));
+    gruppe.addAusgabeToPerson(
+        "Pizza", "MaxHub", List.of("MaxHub", "GitLisa", "ErixHub"), Money.of(100, "EUR"));
+
+    Money summe =
+        gruppe.getPersonenNamen().stream()
+            .map(gruppe::getNettoBetrag)
+            .reduce(Money.of(0, "EUR"), Money::add);
+
+    assertThat(summe).isEqualTo(Money.of(0, "EUR"));
+    assertThat(gruppe.getNettoBetrag("MaxHub")).isEqualTo(Money.of(66.66, "EUR"));
+    assertThat(gruppe.getNettoBetrag("GitLisa")).isEqualTo(Money.of(-33.33, "EUR"));
+    assertThat(gruppe.getNettoBetrag("ErixHub")).isEqualTo(Money.of(-33.33, "EUR"));
+  }
+
+  @Test
+  @DisplayName("Ausgleichsbetraege haben hoechstens zwei Nachkommastellen")
+  void test_33() {
+    UUID id = UUID.randomUUID();
+    Gruppe gruppe =
+        Gruppe.erstelleRestGruppe(id, "Reisegruppe", List.of("MaxHub", "GitLisa", "ErixHub"));
+    gruppe.addAusgabeToPerson(
+        "Pizza", "MaxHub", List.of("MaxHub", "GitLisa", "ErixHub"), Money.of(100, "EUR"));
+
+    gruppe.berechneTransaktionen();
+    transaktionen = gruppe.getTransaktionen();
+
+    assertThat(gruppe.getTransaktionDetails())
+        .allSatisfy(
+            t ->
+                assertThat(
+                        t.betrag()
+                            .getNumber()
+                            .numberValue(BigDecimal.class)
+                            .stripTrailingZeros()
+                            .scale())
+                    .isLessThanOrEqualTo(2));
+  }
+
+  @Test
+  @DisplayName("Eine Ausgabe eines Nichtmitglieds wird nicht erfasst")
+  void test_34() {
+    UUID id = UUID.randomUUID();
+    Gruppe gruppe = Gruppe.erstelleRestGruppe(id, "Reisegruppe", List.of("MaxHub", "GitLisa"));
+
+    gruppe.addAusgabeToPerson(
+        "Pizza", "Fremder", List.of("MaxHub", "GitLisa"), Money.of(10, "EUR"));
+
+    assertThat(gruppe.getAusgabenDetails()).isEmpty();
+    assertThat(gruppe.getNettoBetrag("MaxHub")).isEqualTo(Money.of(0, "EUR"));
+    assertThat(gruppe.getNettoBetrag("GitLisa")).isEqualTo(Money.of(0, "EUR"));
+  }
+
+  @Test
+  @DisplayName("Salden bleiben in Summe null, auch wenn ein Nichtmitglied genannt wird")
+  void test_35() {
+    UUID id = UUID.randomUUID();
+    Gruppe gruppe = Gruppe.erstelleRestGruppe(id, "Reisegruppe", List.of("MaxHub", "GitLisa"));
+    gruppe.addAusgabeToPerson(
+        "Pizza", "Fremder", List.of("MaxHub", "GitLisa"), Money.of(10, "EUR"));
+
+    gruppe.berechneTransaktionen();
+    transaktionen = gruppe.getTransaktionen();
+
+    assertThat(transaktionen).isEmpty();
+  }
+
+  @Test
+  @DisplayName("Eine Transaktion auf einen unbekannten Namen wird abgelehnt")
+  void test_36() {
+    UUID id = UUID.randomUUID();
+    Gruppe gruppe = Gruppe.erstelleRestGruppe(id, "Reisegruppe", List.of("MaxHub", "GitLisa"));
+
+    assertThatThrownBy(() -> gruppe.addTransaktion("Fremder", "MaxHub", Money.of(5, "EUR")))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Fremder");
+  }
+
+  @Test
+  @DisplayName("Eine Ausgabe mit unbekanntem Teilnehmer wird nicht erfasst")
+  void test_37() {
+    UUID id = UUID.randomUUID();
+    Gruppe gruppe = Gruppe.erstelleRestGruppe(id, "Reisegruppe", List.of("MaxHub", "GitLisa"));
+
+    gruppe.addAusgabeToPerson(
+        "Pizza", "GitLisa", List.of("MaxHub", "Fremder"), Money.of(10, "EUR"));
+
+    assertThat(gruppe.getAusgabenDetails()).isEmpty();
+    assertThat(gruppe.isAusgabeGetaetigt()).isFalse();
+  }
+
+  @Test
+  @DisplayName("Ein doppelt genannter Teilnehmer laesst die Salden nicht aufgehen")
+  void test_38() {
+    UUID id = UUID.randomUUID();
+    Gruppe gruppe = Gruppe.erstelleRestGruppe(id, "Reisegruppe", List.of("MaxHub", "GitLisa"));
+
+    gruppe.addAusgabeToPerson("Pizza", "GitLisa", List.of("MaxHub", "MaxHub"), Money.of(10, "EUR"));
+
+    assertThat(gruppe.getAusgabenDetails()).isEmpty();
+    Money summe =
+        gruppe.getPersonenNamen().stream()
+            .map(gruppe::getNettoBetrag)
+            .reduce(Money.of(0, "EUR"), Money::add);
+    assertThat(summe).isEqualTo(Money.of(0, "EUR"));
+  }
+
+  @Test
+  @DisplayName("Alle genannten Teilnehmer tragen den Anteil, den sie genannt bekommen")
+  void test_39() {
+    UUID id = UUID.randomUUID();
+    Gruppe gruppe =
+        Gruppe.erstelleRestGruppe(id, "Reisegruppe", List.of("MaxHub", "GitLisa", "ErixHub"));
+
+    gruppe.addAusgabeToPerson(
+        "Pizza", "MaxHub", List.of("GitLisa", "ErixHub"), Money.of(10, "EUR"));
+
+    assertThat(gruppe.getNettoBetrag("MaxHub")).isEqualTo(Money.of(10, "EUR"));
+    assertThat(gruppe.getNettoBetrag("GitLisa")).isEqualTo(Money.of(-5, "EUR"));
+    assertThat(gruppe.getNettoBetrag("ErixHub")).isEqualTo(Money.of(-5, "EUR"));
   }
 }

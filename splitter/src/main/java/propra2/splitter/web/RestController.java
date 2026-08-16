@@ -2,6 +2,7 @@ package propra2.splitter.web;
 
 import jakarta.validation.Valid;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -74,10 +75,11 @@ public class RestController {
   public ResponseEntity<AusgabeEntity> addAusgabe(
       @PathVariable String id, @RequestBody AusgabeEntity ausgabenEntity) {
     try {
-      if (service.getGruppeInformationEntity(UUID.fromString(id)) == null) {
+      GruppeInformationEntity gruppe = service.getGruppeInformationEntity(UUID.fromString(id));
+      if (gruppe == null) {
         return ResponseEntity.notFound().build();
       }
-      if (service.getGruppeInformationEntity(UUID.fromString(id)).geschlossen()) {
+      if (gruppe.geschlossen()) {
         return ResponseEntity.status(409).build();
       }
       // If check, wenn JSON Dokument fehlerhaft ist
@@ -87,6 +89,11 @@ public class RestController {
           || ausgabenEntity.cent() == null
           || ausgabenEntity.cent() <= 0
           || ausgabenEntity.schuldner().isEmpty()) {
+        return ResponseEntity.badRequest().build();
+      }
+      if (!gruppe.personen().contains(ausgabenEntity.glaeubiger())
+          || !gruppe.personen().containsAll(ausgabenEntity.schuldner())
+          || ausgabenEntity.schuldner().size() != Set.copyOf(ausgabenEntity.schuldner()).size()) {
         return ResponseEntity.badRequest().build();
       }
 

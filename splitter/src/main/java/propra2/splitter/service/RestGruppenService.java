@@ -1,5 +1,7 @@
 package propra2.splitter.service;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -56,7 +58,7 @@ public class RestGruppenService {
                         ausgabe.aktivitaet(),
                         ausgabe.ausleger(),
                         ausgabe.personen(),
-                        ausgabe.kosten().getNumber().intValue() * 100))
+                        cent(ausgabe.kosten())))
             .toList());
   }
 
@@ -73,7 +75,7 @@ public class RestGruppenService {
         ausgabenEntity.grund(),
         ausgabenEntity.glaeubiger(),
         ausgabenEntity.schuldner(),
-        Money.of(ausgabenEntity.cent() / 100, "EUR"));
+        Money.of(BigDecimal.valueOf(ausgabenEntity.cent(), 2), "EUR"));
     repository.save(gruppe);
   }
 
@@ -84,9 +86,7 @@ public class RestGruppenService {
         .map(
             transaktion ->
                 new TransaktionEntity(
-                    transaktion.person1(),
-                    transaktion.person2(),
-                    transaktion.betrag().getNumberStripped().intValue() * 100))
+                    transaktion.person1(), transaktion.person2(), cent(transaktion.betrag())))
         .toList();
   }
 
@@ -99,5 +99,14 @@ public class RestGruppenService {
                 groupDetails.getPersonen().stream()
                     .anyMatch(person -> Objects.equals(person, login)))
         .toList();
+  }
+
+  private static int cent(Money betrag) {
+    return betrag
+        .getNumber()
+        .numberValue(BigDecimal.class)
+        .movePointRight(2)
+        .setScale(0, RoundingMode.HALF_UP)
+        .intValueExact();
   }
 }
