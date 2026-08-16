@@ -1,5 +1,7 @@
 package propra2.splitter.domain;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import org.javamoney.moneta.Money;
 
 import java.util.Objects;
@@ -21,14 +23,23 @@ class Transaktion {
     if (nettoBetrag.isZero()) {
       transaktionsNachricht1 = "Es sind keine Ausgleichszahlungen notwendig.";
     } else {
-      transaktionsNachricht1 =
-          person1.getName() + " muss " + nettoBetrag + " an " + person2.getName() + " zahlen";
+      transaktionsNachricht1 = person1.getName() + " muss " + ausschreiben(nettoBetrag) + " an "
+          + person2.getName() + " zahlen";
     }
     this.transaktionsNachricht = transaktionsNachricht1;
   }
 
   Transaktion() {
     this.transaktionsNachricht = "Es sind keine Ausgleichszahlungen notwendig.";
+  }
+
+  // Immer zwei Nachkommastellen, statt Money.toString() das Format ueberlassen:
+  // Moneta 1.4.2 schrieb "EUR 15.00", 1.4.5 schreibt "EUR 15" und aus "EUR 2.50"
+  // wird "EUR 2.5". Die Nachricht geht unveraendert an die REST-Schnittstelle,
+  // also darf sie nicht davon abhaengen, welche Version gerade eingebunden ist.
+  private static String ausschreiben(Money betrag) {
+    return betrag.getCurrency().getCurrencyCode() + " "
+        + betrag.getNumber().numberValue(BigDecimal.class).setScale(2, RoundingMode.HALF_UP);
   }
 
   @Override
