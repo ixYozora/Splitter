@@ -352,4 +352,25 @@ public class RestControllerTests {
         .andExpect(status().isNotFound())
         .andDo(print());
   }
+
+  @Test
+  @DisplayName("Eine Auslage auf ein Nichtmitglied wird abgelehnt")
+  void test_18() throws Exception {
+    UUID id = UUID.randomUUID();
+    AusgabeEntity ausgabe = new AusgabeEntity("Pizza", "Fremder", List.of("MaxHub"), 10000);
+    GruppeInformationEntity entity =
+        new GruppeInformationEntity(
+            id, "Reisegruppe", List.of("MaxHub", "GitLisa"), false, List.of());
+
+    when(service.getGruppeInformationEntity(id)).thenReturn(entity);
+
+    mvc.perform(
+            MockMvcRequestBuilders.post("/api/gruppen/{id}/auslagen", id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .content(mapper.writeValueAsString(ausgabe)))
+        .andExpect(status().isBadRequest());
+
+    verify(service, never()).addRestAusgabenToGruppe(any(), any());
+  }
 }

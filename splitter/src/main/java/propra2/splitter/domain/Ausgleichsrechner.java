@@ -18,6 +18,9 @@ final class Ausgleichsrechner {
   // laeuft ueber alle Teilmengen und ist ab etwa 20 offenen Salden spuerbar.
   static List<List<Integer>> nullsummenGruppen(long[] salden) {
     int anzahlSalden = salden.length;
+    if (Arrays.stream(salden).sum() != 0) {
+      throw new IllegalArgumentException("Salden ergeben zusammen nicht null");
+    }
     int alle = 1 << anzahlSalden;
 
     long[] summe = new long[alle];

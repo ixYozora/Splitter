@@ -89,7 +89,7 @@ public class Gruppe {
 
   public void addAusgabeToPerson(
       String aktivitaet, String name, List<String> personen2, Money kosten) {
-    if (!geschlossen) {
+    if (!geschlossen && istMitglied(name)) {
       ausgabeGetaetigt = true;
       Person ausleger = getPersonFromName(name);
 
@@ -253,13 +253,15 @@ public class Gruppe {
   }
 
   Person getPersonFromName(String name) {
-    Person newPerson = new Person("platzhalter");
-    for (Person person : personen) {
-      if (person.getName().equals(name)) {
-        newPerson = person;
-      }
-    }
-    return newPerson;
+    return personen.stream()
+        .filter(person -> person.getName().equals(name))
+        .findFirst()
+        .orElseThrow(
+            () -> new IllegalArgumentException(name + " ist kein Mitglied von " + gruppenName));
+  }
+
+  public boolean istMitglied(String name) {
+    return personen.stream().anyMatch(person -> person.getName().equals(name));
   }
 
   @Override

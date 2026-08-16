@@ -1,6 +1,7 @@
 package propra2.splitter.domain;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -621,5 +622,44 @@ public class DomainTests {
                             .stripTrailingZeros()
                             .scale())
                     .isLessThanOrEqualTo(2));
+  }
+
+  @Test
+  @DisplayName("Eine Ausgabe eines Nichtmitglieds wird nicht erfasst")
+  void test_34() {
+    UUID id = UUID.randomUUID();
+    Gruppe gruppe = Gruppe.erstelleRestGruppe(id, "Reisegruppe", List.of("MaxHub", "GitLisa"));
+
+    gruppe.addAusgabeToPerson(
+        "Pizza", "Fremder", List.of("MaxHub", "GitLisa"), Money.of(10, "EUR"));
+
+    assertThat(gruppe.getAusgabenDetails()).isEmpty();
+    assertThat(gruppe.getNettoBetrag("MaxHub")).isEqualTo(Money.of(0, "EUR"));
+    assertThat(gruppe.getNettoBetrag("GitLisa")).isEqualTo(Money.of(0, "EUR"));
+  }
+
+  @Test
+  @DisplayName("Salden bleiben in Summe null, auch wenn ein Nichtmitglied genannt wird")
+  void test_35() {
+    UUID id = UUID.randomUUID();
+    Gruppe gruppe = Gruppe.erstelleRestGruppe(id, "Reisegruppe", List.of("MaxHub", "GitLisa"));
+    gruppe.addAusgabeToPerson(
+        "Pizza", "Fremder", List.of("MaxHub", "GitLisa"), Money.of(10, "EUR"));
+
+    gruppe.berechneTransaktionen();
+    transaktionen = gruppe.getTransaktionen();
+
+    assertThat(transaktionen).isEmpty();
+  }
+
+  @Test
+  @DisplayName("Eine Transaktion auf einen unbekannten Namen wird abgelehnt")
+  void test_36() {
+    UUID id = UUID.randomUUID();
+    Gruppe gruppe = Gruppe.erstelleRestGruppe(id, "Reisegruppe", List.of("MaxHub", "GitLisa"));
+
+    assertThatThrownBy(() -> gruppe.addTransaktion("Fremder", "MaxHub", Money.of(5, "EUR")))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Fremder");
   }
 }
