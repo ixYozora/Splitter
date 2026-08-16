@@ -592,4 +592,22 @@ public class DomainTests {
 
     assertThat(gruppe.getNettoBetrag("Fremder")).isEqualTo(Money.of(0, "EUR"));
   }
+
+  @Test
+  @DisplayName("Betraege unter einem Euro werden beim Ausgleich nicht gleich behandelt")
+  void test_31() {
+    UUID id = UUID.randomUUID();
+    Gruppe gruppe =
+        Gruppe.erstelleRestGruppe(id, "Reisegruppe", List.of("MaxHub", "GitLisa", "ErixHub"));
+    gruppe.addAusgabeToPerson("Kaffee", "MaxHub", List.of("ErixHub"), Money.of(0.99, "EUR"));
+    gruppe.addAusgabeToPerson("Zucker", "GitLisa", List.of("ErixHub"), Money.of(0.01, "EUR"));
+
+    gruppe.berechneTransaktionen();
+    transaktionen = gruppe.getTransaktionen();
+
+    assertThat(transaktionen).hasSize(2);
+    assertThat(gruppe.getTransaktionDetails())
+        .extracting(TransaktionDetails::betrag)
+        .containsExactlyInAnyOrder(Money.of(0.99, "EUR"), Money.of(0.01, "EUR"));
+  }
 }
