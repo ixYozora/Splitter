@@ -14,4 +14,9 @@ spring:
   datasource:
     password: ${POSTGRES_PASSWORD}
     username: ${POSTGRES_USER}
-    url: jdbc:postgresql://localhost:5432/splitter
+    # Assembled from parts so POSTGRES_DB actually decides the database instead
+    # of only naming the one the container creates. The defaults are the local
+    # setup, so a plain `./gradlew bootRun` needs no extra variables. Inside
+    # compose only POSTGRES_HOST differs: there Postgres answers to its service
+    # name, not to localhost.
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:splitter}
