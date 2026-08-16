@@ -27,9 +27,36 @@
   var werkbank = document.querySelector(".werkbank");
   var login = werkbank ? werkbank.getAttribute("data-login") : null;
 
+  // ---------- Bonmappe ----------
+  function verdrahtenBonmappe() {
+    var mappe = document.getElementById("bonmappe");
+    var mehr = document.getElementById("bonsMehr");
+    var zu = document.getElementById("bonmappeZu");
+
+    if (mappe && mehr) {
+      mehr.addEventListener("click", function () {
+        mappe.showModal();
+      });
+    }
+    if (mappe && zu) {
+      zu.addEventListener("click", function () {
+        mappe.close();
+      });
+    }
+    if (mappe) {
+      // Klick auf den Hintergrund schliesst - der Dialog selbst faengt seinen eigenen.
+      mappe.addEventListener("click", function (event) {
+        if (event.target === mappe) {
+          mappe.close();
+        }
+      });
+    }
+  }
+
   // Vor dem Ausstieg: eine geschlossene Gruppe hat keinen Komposer mehr, aber
-  // gerade dann will man den Ausgleich sehen.
+  // Ausgleich und Kassenbons will man gerade dann sehen.
   aufbauenGraf();
+  verdrahtenBonmappe();
 
   if (!komposer || !roster) {
     return;
@@ -758,27 +785,4 @@
     });
   }
 
-  // ---------- Bonmappe ----------
-  var mappe = document.getElementById("bonmappe");
-  var mehr = document.getElementById("bonsMehr");
-  var zu = document.getElementById("bonmappeZu");
-
-  if (mappe && mehr) {
-    mehr.addEventListener("click", function () {
-      mappe.showModal();
-    });
-  }
-  if (mappe && zu) {
-    zu.addEventListener("click", function () {
-      mappe.close();
-    });
-  }
-  if (mappe) {
-    // Klick auf den Hintergrund schliesst - der Dialog selbst faengt seinen eigenen.
-    mappe.addEventListener("click", function (event) {
-      if (event.target === mappe) {
-        mappe.close();
-      }
-    });
-  }
 })();
