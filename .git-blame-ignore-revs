@@ -1,0 +1,9 @@
+# Commits that only moved code around. `git blame` skips them, so a line still
+# points at the change that actually wrote it.
+#
+# GitHub reads this file by itself. Locally it has to be switched on once:
+#
+#     git config blame.ignoreRevsFile .git-blame-ignore-revs
+
+# style: format the whole codebase with google-java-format
+1b21f92f799b143fe4160b644abaea9016697038

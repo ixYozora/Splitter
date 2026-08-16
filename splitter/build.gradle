@@ -2,6 +2,18 @@ plugins {
 	id 'java'
 	id 'org.springframework.boot' version '3.5.16'
 	id 'io.spring.dependency-management' version '1.1.7'
+	id 'com.diffplug.spotless' version '8.9.0'
+}
+
+// Die Aufgabenstellung verlangt den Google-Styleguide und verlangt ausserdem,
+// die Formatierungsregeln vor einem Push nach main zu pruefen. Genau das macht
+// spotlessCheck, und das Plugin haengt es von sich aus an `check` - CI prueft
+// es also mit, ohne dass der Workflow etwas davon wissen muss.
+spotless {
+	java {
+		target 'src/**/*.java'
+		googleJavaFormat()
+	}
 }
 
 group = 'propra2'
