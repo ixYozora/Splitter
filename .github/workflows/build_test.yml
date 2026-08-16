@@ -26,6 +26,11 @@ jobs:
     steps:
       - name: checkout repo
         uses: actions/checkout@v7.0.1
+      # gradle-wrapper.jar ist eine eingecheckte Binaerdatei, die jeder
+      # gradlew-Aufruf ausfuehrt - die Pruefung gehoert also davor, nicht
+      # daneben. distributionSha256Sum deckt nur die geladene Distribution ab.
+      - name: validate gradle wrapper
+        uses: gradle/actions/wrapper-validation@v6.3.0
       - name: install latest jdk
         uses: actions/setup-java@v5.7.0
         with:
@@ -74,6 +79,8 @@ jobs:
     steps:
       - name: checkout repo
         uses: actions/checkout@v7.0.1
+      - name: validate gradle wrapper
+        uses: gradle/actions/wrapper-validation@v6.3.0
       - name: install latest jdk
         uses: actions/setup-java@v5.7.0
         with:
