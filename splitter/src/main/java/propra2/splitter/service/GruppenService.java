@@ -1,6 +1,9 @@
 package propra2.splitter.service;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
 import org.javamoney.moneta.Money;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
@@ -54,7 +57,9 @@ public class GruppenService {
 
   public void addPersonToGruppe(UUID id, String login) {
     Gruppe gruppe = getSingleGruppe(id);
-    if (gruppe.addPerson(login)) repository.save(gruppe);
+    if (gruppe.addPerson(login)) {
+      repository.save(gruppe);
+    }
   }
 
   public void addAusgabeToGruppe(

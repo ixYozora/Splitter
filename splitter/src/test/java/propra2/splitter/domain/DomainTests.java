@@ -16,8 +16,8 @@ public class DomainTests {
   List<Transaktion> transaktionen = new ArrayList<>();
 
   public boolean isValid(List<Transaktion> transaktionen) {
-    List<Person> Zahler = new ArrayList<>();
-    List<Person> Zahlungsempfaenger = new ArrayList<>();
+    List<Person> zahler = new ArrayList<>();
+    List<Person> zahlungsempfaenger = new ArrayList<>();
     boolean isValid = true;
     List<Transaktion> transaktionen2 = new ArrayList<>();
     if (!transaktionen.isEmpty() && !(transaktionen.size() < 2)) {
@@ -32,13 +32,13 @@ public class DomainTests {
           isValid = false;
           break;
         }
-        Zahler.add(transaktion.getPerson1());
-        Zahlungsempfaenger.add(transaktion.getPerson2());
+        zahler.add(transaktion.getPerson1());
+        zahlungsempfaenger.add(transaktion.getPerson2());
         transaktionen2.add(transaktion);
       }
-      for (Person person : Zahlungsempfaenger) {
+      for (Person person : zahlungsempfaenger) {
         // Verletzung von Kriterium 1, Person ist Zahler und Zahlungsempfänger
-        if (Zahler.contains(person)) {
+        if (zahler.contains(person)) {
           isValid = false;
           break;
         }
@@ -232,7 +232,8 @@ public class DomainTests {
   @Test
   @DisplayName(
       "isValid Utility Methode bestimmt richtig, wenn Kriterium 1 nicht erfüllt ist:"
-          + "eine Personen darf immer nur selber Überweisungen an andere tätigen oder Geld überwiesen bekommen, niemals beides")
+          + "eine Personen darf immer nur selber Überweisungen an andere tätigen oder Geld"
+          + " überwiesen bekommen, niemals beides")
   void test_14() {
     Person personA = new Person("MaxHub");
     Person personB = new Person("GitLisa");

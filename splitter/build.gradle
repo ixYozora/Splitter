@@ -3,6 +3,7 @@ plugins {
 	id 'org.springframework.boot' version '4.1.0'
 	id 'io.spring.dependency-management' version '1.1.7'
 	id 'com.diffplug.spotless' version '8.9.0'
+	id 'checkstyle'
 }
 
 // spotlessCheck haengt sich selbst an `check`.
@@ -11,6 +12,13 @@ spotless {
 		target 'src/**/*.java'
 		googleJavaFormat()
 	}
+}
+
+// Liest config/checkstyle/checkstyle.xml; checkstyleMain und checkstyleTest
+// haengen ebenfalls von selbst an `check`.
+checkstyle {
+	toolVersion = '13.10.0'
+	maxWarnings = 0
 }
 
 group = 'propra2'
