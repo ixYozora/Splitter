@@ -2,6 +2,7 @@ package propra2.splitter.web;
 
 import jakarta.validation.Valid;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -90,7 +91,9 @@ public class RestController {
           || ausgabenEntity.schuldner().isEmpty()) {
         return ResponseEntity.badRequest().build();
       }
-      if (!gruppe.personen().contains(ausgabenEntity.glaeubiger())) {
+      if (!gruppe.personen().contains(ausgabenEntity.glaeubiger())
+          || !gruppe.personen().containsAll(ausgabenEntity.schuldner())
+          || ausgabenEntity.schuldner().size() != Set.copyOf(ausgabenEntity.schuldner()).size()) {
         return ResponseEntity.badRequest().build();
       }
 

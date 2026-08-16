@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 import org.javamoney.moneta.Money;
 import propra2.splitter.stereotypes.AggregateRoot;
@@ -89,24 +90,25 @@ public class Gruppe {
 
   public void addAusgabeToPerson(
       String aktivitaet, String name, List<String> personen2, Money kosten) {
-    if (!geschlossen && istMitglied(name)) {
-      ausgabeGetaetigt = true;
-      Person ausleger = getPersonFromName(name);
-
-      // Personen, die ausgelegt bekommen haben und später Geld zurückzahlen müssen, wenn sie nicht
-      // Ausleger sind
-      List<Person> teilnehmer = getPersonenFromNames(personen2);
-
-      if (!teilnehmer.isEmpty()) {
-        // Ausgaben in Person, welche Ausgabe getätigt hat, speichern
-        Ausgabe newAusgabe =
-            new Ausgabe(new Aktivitaet(aktivitaet), ausleger, teilnehmer, kosten, Instant.now());
-        gruppenAusgaben.add(newAusgabe);
-      }
-      // speichert Schulden der Teilnehmer mit Ausnahme vom Ausleger, falls dieser für sich selber
-      // bezahlt hat
-
+    if (geschlossen || !istMitglied(name) || !sindGueltigeTeilnehmer(personen2)) {
+      return;
     }
+    ausgabeGetaetigt = true;
+    gruppenAusgaben.add(
+        new Ausgabe(
+            new Aktivitaet(aktivitaet),
+            getPersonFromName(name),
+            getPersonenFromNames(personen2),
+            kosten,
+            Instant.now()));
+  }
+
+  // Ein doppelt genannter Teilnehmer bekaeme zwei Anteile, aber nur einer wuerde ihm
+  // belastet - dann gehen die Salden nicht mehr auf null auf.
+  public boolean sindGueltigeTeilnehmer(List<String> namen) {
+    return !namen.isEmpty()
+        && namen.stream().allMatch(this::istMitglied)
+        && namen.size() == Set.copyOf(namen).size();
   }
 
   public void berechneTransaktionen() {
@@ -241,15 +243,7 @@ public class Gruppe {
   }
 
   List<Person> getPersonenFromNames(List<String> personen2) {
-    List<Person> newPersonen = new ArrayList<>();
-    for (Person person : personen) {
-      for (String personName : personen2) {
-        if (person.getName().equals(personName)) {
-          newPersonen.add(person);
-        }
-      }
-    }
-    return newPersonen;
+    return personen2.stream().map(this::getPersonFromName).toList();
   }
 
   Person getPersonFromName(String name) {
