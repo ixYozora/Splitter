@@ -9,7 +9,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import propra2.splitter.service.*;
+import propra2.splitter.service.AusgabeEntity;
+import propra2.splitter.service.GruppeEntity;
+import propra2.splitter.service.GruppeInformationEntity;
+import propra2.splitter.service.RestGruppenService;
+import propra2.splitter.service.TransaktionEntity;
 
 @org.springframework.web.bind.annotation.RestController
 public class RestController {
