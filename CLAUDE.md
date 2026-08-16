@@ -35,9 +35,13 @@ points the datasource at in-memory H2 and disables Flyway.
 
 ## Running the app
 
-Needs a Postgres container and four env vars. The datasource URL is hard-coded to the `splitter`
-database, so `POSTGRES_DB=splitter` is required — `docker-compose.yml` reads all three Postgres
-values from the environment (the README's claim that they are written in the compose file is stale).
+Needs a Postgres container and four env vars. `docker-compose.yml` reads all three Postgres values
+from the environment (the README's claim that they are written in the compose file is stale).
+
+The datasource URL is assembled in `application.yaml` from `POSTGRES_HOST` (default `localhost`),
+`POSTGRES_PORT` (default `5432`) and `POSTGRES_DB` (default `splitter`), so the database name is
+free and `bootRun` works without them. Compose sets `POSTGRES_HOST=database`, since inside the
+network Postgres answers to its service name.
 
 ```bash
 cd splitter

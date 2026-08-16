@@ -1,5 +1,7 @@
 package propra2.splitter.domain;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.*;
 import org.javamoney.moneta.Money;
@@ -159,8 +161,8 @@ public class Gruppe {
     }
 
     // Rekursionsabbruch bei fertigem Ausgleich
-    if (personMaxGutschrift.getNettoBetrag().toString().equals("EUR 0.00")
-        && personMaxSchulden.getNettoBetrag().toString().equals("EUR 0.00")) {
+    if (istAusgeglichen(personMaxGutschrift.getNettoBetrag())
+        && istAusgeglichen(personMaxSchulden.getNettoBetrag())) {
       return;
     }
 
@@ -255,6 +257,23 @@ public class Gruppe {
       arr[i] = Money.of(0, "EUR");
     }
     return arr;
+  }
+
+  // Ein Restbetrag unterhalb eines Cents gilt als ausgeglichen. Teilt sich eine
+  // Summe nicht glatt auf - 100 EUR durch drei -, bleibt nach dem Verrechnen ein
+  // Bruchteil stehen, denn geteilt wird mit voller Genauigkeit und nicht auf
+  // Cent gerundet. Bis hierher hat das ein Vergleich von toString() mit
+  // "EUR 0.00" erledigt: Moneta rundete beim Ausschreiben auf zwei Stellen, der
+  // Rest verschwand also nur in der Anzeige. Das war nie so gemeint, und mit
+  // Moneta 1.4.5 schreibt sich derselbe Betrag als "EUR 0.000...001" - die
+  // Rekursion hielt nicht mehr an. Jetzt steht die Toleranz ausdruecklich da.
+  private static boolean istAusgeglichen(Money betrag) {
+    return betrag
+            .getNumber()
+            .numberValue(BigDecimal.class)
+            .setScale(2, RoundingMode.HALF_UP)
+            .signum()
+        == 0;
   }
 
   Person getPersonWithMaxNettoBetrag(List<Person> nettoBetraege) {

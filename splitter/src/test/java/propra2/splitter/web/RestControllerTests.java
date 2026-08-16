@@ -8,14 +8,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -27,6 +26,7 @@ import propra2.splitter.service.GruppeEntity;
 import propra2.splitter.service.GruppeInformationEntity;
 import propra2.splitter.service.RestGruppenService;
 import propra2.splitter.service.TransaktionEntity;
+import tools.jackson.databind.ObjectMapper;
 
 @WebMvcTest(controllers = RestController.class)
 @Import(WebSecurityKonfiguration.class)
