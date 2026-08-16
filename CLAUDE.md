@@ -147,8 +147,14 @@ and speaks a different money unit: JSON uses integer **cents** (`AusgabeEntity.c
 ## Style
 
 Production code follows the Google Java Style Guide (2-space indent, 100-col) — required by the
-assignment; JavaDoc is not required. The IDE config enables google-java-format and Checkstyle's
-Google checks, but there is **no lint task in Gradle**, so formatting is not verified by `check`.
+assignment; JavaDoc is not required. Two tasks enforce this and both run as part of `check`:
+Spotless (`spotlessApply` reformats, `spotlessCheck` verifies) and Checkstyle. They divide the work
+— google-java-format owns layout, Checkstyle owns what a formatter cannot see, above all wildcard
+imports. The Checkstyle config is deliberately **not** `google_checks.xml`: that reports 325
+violations here, of which the test naming (`test_01`), the absent JavaDoc and the digit in package
+`propra2` are all project decisions. `splitter/config/checkstyle/checkstyle.xml` keeps only the
+rules that survive that, and `maxWarnings = 0` makes any violation fail the build.
+
 Identifiers and comments are German; keep new code in the same vocabulary:
 
 Gruppe = group · Person/Teilnehmer = member/participant · Ausgabe = expense · Ausleger/Gläubiger =
