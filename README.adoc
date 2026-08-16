@@ -2,66 +2,148 @@
 
 A *Minimal Viable Product (MVP)*, Splitter, is a simple tool that calculates the fair distribution of expenses among a group of people, ensuring that everyone pays their fair share based on the contributions they made during shared activities like trips or events.
 
-== USER GUIDE
+The interface is in German. This guide gives the German labels as they appear on screen and explains
+them in English.
 
-=== Prerequisites:
-A *JDK 25* and Docker. The Gradle wrapper (9.7.0) is included, so no separate Gradle installation is
-needed.
+== User Guide
 
-=== Step 1:
-Clone the application.
+=== Prerequisites
 
-=== Step 2:
-Before using the project, you need to generate your OAuth Client-Secret and Client-ID on the GitHub website.
+Docker, and nothing else. The application image is built from source inside Docker, so no JDK and no
+Gradle installation are needed.
 
-To do this, fill out the given form as follows:
+Everything except the documentation lives in the `splitter/` subdirectory. Run all commands from
+there.
+
+=== Step 1: Clone the repository
+
+=== Step 2: Register a GitHub OAuth app
+
+Signing in goes through GitHub, so the application needs its own OAuth app. Create one under
+*Settings > Developer settings > OAuth Apps > New OAuth App* and fill out the form as follows:
 
 * Your desired name for the project as the *Application name*.
 * Use *http://localhost:9000* as the *Homepage URL*, as our application runs on port 9000.
 * Optionally, provide a description.
-* Use *http://localhost:9000* as the *Callback URL*.
+* Use *http://localhost:9000* as the *Authorization callback URL*.
 
-You should now receive the Client-ID and the Client-Secret. Copy these as you will need them in the next step.
+You should now receive the Client-ID and the Client-Secret. Copy these as you will need them in the
+next step.
 
-=== Step 3:
-Enter the Client-Secret and Client-ID into the environment variables of the application.
+=== Step 3: Fill in the environment file
 
-=== Step 4:
-Enter the *POSTGRES_USER* and *POSTGRES_PASSWORD*, which can be found in the `docker-compose.yml` file, into the environment variables.
+Copy the template and enter your values:
 
-=== Step 5:
-To start the Docker container, first execute `docker compose up` in your Git Bash.
+[source,bash]
+----
+cd splitter
+cp .env.example .env
+----
 
-=== Step 6:
-To start the application, use the following command:
-`CLIENT_SECRET=SECRET CLIENT_ID=ID POSTGRES_USER=user POSTGRES_PASSWORD=password ./gradlew bootRun`
+`.env` holds five variables: the Postgres database name, user and password, which you pick yourself,
+plus the `CLIENT_ID` and `CLIENT_SECRET` from step 2. Git ignores the file. Never commit it.
 
-Replace `SECRET`, `ID`, `user`, and `password` with the values you set in the environment variables. Ensure that `user` and `password` match the values in the `docker-compose` file.
+=== Step 4: Start it
 
-The application should now be running.
+`docker compose` reads `.env` by itself and waits for the database to be healthy before it starts
+the application:
+
+[source,bash]
+----
+docker compose build
+docker compose up
+----
+
+The first command builds the application image from source and only has to be repeated after a code
+change. Flyway applies the schema on startup, so there is nothing to import by hand.
+
+The application then answers at *http://localhost:9000*. It is bound to the loopback interface, so
+it is not published to your network.
 
 == Guide to the Web Interface
 
-* On the homepage, you can add groups by entering the desired group name into the input field and clicking the *Add Group* button. Each group will have a hyperlink that directs you to the corresponding group information page.
+=== Signing in
 
-* At the top of the page, you can search for groups, either open or closed ones.
+Opening the site sends you to GitHub. Once you authorise the OAuth app you land on your group
+overview. Your GitHub login is your identity in the application, and group membership is matched on
+it, so members are added by GitHub name and not as free text.
 
-=== In the Group Information Page:
+The account menu at the top right shows who is signed in and holds *Abmelden* (sign out).
 
-* You can add members by entering their names into the input field at the top of the page. These names will then be listed individually below the input field.
+=== The overview page: "Deine Gruppen"
 
-* Below the member table, you'll find fields to input expenses. Fill out these fields as indicated by the labels.
+* The counter under the heading says how many of your groups are *offen* (open) and how many are
+*geschlossen* (closed).
 
-* When specifying participants, always separate names with a comma and a space:
-**Example:** Max, Lisa, Tim, Jan
+* To create a group, type a name into the input field and press *Anlegen*. Names are 5 to 30
+characters long. You become the first member and land in the new group right away.
 
-* After filling out the inputs and selecting the payer, you can click the *Add Expense* button, and your expense will be displayed below the input fields.
+* Every row links to a group and shows its name, the number of members, its status and *Dein
+Anteil*, your own net position in that group. A `+` means the others owe you, a `−` means you owe
+them, and `0,00 €` means the group is even.
 
-* Once all expenses have been added, click the *Calculate Transactions* button to compute the required transactions for balancing the expenses. If you want to add another expense, you can do so and click *Calculate Transactions* again to get an updated calculation.
+* *Dein Stand* below the list adds those positions up across all your groups.
 
-* If you wish to close the group, click the *Close Group* button. This will lock the group, making it no longer editable.
+* Once you have more than six groups, a search field and an *Alle / Offen / Geschlossen* filter
+appear above the list. Both filter in the browser. Umlauts can be typed either way, so `Munchen`
+finds `München` as well.
 
-* Below the *Close Group* button, there's a hyperlink to return to the homepage. The group you just closed will now appear under closed groups. You can access the group's information via its hyperlink, but no further changes can be made.
+=== Inside a group
+
+Members are on the left, the expense form and the receipts on the right, the settlement across the
+bottom.
+
+==== Members: "Mitglieder"
+
+Enter a GitHub name under *Mitglied hinzufügen* and press *Hinzufügen*. Members appear below as
+tokens with their GitHub avatar, and your own carries the mark *du*. Once a group has more than six
+members the list folds up and *+x weitere* expands it. A closed group always shows everyone.
+
+Members can be added only while the group has no expenses. The first recorded expense fixes the
+roster.
+
+==== Recording an expense: "Ausgabe erfassen"
+
+* *Aktivität* is what the money was spent on, for example `Pizza`.
+
+* *Ausleger* (who paid) and *Teilnehmer* (who took part) are filled by moving member tokens into the
+two zones below. Drag a token across, or activate it once to pick it up and activate the zone to put
+it down. The second way also works from the keyboard. *Ausleger* takes one person, *Teilnehmer*
+takes as many as you want, and the small × on a token removes it again.
+
+* *Betrag* is the amount, written as `12,50` or as `12.50`. As soon as an amount and one participant
+are set, the share per person appears under the *Teilnehmer* zone and updates as you type.
+
+* *Erfassen* records the expense. The payer does not have to be one of the participants. If they are
+not, they fronted the cost for the others.
+
+Without JavaScript the two zones are replaced by a dropdown for the payer and a text field for the
+participants, separated by a comma and a space, for example `MaxHub, GitLisa`.
+
+==== Receipts: "Kassenbons"
+
+Each recorded expense becomes a receipt with the activity, the date, who fronted the cost, the share
+per participant and the total. The six most recent ones stand on the page, and *+x weitere* opens a
+dialog with all of them. Escape, the × or a click next to the dialog closes it.
+
+==== Settlement: "Ausgleich"
+
+*Ausgleich berechnen* works out who pays whom. The result is drawn as a diagram of arrows between
+the members, and *Als Liste anzeigen* switches to the same information as a list of `A zahlt X € an
+B` lines.
+
+The result uses the smallest possible number of transfers, nobody pays and receives at the same
+time, and no two people transfer money in both directions. Record further expenses and press the
+button again for an updated result.
+
+If the expenses already balance, the section says so instead of listing transfers.
+
+==== Closing a group: "Gruppe schließen"
+
+*Gruppe schließen* locks the group. No further members, no further expenses, no recalculation.
+Receipts and settlement stay readable, including the dialog with all receipts.
+
+Closed groups keep showing up on the overview under the *Geschlossen* filter.
 
 == Authors
 
