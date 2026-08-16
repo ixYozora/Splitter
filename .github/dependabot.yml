@@ -47,8 +47,3 @@ updates:
       interval: "weekly"
     commit-message:
       prefix: "build"
-    ignore:
-      # The schema is verified against Postgres 15 by the acceptance job.
-      # Going higher is its own change with its own test run.
-      - dependency-name: "postgres"
-        update-types: ["version-update:semver-major"]

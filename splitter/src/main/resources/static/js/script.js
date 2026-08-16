@@ -84,9 +84,8 @@
     }
   }
 
-  // Der Auftritt gehoert zum ersten Aufbau. Sobald jemand filtert, faellt die
-  // Klasse weg, sonst liefe die Animation bei jedem Tastendruck erneut - beim
-  // Ein- und Ausblenden setzt display:none die Animation zurueck.
+  // Der Auftritt gehoert zum ersten Aufbau; ohne das Entfernen liefe die Animation bei jedem
+  // Tastendruck im Filter erneut.
   function auftrittBeenden() {
     ledger.classList.remove("ledger--intro");
   }

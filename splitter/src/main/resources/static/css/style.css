@@ -1,6 +1,5 @@
-/* Splitter - Kontobuch-Optik: neutrales Papier, tiefe Tinte, linierte Zeilen.
-   Ein Schriftsystem (IBM Plex Sans + Plex Mono), ein Akzent (Tintenblau).
-   Rot und Gruen bleiben fuer Betraege reserviert - auch Fehler benutzen sie nicht. */
+/* Splitter - Kontobuch-Optik: ein Schriftsystem, ein Akzent (Tintenblau).
+   Rot und Gruen bleiben Betraegen vorbehalten, auch Fehler benutzen sie nicht. */
 
 @font-face {
   font-family: "Plex Sans";
@@ -67,19 +66,13 @@
 
   /* Kräftiges ease-out; die eingebauten Kurven sind für Auftritte zu weich. */
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
-  /* Fuer kurze Wege. --ease-out ist so kopflastig, dass es bei sechs Pixeln
-     Strecke nach einem Sprung mit langem, unsichtbarem Nachlauf aussieht:
-     nach einem Drittel der Zeit sind schon vier Fuenftel erledigt. Diese Kurve
-     verteilt gleichmaessiger und laesst sich als Bewegung lesen. */
+  /* Fuer kurze Wege: --ease-out ist zu kopflastig und sieht auf sechs Pixeln
+     wie ein Sprung aus. */
   --ease-menu: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
-/* Spaltenpapier: der Tisch ist der Bogen, aus dem das Blatt stammt.
-   Das 32px-Modul teilt die Blattbreite (--measure 52rem = 832px) genau 26-mal,
-   und die Phase calc(50% + 16px) legt beide Blattkanten auf eine Linie - die
-   Spalten draussen setzen also das Modul des Blattes ohne Rest fort.
-   Nur senkrecht: ein Kontobogen ist senkrecht liniert, und ein senkrechtes
-   Muster ist scrollfest, kostet also weder Repaint noch eine eigene Ebene. */
+/* Spaltenpapier: das 32px-Modul teilt die Blattbreite (--measure, 832px) genau 26-mal,
+   die Phase calc(50% + 16px) legt beide Blattkanten auf eine Linie. */
 .page {
   margin: 0;
   background-color: var(--desk);
@@ -185,12 +178,8 @@
   position: relative;
 }
 
-/* Chrome ueberspringt die Stile eines geschlossenen <details> vollstaendig
-   (content-visibility: hidden auf ::details-content). Dann existiert beim
-   ersten Oeffnen kein Ausgangswert, von dem aus ueberblendet werden koennte,
-   und der Auftritt springt - genau einmal, danach laeuft er. Die Stile muessen
-   also berechnet bleiben. Unsichtbar und nicht bedienbar ist das Menue ohnehin
-   schon ueber visibility, dafuer ist content-visibility nicht noetig. */
+/* Chrome setzt content-visibility: hidden auf ::details-content, dann fehlt beim ersten
+   Oeffnen der Ausgangswert und der Auftritt springt. Sichtbarkeit macht hier visibility. */
 .account::details-content {
   content-visibility: visible;
 }
@@ -262,11 +251,8 @@
   stroke: var(--accent);
 }
 
-/* Der Knick vom Kreis zum abgesetzten Menü. Er erklärt, warum das Menü nicht
-   unter dem Auslöser hängt, und existiert deshalb nur dort, wo das Menü auch
-   wirklich abgesetzt ist - unterhalb von 82rem entfällt er mit der Versetzung.
-   Zwei gerade Stücke mit einer Ecke, nicht ein durchgehender Bogen; die Rundung
-   sitzt allein im Knick, damit der Winkel als Winkel lesbar bleibt. */
+/* Der Knick vom Kreis zum abgesetzten Menü; unterhalb von 82rem entfällt er mit der
+   Versetzung. Zwei gerade Stücke mit einer Ecke, kein durchgehender Bogen. */
 .account__connector {
   display: none;
   position: absolute;
@@ -290,11 +276,8 @@
   transition: visibility 0s;
 }
 
-/* Die Linie zeichnet sich entlang ihres eigenen Verlaufs. Vorher wischte ein
-   clip-path den ganzen Kasten von oben herunter - das folgt dem Knick nicht,
-   sondern schiebt eine waagerechte Kante darueber. pathLength normiert die
-   Laenge auf 100, damit eine spaetere Aenderung der Geometrie diese Werte
-   nicht mitzieht. */
+/* Die Linie zeichnet sich entlang ihres eigenen Verlaufs; pathLength normiert auf 100,
+   damit eine geaenderte Geometrie diese Werte nicht mitzieht. */
 .account__connector path {
   stroke-dasharray: 100;
   stroke-dashoffset: 100;
@@ -323,10 +306,8 @@
   color: var(--accent);
 }
 
-/* display beugt der UA-Regel vor, die Inhalte eines geschlossenen <details>
-   ausblendet - sonst laesst sich der Auftritt nicht bewegen. Sichtbarkeit und
-   Fokusfaehigkeit uebernimmt visibility, damit das Menue geschlossen weder
-   anklickbar noch im Tab-Fluss ist. */
+/* display beugt der UA-Regel fuer geschlossene <details> vor; Sichtbarkeit und
+   Fokusfaehigkeit uebernimmt visibility. */
 .account__menu {
   position: absolute;
   top: calc(100% + var(--step));
@@ -359,13 +340,8 @@
               visibility 0s;
 }
 
-/* Ab 82rem ist rechts neben dem Blatt Platz: das Menü rückt heraus, damit es
-   dem Blatt nicht mehr auf der Nase sitzt, und hängt am Bogen.
-   Der seitliche Versatz ist abgeleitet - zwischen Auslöserkante und Blattkante
-   liegt genau --gutter, plus zwei Schritte Luft.
-   Der Abstand nach unten (28px) muss dort enden, wo der Bogen endet:
-   --control-h + 28px = Bogenoberkante (--control-h / 2 - 20px) + 70px Höhe.
-   Wird eines der beiden geändert, muss das andere mit. */
+/* Ab 82rem rückt das Menü neben das Blatt und hängt am Bogen. Der Abstand nach unten
+   muss dort enden, wo der Bogen endet - wird eines der beiden geändert, muss das andere mit. */
 @media (min-width: 82rem) {
   .account__connector {
     display: block;
@@ -378,10 +354,8 @@
     transform-origin: top left;
   }
 
-  /* Nacheinander statt gleichzeitig: erst laeuft die Linie hinaus, dann kommt
-     das Menue an ihrem Ende an. Vorher liefen beide im Gleichschritt und das
-     Menue stand schon da, bevor die Linie es erreicht hatte. Die Verzoegerung
-     gilt nur hier - schmaler gibt es keine Linie, auf die zu warten waere. */
+  /* Nacheinander: erst laeuft die Linie hinaus, dann kommt das Menue an ihrem Ende an.
+     Schmaler gibt es keine Linie, auf die zu warten waere. */
   .account[open] .account__menu {
     transition: opacity 180ms var(--ease-menu) 80ms,
                 transform 180ms var(--ease-menu) 80ms,
@@ -853,9 +827,8 @@
 }
 
 
-/* Der eine gestaltete Moment: die Linien werden gezogen, waehrend die Tinte
-   erscheint. Nur beim ersten Aufbau - .ledger--intro wird danach entfernt,
-   sonst liefe der Auftritt bei jedem Tastendruck im Suchfeld erneut. */
+/* Die Linien werden gezogen, waehrend die Tinte erscheint. Nur beim ersten Aufbau,
+   .ledger--intro wird danach entfernt. */
 @media (prefers-reduced-motion: no-preference) {
   .ledger--intro .ledger__row::after {
     animation: ruleIn 280ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
@@ -990,9 +963,8 @@
 }
 
 /* ================================================================
-   Gruppenseite
-   Zwei Spalten, weil Mitgliederliste und Ablagen gleichzeitig
-   sichtbar sein muessen - sonst laesst sich niemand hinueberziehen.
+   Gruppenseite - zwei Spalten, damit Mitgliederliste und Ablagen
+   gleichzeitig sichtbar sind.
    ================================================================ */
 
 .page-gruppe {
@@ -1062,8 +1034,7 @@
 }
 
 /* ---------- Blaetter dieser Seite ----------
-   Bewusst verschieden schwer: gleich grosse Karten waeren genau das
-   Karten-Raster, das der craft floor verbietet. */
+   Bewusst verschieden schwer, kein gleichfoermiges Karten-Raster. */
 
 .page-gruppe .sheet {
   width: auto;
@@ -1146,10 +1117,8 @@
   gap: 2px;
 }
 
-/* Ausrollen und wieder einrollen. Hier wird bewusst die Hoehe bewegt und nicht
-   nur transform: die Liste soll alles unter sich mitschieben, und genau das
-   kann transform nicht. Das Skript setzt die Pixelwerte, damit die Kurve ueber
-   die echte Strecke laeuft statt ueber einen geratenen max-height-Wert. */
+/* Bewegt wird die Hoehe, nicht transform: die Liste soll alles unter sich mitschieben.
+   Die Pixelwerte setzt das Skript, damit die Kurve die echte Strecke laeuft. */
 .roster.is-gefaltet {
   overflow: hidden;
 }
@@ -1332,9 +1301,8 @@
 .ablage--einer { min-height: 6rem; }
 .ablage--viele { min-height: 6rem; }
 
-/* Etwas liegt in der Hand: den Ablegeplatz zeigt der Streifen darin, nicht
-   auch noch der Rahmen aussen herum - zwei gestrichelte Rechtecke ineinander
-   sind nur Laerm. */
+/* Etwas liegt in der Hand: den Ablegeplatz zeigt der Streifen darin, nicht zusaetzlich
+   der Rahmen aussen herum. */
 
 /* Der Zeiger steht genau ueber dieser hier. */
 .ablage.is-ziel {
@@ -1475,9 +1443,8 @@
 
 /* ---------- Kassenbons ---------- */
 
-/* Spalten statt Raster: ein Bon ist so hoch wie seine Zeilen, und ein kurzer
-   rutscht unter einen langen, statt neben ihm Luft stehen zu lassen. Ein Raster
-   zwingt jede Reihe auf die Hoehe ihres laengsten Bons. */
+/* Spalten statt Raster: ein kurzer Bon rutscht unter einen langen, statt neben ihm
+   Luft stehen zu lassen. */
 .bons {
   columns: 11rem;
   column-gap: calc(var(--step) * 2);
@@ -1489,9 +1456,8 @@
   margin-bottom: calc(var(--step) * 2);
 }
 
-/* Eingelegt, nicht aufgelegt: ein Bon liegt IM Blatt. Eine erhoehte Karte in
-   einer erhoehten Karte waere genau die verschachtelte Karte, die der craft
-   floor ausschliesst. */
+/* Eingelegt, nicht aufgelegt: ein Bon liegt im Blatt, keine erhoehte Karte in einer
+   erhoehten Karte. */
 .bon {
   padding: var(--step) 12px 12px;
   background: var(--surface);
@@ -1583,10 +1549,8 @@
 }
 
 /* ---------- Ausgleich als Graph ----------
-   Die Marken sind echte HTML-Knoten ueber einer SVG-Ebene: so behalten Bild und
-   Name die normale Schrift- und Fehlerbehandlung, und das SVG traegt nur die
-   Kanten. Farbe steht nur fuer eine Sache, naemlich fuer die eigenen Kanten -
-   Betraege bleiben schwarz, wie ueberall sonst auf der Seite. */
+   Die Marken sind HTML-Knoten ueber einer SVG-Ebene, das SVG traegt nur die Kanten.
+   Farbe steht hier allein fuer die eigenen Kanten. */
 
 .graf {
   position: relative;
@@ -1779,9 +1743,8 @@
 .bonmappe__zu:hover { border-color: var(--accent); background: var(--accent-wash); }
 .bonmappe__zu:hover svg { stroke: var(--accent); }
 
-/* Dieselbe Packung wie im Blatt. Vorher streckte das Raster jeden Bon auf die
-   Hoehe des laengsten in seiner Reihe - im Dialog mit vier Bons nebeneinander
-   war das fast nur Leerraum. */
+/* Dieselbe Packung wie im Blatt: ein Raster streckte jeden Bon auf die Hoehe des
+   laengsten in seiner Reihe. */
 .bonmappe__inhalt {
   columns: 13rem;
   column-gap: calc(var(--step) * 2);
