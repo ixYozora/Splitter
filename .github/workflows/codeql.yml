@@ -1,0 +1,78 @@
+name: codeql
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  # Neue Regeln erscheinen, ohne dass sich der Code aendert. Ohne festen
+  # Termin liefe die Analyse in ruhigen Wochen gar nicht.
+  schedule:
+    - cron: '27 4 * * 1'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    permissions:
+      # Ohne dieses Recht kann die Analyse ihre Funde nicht melden.
+      security-events: write
+      contents: read
+      # Beide nur noetig, falls das Repository einmal privat wird - dann
+      # scheitert die Analyse sonst am Laden der Regelpakete.
+      packages: read
+      actions: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Java braucht den echten Compiler-Durchlauf: build-mode none liest
+          # nur den Quelltext und loest die Typen aus den Abhaengigkeiten nicht
+          # auf. JavaScript wird ohnehin nicht uebersetzt.
+          - language: java-kotlin
+            build-mode: manual
+          - language: javascript-typescript
+            build-mode: none
+    steps:
+      - name: checkout repo
+        uses: actions/checkout@v7.0.1
+
+      - name: validate gradle wrapper
+        if: matrix.build-mode == 'manual'
+        uses: gradle/actions/wrapper-validation@v6.3.0
+
+      - name: install latest jdk
+        if: matrix.build-mode == 'manual'
+        uses: actions/setup-java@v5.7.0
+        with:
+          java-version: 25
+          cache: 'gradle'
+          distribution: 'temurin'
+
+      # Bewusst nur die Hauptversion statt einer festen Nummer, anders als bei
+      # allen anderen Actions hier: ueber diesen Tag kommen auch neue Regeln
+      # und Analyse-Staende, ein fester Pin friert sie ein.
+      - name: initialise codeql
+        uses: github/codeql-action/init@v4
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+
+      # Muss nach der Initialisierung stehen: erst danach beobachtet CodeQL den
+      # Compiler. compileJava reicht, die Tests analysiert es nicht mit.
+      - name: compile
+        if: matrix.build-mode == 'manual'
+        working-directory: ./splitter
+        run: |
+          chmod +x gradlew
+          ./gradlew compileJava
+
+      - name: analyse
+        uses: github/codeql-action/analyze@v4
+        with:
+          category: /language:${{ matrix.language }}

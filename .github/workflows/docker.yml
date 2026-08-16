@@ -1,0 +1,91 @@
+name: docker image
+
+# Nur wenn sich am Bild oder an dem, was hineinwandert, etwas aendert - eine
+# Aenderung an README.adoc muss keinen Container bauen.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'splitter/**'
+      - '.github/workflows/docker.yml'
+  pull_request:
+    paths:
+      - 'splitter/**'
+      - '.github/workflows/docker.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # build_test.yml startet das Jar direkt auf dem Runner. Damit bleibt alles
+  # ungeprueft, was erst das Bild ausmacht: die beiden Stufen, das JRE-Image
+  # ohne JDK, der unprivilegierte Benutzer und der ENTRYPOINT. Hier wird das
+  # Bild deshalb gebaut und danach wirklich gestartet.
+  image:
+    runs-on: ubuntu-latest
+    services:
+      database:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_DB: splitter
+          POSTGRES_USER: splitter
+          POSTGRES_PASSWORD: splitter
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U splitter -d splitter"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - name: checkout repo
+        uses: actions/checkout@v7.0.1
+
+      - name: set up buildx
+        uses: docker/setup-buildx-action@v4.2.0
+
+      # load statt push: das Bild wird nirgends veroeffentlicht, muss aber
+      # lokal vorliegen, damit der naechste Schritt es starten kann. Der
+      # Cache spart den Gradle-Abhaengigkeitsbaum der ersten Stufe.
+      - name: build the image
+        uses: docker/build-push-action@v7.3.0
+        with:
+          context: ./splitter
+          load: true
+          tags: splitter:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # --network host, damit der Container das Postgres des Jobs unter
+      # localhost erreicht und Port 9000 ohne Mapping offen liegt.
+      - name: start the container
+        run: |
+          docker run -d --name splitter --network host \
+            -e POSTGRES_USER=splitter \
+            -e POSTGRES_PASSWORD=splitter \
+            -e POSTGRES_DB=splitter \
+            -e CLIENT_ID=dummy \
+            -e CLIENT_SECRET=dummy \
+            splitter:ci
+
+      # Mehr Luft als beim blanken Jar: lokal brauchte der Container 18s statt 8s.
+      - name: wait for the container
+        run: |
+          for i in $(seq 1 90); do
+            if curl -sf -o /dev/null http://localhost:9000/api/user/probe/gruppen; then
+              echo "bereit nach ${i}s"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Container war nach 90s nicht erreichbar"
+          docker logs splitter
+          exit 1
+
+      - name: stop the container
+        if: always()
+        run: docker rm -f splitter || true
