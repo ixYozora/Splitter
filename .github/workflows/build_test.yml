@@ -45,3 +45,94 @@ jobs:
         with:
           name: test-reports
           path: splitter/build/reports/tests/
+
+  # Der Test-Job oben laeuft auf H2 mit abgeschaltetem Flyway. Damit wird
+  # V1__init_tables.sql nie ausgefuehrt, nie gegen die H2-Fassung in
+  # tables.sql gehalten, und flyway-database-postgresql nie geladen - alles
+  # drei faellt sonst erst beim Start der echten Anwendung auf. Dieser Job
+  # startet sie deshalb gegen ein echtes Postgres und laesst danach den
+  # Abnahmetest der Veranstaltung dagegen laufen.
+  akzeptanz:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./splitter
+    services:
+      database:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_DB: splitter
+          POSTGRES_USER: splitter
+          POSTGRES_PASSWORD: splitter
+        ports:
+          - 5432:5432
+        # Ohne healthcheck startet der Job, sobald der Container laeuft, und
+        # nicht erst, wenn Postgres Verbindungen annimmt.
+        options: >-
+          --health-cmd "pg_isready -U splitter -d splitter"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - name: checkout repo
+        uses: actions/checkout@v7.0.1
+      - name: install latest jdk
+        uses: actions/setup-java@v5.7.0
+        with:
+          java-version: 25
+          cache: 'gradle'
+          distribution: 'temurin'
+      - name: make gradlew executable
+        run: chmod +x gradlew
+
+      # bootJar statt bootRun: das Startskript braucht keinen Gradle-Daemon im
+      # Hintergrund, und dass sich ueberhaupt ein lauffaehiges Jar bauen laesst,
+      # ist selbst schon eine Aussage.
+      - name: build the jar
+        run: ./gradlew bootJar
+
+      # Die OAuth-Werte duerfen Platzhalter sein: die Anwendung registriert den
+      # Client beim Start, spricht aber nie mit GitHub, und /api/** liegt
+      # ohnehin ausserhalb der Sicherheitskette.
+      - name: start the app
+        env:
+          POSTGRES_USER: splitter
+          POSTGRES_PASSWORD: splitter
+          POSTGRES_DB: splitter
+          CLIENT_ID: dummy
+          CLIENT_SECRET: dummy
+        run: |
+          java -jar build/libs/*.jar > app.log 2>&1 &
+          echo $! > app.pid
+
+      # Kein Actuator im Projekt, also wird ein echter Endpunkt abgefragt.
+      # Zuletzt war die Anwendung nach acht Sekunden bereit; 60 laesst Luft
+      # fuer einen langsamen Runner, ohne bei einem Startfehler zu haengen.
+      - name: wait for the app
+        run: |
+          for i in $(seq 1 60); do
+            if curl -sf -o /dev/null http://localhost:9000/api/user/probe/gruppen; then
+              echo "bereit nach ${i}s"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Anwendung war nach 60s nicht erreichbar"
+          cat app.log
+          exit 1
+
+      # Beendet sich mit 1, wenn ein Testfall fehlschlaegt, und mit 0, wenn alle
+      # durchlaufen - der Schritt ist also aussagekraeftig und nicht Zierde.
+      - name: run the acceptance checker
+        run: java -jar run_tests.jar
+
+      - name: stop the app
+        if: always()
+        run: kill "$(cat app.pid)" || true
+
+      - name: upload the app log
+        if: failure()
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: app-log
+          path: splitter/app.log
