@@ -662,4 +662,48 @@ public class DomainTests {
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("Fremder");
   }
+
+  @Test
+  @DisplayName("Eine Ausgabe mit unbekanntem Teilnehmer wird nicht erfasst")
+  void test_37() {
+    UUID id = UUID.randomUUID();
+    Gruppe gruppe = Gruppe.erstelleRestGruppe(id, "Reisegruppe", List.of("MaxHub", "GitLisa"));
+
+    gruppe.addAusgabeToPerson(
+        "Pizza", "GitLisa", List.of("MaxHub", "Fremder"), Money.of(10, "EUR"));
+
+    assertThat(gruppe.getAusgabenDetails()).isEmpty();
+    assertThat(gruppe.isAusgabeGetaetigt()).isFalse();
+  }
+
+  @Test
+  @DisplayName("Ein doppelt genannter Teilnehmer laesst die Salden nicht aufgehen")
+  void test_38() {
+    UUID id = UUID.randomUUID();
+    Gruppe gruppe = Gruppe.erstelleRestGruppe(id, "Reisegruppe", List.of("MaxHub", "GitLisa"));
+
+    gruppe.addAusgabeToPerson("Pizza", "GitLisa", List.of("MaxHub", "MaxHub"), Money.of(10, "EUR"));
+
+    assertThat(gruppe.getAusgabenDetails()).isEmpty();
+    Money summe =
+        gruppe.getPersonenNamen().stream()
+            .map(gruppe::getNettoBetrag)
+            .reduce(Money.of(0, "EUR"), Money::add);
+    assertThat(summe).isEqualTo(Money.of(0, "EUR"));
+  }
+
+  @Test
+  @DisplayName("Alle genannten Teilnehmer tragen den Anteil, den sie genannt bekommen")
+  void test_39() {
+    UUID id = UUID.randomUUID();
+    Gruppe gruppe =
+        Gruppe.erstelleRestGruppe(id, "Reisegruppe", List.of("MaxHub", "GitLisa", "ErixHub"));
+
+    gruppe.addAusgabeToPerson(
+        "Pizza", "MaxHub", List.of("GitLisa", "ErixHub"), Money.of(10, "EUR"));
+
+    assertThat(gruppe.getNettoBetrag("MaxHub")).isEqualTo(Money.of(10, "EUR"));
+    assertThat(gruppe.getNettoBetrag("GitLisa")).isEqualTo(Money.of(-5, "EUR"));
+    assertThat(gruppe.getNettoBetrag("ErixHub")).isEqualTo(Money.of(-5, "EUR"));
+  }
 }

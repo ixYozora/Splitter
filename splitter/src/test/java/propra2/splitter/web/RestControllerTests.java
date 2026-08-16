@@ -373,4 +373,28 @@ public class RestControllerTests {
 
     verify(service, never()).addRestAusgabenToGruppe(any(), any());
   }
+
+  @Test
+  @DisplayName("Eine Auslage auf unbekannte oder doppelte Schuldner wird abgelehnt")
+  void test_19() throws Exception {
+    UUID id = UUID.randomUUID();
+    GruppeInformationEntity entity =
+        new GruppeInformationEntity(
+            id, "Reisegruppe", List.of("MaxHub", "GitLisa"), false, List.of());
+    when(service.getGruppeInformationEntity(id)).thenReturn(entity);
+
+    for (List<String> schuldner :
+        List.of(List.of("MaxHub", "Fremder"), List.of("MaxHub", "MaxHub"))) {
+      mvc.perform(
+              MockMvcRequestBuilders.post("/api/gruppen/{id}/auslagen", id)
+                  .contentType(MediaType.APPLICATION_JSON)
+                  .accept(MediaType.APPLICATION_JSON)
+                  .content(
+                      mapper.writeValueAsString(
+                          new AusgabeEntity("Pizza", "GitLisa", schuldner, 1000))))
+          .andExpect(status().isBadRequest());
+    }
+
+    verify(service, never()).addRestAusgabenToGruppe(any(), any());
+  }
 }
