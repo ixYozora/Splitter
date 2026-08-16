@@ -2,9 +2,8 @@ package propra2.splitter.domain;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import org.javamoney.moneta.Money;
-
 import java.util.Objects;
+import org.javamoney.moneta.Money;
 import propra2.splitter.stereotypes.Entity;
 
 @Entity
@@ -23,8 +22,13 @@ class Transaktion {
     if (nettoBetrag.isZero()) {
       transaktionsNachricht1 = "Es sind keine Ausgleichszahlungen notwendig.";
     } else {
-      transaktionsNachricht1 = person1.getName() + " muss " + ausschreiben(nettoBetrag) + " an "
-          + person2.getName() + " zahlen";
+      transaktionsNachricht1 =
+          person1.getName()
+              + " muss "
+              + ausschreiben(nettoBetrag)
+              + " an "
+              + person2.getName()
+              + " zahlen";
     }
     this.transaktionsNachricht = transaktionsNachricht1;
   }
@@ -38,7 +42,8 @@ class Transaktion {
   // wird "EUR 2.5". Die Nachricht geht unveraendert an die REST-Schnittstelle,
   // also darf sie nicht davon abhaengen, welche Version gerade eingebunden ist.
   private static String ausschreiben(Money betrag) {
-    return betrag.getCurrency().getCurrencyCode() + " "
+    return betrag.getCurrency().getCurrencyCode()
+        + " "
         + betrag.getNumber().numberValue(BigDecimal.class).setScale(2, RoundingMode.HALF_UP);
   }
 
@@ -51,8 +56,8 @@ class Transaktion {
       return false;
     }
     Transaktion that = (Transaktion) o;
-    return Objects.equals(getPerson1(), that.getPerson1()) && Objects.equals(getPerson2(),
-        that.getPerson2());
+    return Objects.equals(getPerson1(), that.getPerson1())
+        && Objects.equals(getPerson2(), that.getPerson2());
   }
 
   @Override

@@ -1,11 +1,11 @@
 package propra2.splitter.service;
 
-import org.javamoney.moneta.Money;
-import org.springframework.stereotype.Service;
-import propra2.splitter.domain.Gruppe;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import org.javamoney.moneta.Money;
+import org.springframework.stereotype.Service;
+import propra2.splitter.domain.Gruppe;
 
 @Service
 public class RestGruppenService {
@@ -21,7 +21,8 @@ public class RestGruppenService {
   }
 
   public UUID addRestGruppe(GruppeEntity gruppe) {
-    return repository.save(Gruppe.erstelleRestGruppe(null, gruppe.getName(), gruppe.getPersonen()))
+    return repository
+        .save(Gruppe.erstelleRestGruppe(null, gruppe.getName(), gruppe.getPersonen()))
         .getId();
   }
 
@@ -31,8 +32,7 @@ public class RestGruppenService {
   }
 
   private GruppeEntity toGruppeEntity(Gruppe gruppe) {
-    return new GruppeEntity(gruppe.getId(), gruppe.getGruppenName(),
-        gruppe.getPersonenNamen());
+    return new GruppeEntity(gruppe.getId(), gruppe.getGruppenName(), gruppe.getPersonenNamen());
   }
 
   public GruppeInformationEntity getGruppeInformationEntity(UUID id) {
@@ -44,12 +44,20 @@ public class RestGruppenService {
   }
 
   public GruppeInformationEntity toGruppeInformationsEntity(Gruppe gruppe) {
-    return new GruppeInformationEntity(gruppe.getId(), gruppe.getGruppenName(),
+    return new GruppeInformationEntity(
+        gruppe.getId(),
+        gruppe.getGruppenName(),
         gruppe.getPersonenNamen(),
-        gruppe.isGeschlossen(), gruppe.getAusgabenDetails().stream().
-        map(ausgabe -> new AusgabeEntity(ausgabe.aktivitaet(), ausgabe.ausleger(),
-            ausgabe.personen(), ausgabe.kosten().getNumber().intValue() * 100))
-        .toList());
+        gruppe.isGeschlossen(),
+        gruppe.getAusgabenDetails().stream()
+            .map(
+                ausgabe ->
+                    new AusgabeEntity(
+                        ausgabe.aktivitaet(),
+                        ausgabe.ausleger(),
+                        ausgabe.personen(),
+                        ausgabe.kosten().getNumber().intValue() * 100))
+            .toList());
   }
 
   public String setRestGruppeGeschlossen(UUID id) {
@@ -61,8 +69,11 @@ public class RestGruppenService {
 
   public void addRestAusgabenToGruppe(UUID id, AusgabeEntity ausgabenEntity) {
     Gruppe gruppe = getSingleGruppe(id);
-    gruppe.addAusgabeToPerson(ausgabenEntity.grund(), ausgabenEntity.glaeubiger(),
-        ausgabenEntity.schuldner(), Money.of(ausgabenEntity.cent() / 100, "EUR"));
+    gruppe.addAusgabeToPerson(
+        ausgabenEntity.grund(),
+        ausgabenEntity.glaeubiger(),
+        ausgabenEntity.schuldner(),
+        Money.of(ausgabenEntity.cent() / 100, "EUR"));
     repository.save(gruppe);
   }
 
@@ -70,18 +81,23 @@ public class RestGruppenService {
     Gruppe gruppe = getSingleGruppe(id);
     gruppe.berechneTransaktionen();
     return gruppe.getTransaktionDetails().stream()
-        .map(transaktion -> new TransaktionEntity
-            (transaktion.person1(), transaktion.person2(),
-                transaktion.betrag().getNumberStripped().intValue() * 100)).toList();
+        .map(
+            transaktion ->
+                new TransaktionEntity(
+                    transaktion.person1(),
+                    transaktion.person2(),
+                    transaktion.betrag().getNumberStripped().intValue() * 100))
+        .toList();
   }
 
   public List<GruppeEntity> personRestMatch(String login) {
     List<GruppeEntity> currentDetails = getRestGruppen();
 
     return currentDetails.stream()
-        .filter(groupDetails -> groupDetails.getPersonen().stream()
-            .anyMatch(Person -> Objects.equals(Person, login))).toList();
+        .filter(
+            groupDetails ->
+                groupDetails.getPersonen().stream()
+                    .anyMatch(Person -> Objects.equals(Person, login)))
+        .toList();
   }
-
-
 }

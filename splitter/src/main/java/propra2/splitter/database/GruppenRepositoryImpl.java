@@ -3,7 +3,6 @@ package propra2.splitter.database;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-
 import org.javamoney.moneta.Money;
 import org.springframework.stereotype.Repository;
 import propra2.splitter.domain.Gruppe;
@@ -17,7 +16,6 @@ public class GruppenRepositoryImpl implements GruppenRepository {
   public GruppenRepositoryImpl(SpringDataGruppeRepository repository) {
     this.repository = repository;
   }
-
 
   @Override
   public List<Gruppe> findAll() {
@@ -37,42 +35,63 @@ public class GruppenRepositoryImpl implements GruppenRepository {
     return toGruppe(saved);
   }
 
-
   Gruppe toGruppe(GruppeDTO dto) {
-    Gruppe gruppe = new Gruppe(dto.id(), dto.gruppenName(), dto.geschlossen(),
-        dto.ausgabeGetaetigt());
+    Gruppe gruppe =
+        new Gruppe(dto.id(), dto.gruppenName(), dto.geschlossen(), dto.ausgabeGetaetigt());
     dto.personen().forEach(p -> gruppe.addPersonAlways(p.name()));
-    dto.ausgaben().forEach(a -> gruppe.addAusgabe(a.aktivitaet().name(), a.ausleger().name(),
-        a.personen().stream().map(TeilnehmerDTO::name).toList(), Money.of(a.kosten(), "EUR"),
-        a.erfasstAm()));
-    dto.transaktionen().forEach(
-        t -> gruppe.addTransaktion(t.zahler().name(), t.zahlungsempfaenger().name(),
-            Money.of(t.nettoBetrag(), "EUR")));
+    dto.ausgaben()
+        .forEach(
+            a ->
+                gruppe.addAusgabe(
+                    a.aktivitaet().name(),
+                    a.ausleger().name(),
+                    a.personen().stream().map(TeilnehmerDTO::name).toList(),
+                    Money.of(a.kosten(), "EUR"),
+                    a.erfasstAm()));
+    dto.transaktionen()
+        .forEach(
+            t ->
+                gruppe.addTransaktion(
+                    t.zahler().name(),
+                    t.zahlungsempfaenger().name(),
+                    Money.of(t.nettoBetrag(), "EUR")));
     return gruppe;
   }
 
   GruppeDTO fromGruppe(Gruppe gruppe) {
-    List<PersonDTO> personen = gruppe.getPersonenNamen()
-        .stream()
-        .map(PersonDTO::new).toList();
+    List<PersonDTO> personen = gruppe.getPersonenNamen().stream().map(PersonDTO::new).toList();
 
-    List<AusgabeDTO> gruppenAusgaben = gruppe.getAusgabenDetails()
-        .stream()
-        .map(a -> new AusgabeDTO(null, new AktivitaetDTO(a.aktivitaet()),
-            new AuslegerDTO(a.ausleger()), a.personen().stream().map(
-            TeilnehmerDTO::new).toList(), a.kosten().getNumberStripped().doubleValue(),
-            a.erfasstAm())).toList();
+    List<AusgabeDTO> gruppenAusgaben =
+        gruppe.getAusgabenDetails().stream()
+            .map(
+                a ->
+                    new AusgabeDTO(
+                        null,
+                        new AktivitaetDTO(a.aktivitaet()),
+                        new AuslegerDTO(a.ausleger()),
+                        a.personen().stream().map(TeilnehmerDTO::new).toList(),
+                        a.kosten().getNumberStripped().doubleValue(),
+                        a.erfasstAm()))
+            .toList();
 
-    List<TransaktionDTO> transaktionen = gruppe.getTransaktionDetails()
-        .stream()
-        .map(t -> new TransaktionDTO(null, new ZahlerDTO(t.person1()),
-            new ZahlungsempfaengerDTO(t.person2()), t.betrag().getNumberStripped().doubleValue()))
-        .toList();
+    List<TransaktionDTO> transaktionen =
+        gruppe.getTransaktionDetails().stream()
+            .map(
+                t ->
+                    new TransaktionDTO(
+                        null,
+                        new ZahlerDTO(t.person1()),
+                        new ZahlungsempfaengerDTO(t.person2()),
+                        t.betrag().getNumberStripped().doubleValue()))
+            .toList();
 
-    return new GruppeDTO(gruppe.getId(), gruppe.getGruppenName(), personen, gruppenAusgaben,
-        transaktionen, gruppe.isGeschlossen(), gruppe.isAusgabeGetaetigt());
-
+    return new GruppeDTO(
+        gruppe.getId(),
+        gruppe.getGruppenName(),
+        personen,
+        gruppenAusgaben,
+        transaktionen,
+        gruppe.isGeschlossen(),
+        gruppe.isAusgabeGetaetigt());
   }
-
-
 }

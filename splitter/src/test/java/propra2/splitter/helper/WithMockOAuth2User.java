@@ -13,13 +13,11 @@ public @interface WithMockOAuth2User {
 
   int id() default 666666;
 
-
   String login() default "username";
 
   String[] roles() default {"USER"};
 
   String[] authorities() default {};
-
 
   String clientRegistrationId() default "github";
 }

@@ -1,6 +1,18 @@
 package propra2.splitter.web;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import java.util.List;
+import java.util.UUID;
 import org.javamoney.moneta.Money;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -15,45 +27,30 @@ import propra2.splitter.domain.Gruppe;
 import propra2.splitter.helper.WithMockOAuth2User;
 import propra2.splitter.service.GruppenService;
 
-import java.util.List;
-import java.util.UUID;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.Matchers.containsString;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-
 @WebMvcTest(controllers = WebController.class)
 @Import(WebSecurityKonfiguration.class)
 public class SingleGruppeAnzeigeTest {
 
-  @Autowired
-  MockMvc mvc;
+  @Autowired MockMvc mvc;
 
-  @MockitoBean
-  GruppenService service;
+  @MockitoBean GruppenService service;
 
   @Test
   @WithMockOAuth2User(login = "MaxHub")
   @DisplayName("Die interne Gruppenseite ist erreichbar")
   void test_01() throws Exception {
     UUID id = UUID.randomUUID();
-    when(service.getSingleGruppe(id)).thenReturn(Gruppe.erstelleGruppe(id, "MaxHub", "Reisegruppe"));
+    when(service.getSingleGruppe(id))
+        .thenReturn(Gruppe.erstelleGruppe(id, "MaxHub", "Reisegruppe"));
     String error = "invalider GitHub Name";
 
-    mvc.perform(get("/gruppe")
-            .param("id", String.valueOf(id))
-            .param("loginForm", "MaxHub")
-            .param("error", error))
+    mvc.perform(
+            get("/gruppe")
+                .param("id", String.valueOf(id))
+                .param("loginForm", "MaxHub")
+                .param("error", error))
         .andExpect(status().isOk())
         .andExpect(view().name("gruppe"));
-
   }
 
   @Test
@@ -67,10 +64,11 @@ public class SingleGruppeAnzeigeTest {
 
     when(service.getSingleGruppe(gruppe.getId())).thenReturn(gruppe);
 
-    mvc.perform(get("/gruppe")
-            .param("id", gruppe.getId().toString())
-            .param("loginForm", "MaxHub")
-            .param("error", error))
+    mvc.perform(
+            get("/gruppe")
+                .param("id", gruppe.getId().toString())
+                .param("loginForm", "MaxHub")
+                .param("error", error))
         .andExpect(model().attribute("gruppe", gruppe))
         .andReturn();
   }
@@ -85,13 +83,13 @@ public class SingleGruppeAnzeigeTest {
     String error = "invalider GitHub Name";
     when(service.getSingleGruppe(gruppe.getId())).thenReturn(gruppe);
 
-    mvc.perform(get("/gruppe")
-            .param("id", gruppe.getId().toString())
-            .param("loginForm", "MaxHub")
-            .param("error", error))
+    mvc.perform(
+            get("/gruppe")
+                .param("id", gruppe.getId().toString())
+                .param("loginForm", "MaxHub")
+                .param("error", error))
         .andExpect(content().string(containsString("MaxHub")))
         .andExpect(content().string(containsString("GitLisa")));
-
   }
 
   @Test
@@ -105,17 +103,17 @@ public class SingleGruppeAnzeigeTest {
     String error = "invalider GitHub Name";
     when(service.getSingleGruppe(gruppe.getId())).thenReturn(gruppe);
 
-    mvc.perform(get("/gruppe")
-            .param("id", gruppe.getId().toString())
-            .param("loginForm", "MaxHub")
-            .param("error", error))
+    mvc.perform(
+            get("/gruppe")
+                .param("id", gruppe.getId().toString())
+                .param("loginForm", "MaxHub")
+                .param("error", error))
         .andExpect(content().string(containsString("pizza")))
         .andExpect(content().string(containsString("MaxHub")))
         // Teilnehmer stehen jetzt als eigene Zeilen im Kassenbon, nicht mehr als
         // rohes List.toString() der Form "[GitLisa]".
         .andExpect(content().string(containsString("GitLisa")))
         .andExpect(content().string(containsString("400,00 €")));
-
   }
 
   @Test
@@ -130,10 +128,11 @@ public class SingleGruppeAnzeigeTest {
     String error = "invalider GitHub Name";
     when(service.getSingleGruppe(gruppe.getId())).thenReturn(gruppe);
 
-    mvc.perform(get("/gruppe")
-            .param("id", gruppe.getId().toString())
-            .param("loginForm", "MaxHub")
-            .param("error", error))
+    mvc.perform(
+            get("/gruppe")
+                .param("id", gruppe.getId().toString())
+                .param("loginForm", "MaxHub")
+                .param("error", error))
         // Die Seite schreibt den Ausgleich in deutscher Schreibweise aus den
         // Transaktionsdaten. getTransaktionsNachricht() bleibt unveraendert und
         // wird weiterhin von der REST-Schnittstelle und den Domaenentests geprueft.
@@ -141,7 +140,6 @@ public class SingleGruppeAnzeigeTest {
         .andExpect(content().string(containsString("400,00 €")))
         .andExpect(content().string(containsString("GitLisa")))
         .andExpect(content().string(containsString("MaxHub")));
-
   }
 
   @Test
@@ -153,11 +151,13 @@ public class SingleGruppeAnzeigeTest {
     String error = "invalider GitHub Name";
     when(service.getSingleGruppe(gruppe.getId())).thenReturn(gruppe);
 
-    MvcResult result = mvc.perform(get("/gruppe")
-            .param("id", gruppe.getId().toString())
-            .param("loginForm", "MaxHub")
-            .param("error", error))
-        .andReturn();
+    MvcResult result =
+        mvc.perform(
+                get("/gruppe")
+                    .param("id", gruppe.getId().toString())
+                    .param("loginForm", "MaxHub")
+                    .param("error", error))
+            .andReturn();
     String html = result.getResponse().getContentAsString();
 
     // Auf Fragmente statt auf ganze Tags pruefen, damit der naechste Umbau des
@@ -166,7 +166,6 @@ public class SingleGruppeAnzeigeTest {
     assertThat(html).contains("id=\"name\"");
     assertThat(html).contains("name=\"login\"");
     assertThat(html).contains("value=\"MaxHub\"");
-
   }
 
   @Test
@@ -179,16 +178,17 @@ public class SingleGruppeAnzeigeTest {
     gruppe.addPerson("GitLisa");
     when(service.getSingleGruppe(gruppe.getId())).thenReturn(gruppe);
 
-    MvcResult result = mvc.perform(get("/gruppe")
-            .param("id", gruppe.getId().toString())
-            .param("loginForm", "MaxHub")
-            .param("error", error))
-        .andReturn();
+    MvcResult result =
+        mvc.perform(
+                get("/gruppe")
+                    .param("id", gruppe.getId().toString())
+                    .param("loginForm", "MaxHub")
+                    .param("error", error))
+            .andReturn();
     String html = result.getResponse().getContentAsString();
 
     assertThat(html).contains("href=\"/\"");
     assertThat(html).contains("zurück zur Gruppen-Übersicht");
-
   }
 
   @Test
@@ -201,16 +201,17 @@ public class SingleGruppeAnzeigeTest {
     gruppe.addPerson("GitLisa");
     when(service.getSingleGruppe(gruppe.getId())).thenReturn(gruppe);
 
-    MvcResult result = mvc.perform(get("/gruppe")
-            .param("id", gruppe.getId().toString())
-            .param("loginForm", "MaxHub")
-            .param("error", error))
-        .andReturn();
+    MvcResult result =
+        mvc.perform(
+                get("/gruppe")
+                    .param("id", gruppe.getId().toString())
+                    .param("loginForm", "MaxHub")
+                    .param("error", error))
+            .andReturn();
     String html = result.getResponse().getContentAsString();
 
     assertThat(html).contains("action=\"/gruppe/close\"");
     assertThat(html).contains("Gruppe schließen");
-
   }
 
   @Test
@@ -223,16 +224,17 @@ public class SingleGruppeAnzeigeTest {
     gruppe.addPerson("GitLisa");
     when(service.getSingleGruppe(gruppe.getId())).thenReturn(gruppe);
 
-    MvcResult result = mvc.perform(get("/gruppe")
-            .param("id", gruppe.getId().toString())
-            .param("loginForm", "MaxHub")
-            .param("error", error))
-        .andReturn();
+    MvcResult result =
+        mvc.perform(
+                get("/gruppe")
+                    .param("id", gruppe.getId().toString())
+                    .param("loginForm", "MaxHub")
+                    .param("error", error))
+            .andReturn();
     String html = result.getResponse().getContentAsString();
 
     assertThat(html).contains("action=\"/gruppe/close\"");
     assertThat(html).contains("Gruppe schließen");
-
   }
 
   @Test
@@ -244,10 +246,10 @@ public class SingleGruppeAnzeigeTest {
     gruppe.addPerson("GitLisa");
     when(service.getSingleGruppe(gruppe.getId())).thenReturn(gruppe);
 
-    MvcResult result = mvc.perform(get("/gruppe")
-            .param("id", gruppe.getId().toString())
-            .param("loginForm", "MaxHub"))
-        .andReturn();
+    MvcResult result =
+        mvc.perform(
+                get("/gruppe").param("id", gruppe.getId().toString()).param("loginForm", "MaxHub"))
+            .andReturn();
     String html = result.getResponse().getContentAsString();
 
     assertThat(html).contains("https://github.com/MaxHub.png?size=64");
@@ -265,10 +267,10 @@ public class SingleGruppeAnzeigeTest {
     gruppe.closeGroup();
     when(service.getSingleGruppe(gruppe.getId())).thenReturn(gruppe);
 
-    MvcResult result = mvc.perform(get("/gruppe")
-            .param("id", gruppe.getId().toString())
-            .param("loginForm", "MaxHub"))
-        .andReturn();
+    MvcResult result =
+        mvc.perform(
+                get("/gruppe").param("id", gruppe.getId().toString()).param("loginForm", "MaxHub"))
+            .andReturn();
     String html = result.getResponse().getContentAsString();
 
     assertThat(html).doesNotContain("action=\"/gruppe/add\"");
@@ -288,10 +290,10 @@ public class SingleGruppeAnzeigeTest {
     gruppe.addPerson("GitLisa");
     when(service.getSingleGruppe(gruppe.getId())).thenReturn(gruppe);
 
-    MvcResult result = mvc.perform(get("/gruppe")
-            .param("id", gruppe.getId().toString())
-            .param("loginForm", "MaxHub"))
-        .andReturn();
+    MvcResult result =
+        mvc.perform(
+                get("/gruppe").param("id", gruppe.getId().toString()).param("loginForm", "MaxHub"))
+            .andReturn();
     String html = result.getResponse().getContentAsString();
 
     assertThat(html).doesNotContain("zuweisung__knopf");
@@ -308,10 +310,10 @@ public class SingleGruppeAnzeigeTest {
     gruppe.addPerson("GitLisa");
     when(service.getSingleGruppe(gruppe.getId())).thenReturn(gruppe);
 
-    MvcResult result = mvc.perform(get("/gruppe")
-            .param("id", gruppe.getId().toString())
-            .param("loginForm", "MaxHub"))
-        .andReturn();
+    MvcResult result =
+        mvc.perform(
+                get("/gruppe").param("id", gruppe.getId().toString()).param("loginForm", "MaxHub"))
+            .andReturn();
     String html = result.getResponse().getContentAsString();
 
     assertThat(html).contains("data-ablage=\"ausleger\"");
@@ -334,15 +336,18 @@ public class SingleGruppeAnzeigeTest {
 
     // Betrag ist kein gueltiger Double - vorher warf der Redirect die ganze
     // Zuordnung weg.
-    MvcResult result = mvc.perform(post("/gruppe/add/ausgaben").with(csrf())
-            .param("id", id.toString())
-            .param("aktivitaet", "Pizza")
-            .param("zahler", "MaxHub")
-            .param("teilnehmer", "MaxHub, GitLisa")
-            .param("betrag", "keine Zahl"))
-        .andExpect(status().isOk())
-        .andExpect(view().name("gruppe"))
-        .andReturn();
+    MvcResult result =
+        mvc.perform(
+                post("/gruppe/add/ausgaben")
+                    .with(csrf())
+                    .param("id", id.toString())
+                    .param("aktivitaet", "Pizza")
+                    .param("zahler", "MaxHub")
+                    .param("teilnehmer", "MaxHub, GitLisa")
+                    .param("betrag", "keine Zahl"))
+            .andExpect(status().isOk())
+            .andExpect(view().name("gruppe"))
+            .andReturn();
     String html = result.getResponse().getContentAsString();
 
     assertThat(html).contains("value=\"MaxHub, GitLisa\"");
@@ -362,14 +367,17 @@ public class SingleGruppeAnzeigeTest {
     gruppe.addPerson("GitLisa");
     when(service.getSingleGruppe(id)).thenReturn(gruppe);
 
-    MvcResult result = mvc.perform(post("/gruppe/add/ausgaben").with(csrf())
-            .param("id", id.toString())
-            .param("aktivitaet", "")
-            .param("zahler", "MaxHub")
-            .param("teilnehmer", "GitLisa")
-            .param("betrag", "12.5"))
-        .andExpect(status().isOk())
-        .andReturn();
+    MvcResult result =
+        mvc.perform(
+                post("/gruppe/add/ausgaben")
+                    .with(csrf())
+                    .param("id", id.toString())
+                    .param("aktivitaet", "")
+                    .param("zahler", "MaxHub")
+                    .param("teilnehmer", "GitLisa")
+                    .param("betrag", "12.5"))
+            .andExpect(status().isOk())
+            .andReturn();
     String html = result.getResponse().getContentAsString();
 
     assertThat(html).contains("Bitte eine Aktivität eintragen");
@@ -385,12 +393,12 @@ public class SingleGruppeAnzeigeTest {
     Gruppe gruppe = Gruppe.erstelleGruppe(id, "MaxHub", "Reisegruppe");
     when(service.getSingleGruppe(id)).thenReturn(gruppe);
 
-    MvcResult result = mvc.perform(post("/gruppe/add").with(csrf())
-            .param("id", id.toString())
-            .param("login", "!!"))
-        .andExpect(status().isOk())
-        .andExpect(view().name("gruppe"))
-        .andReturn();
+    MvcResult result =
+        mvc.perform(
+                post("/gruppe/add").with(csrf()).param("id", id.toString()).param("login", "!!"))
+            .andExpect(status().isOk())
+            .andExpect(view().name("gruppe"))
+            .andReturn();
     String html = result.getResponse().getContentAsString();
 
     assertThat(html).contains("Invalider GitHub Name");
@@ -409,15 +417,19 @@ public class SingleGruppeAnzeigeTest {
     // GitHub laesst 39 Zeichen zu - das Muster hier stand vorher auf 15 und
     // sperrte solche Konten komplett aus.
     String neununddreissig = "a".repeat(39);
-    mvc.perform(post("/gruppe/add").with(csrf())
-            .param("id", id.toString())
-            .param("login", neununddreissig))
+    mvc.perform(
+            post("/gruppe/add")
+                .with(csrf())
+                .param("id", id.toString())
+                .param("login", neununddreissig))
         .andExpect(status().is3xxRedirection());
     verify(service).addPersonToGruppe(id, neununddreissig);
 
-    mvc.perform(post("/gruppe/add").with(csrf())
-            .param("id", id.toString())
-            .param("login", "a".repeat(40)))
+    mvc.perform(
+            post("/gruppe/add")
+                .with(csrf())
+                .param("id", id.toString())
+                .param("login", "a".repeat(40)))
         .andExpect(status().isOk());
     verify(service, never()).addPersonToGruppe(id, "a".repeat(40));
   }
@@ -431,18 +443,15 @@ public class SingleGruppeAnzeigeTest {
     when(service.getSingleGruppe(id)).thenReturn(gruppe);
 
     for (String gut : List.of("ab", "a", "Max-Hub", "a1-b2-c3")) {
-      mvc.perform(post("/gruppe/add").with(csrf())
-              .param("id", id.toString())
-              .param("login", gut))
+      mvc.perform(post("/gruppe/add").with(csrf()).param("id", id.toString()).param("login", gut))
           .andExpect(status().is3xxRedirection());
       verify(service).addPersonToGruppe(id, gut);
     }
 
     // Unterstriche kennt GitHub bei Konten nicht, das alte Muster liess sie zu.
     for (String schlecht : List.of("-max", "max-", "ma--x", "max_hub", "ma x")) {
-      mvc.perform(post("/gruppe/add").with(csrf())
-              .param("id", id.toString())
-              .param("login", schlecht))
+      mvc.perform(
+              post("/gruppe/add").with(csrf()).param("id", id.toString()).param("login", schlecht))
           .andExpect(status().isOk());
       verify(service, never()).addPersonToGruppe(id, schlecht);
     }
@@ -496,5 +505,4 @@ public class SingleGruppeAnzeigeTest {
     assertThat(html).doesNotContain("ausgleich__betrag");
     assertThat(html).doesNotContain("id=\"ausgleichListe\"");
   }
-
 }

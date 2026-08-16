@@ -1,5 +1,8 @@
 package propra2.splitter.web;
 
+import jakarta.validation.Valid;
+import java.util.List;
+import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -7,10 +10,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import propra2.splitter.service.*;
-
-import jakarta.validation.Valid;
-import java.util.List;
-import java.util.UUID;
 
 @org.springframework.web.bind.annotation.RestController
 public class RestController {
@@ -49,8 +48,8 @@ public class RestController {
         return ResponseEntity.notFound().build();
       }
 
-      return new ResponseEntity<>(service.getGruppeInformationEntity(UUID.fromString(id)),
-          HttpStatus.OK);
+      return new ResponseEntity<>(
+          service.getGruppeInformationEntity(UUID.fromString(id)), HttpStatus.OK);
     } catch (IllegalArgumentException exception) {
       return ResponseEntity.notFound().build();
     }
@@ -63,16 +62,16 @@ public class RestController {
         return ResponseEntity.notFound().build();
       }
 
-      return new ResponseEntity<>(service.setRestGruppeGeschlossen(UUID.fromString(id)),
-          HttpStatus.OK);
+      return new ResponseEntity<>(
+          service.setRestGruppeGeschlossen(UUID.fromString(id)), HttpStatus.OK);
     } catch (IllegalArgumentException exception) {
       return ResponseEntity.notFound().build();
     }
   }
 
   @PostMapping("/api/gruppen/{id}/auslagen")
-  public ResponseEntity<AusgabeEntity> addAusgabe(@PathVariable String id,
-      @RequestBody AusgabeEntity ausgabenEntity) {
+  public ResponseEntity<AusgabeEntity> addAusgabe(
+      @PathVariable String id, @RequestBody AusgabeEntity ausgabenEntity) {
     try {
       if (service.getGruppeInformationEntity(UUID.fromString(id)) == null) {
         return ResponseEntity.notFound().build();
@@ -81,9 +80,12 @@ public class RestController {
         return ResponseEntity.status(409).build();
       }
       // If check, wenn JSON Dokument fehlerhaft ist
-      if (ausgabenEntity.grund() == null || ausgabenEntity.glaeubiger() == null
-          || ausgabenEntity.schuldner() == null || ausgabenEntity.cent() == null
-          || ausgabenEntity.cent() <= 0 || ausgabenEntity.schuldner().isEmpty()) {
+      if (ausgabenEntity.grund() == null
+          || ausgabenEntity.glaeubiger() == null
+          || ausgabenEntity.schuldner() == null
+          || ausgabenEntity.cent() == null
+          || ausgabenEntity.cent() <= 0
+          || ausgabenEntity.schuldner().isEmpty()) {
         return ResponseEntity.badRequest().build();
       }
 
@@ -100,12 +102,9 @@ public class RestController {
       if (service.getGruppeInformationEntity(UUID.fromString(id)) == null) {
         return ResponseEntity.notFound().build();
       }
-      return new ResponseEntity<>(service.getRestTransaktionen(UUID.fromString(id)),
-          HttpStatus.OK);
+      return new ResponseEntity<>(service.getRestTransaktionen(UUID.fromString(id)), HttpStatus.OK);
     } catch (IllegalArgumentException exception) {
       return ResponseEntity.notFound().build();
     }
   }
-
-
 }

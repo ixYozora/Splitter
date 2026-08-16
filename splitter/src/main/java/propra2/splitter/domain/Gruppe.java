@@ -2,10 +2,9 @@ package propra2.splitter.domain;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import org.javamoney.moneta.Money;
-
 import java.time.Instant;
 import java.util.*;
+import org.javamoney.moneta.Money;
 import propra2.splitter.stereotypes.AggregateRoot;
 
 @AggregateRoot
@@ -72,10 +71,15 @@ public class Gruppe {
 
   // Nur fuer die Wiederherstellung aus der Datenbank: der Zeitpunkt kommt mit,
   // statt neu gesetzt zu werden.
-  public void addAusgabe(String aktivitaet, String name, List<String> personen2, Money kosten,
-      Instant erfasstAm) {
-    gruppenAusgaben.add(new Ausgabe(new Aktivitaet(aktivitaet), getPersonFromName(name),
-        getPersonenFromNames(personen2), kosten, erfasstAm));
+  public void addAusgabe(
+      String aktivitaet, String name, List<String> personen2, Money kosten, Instant erfasstAm) {
+    gruppenAusgaben.add(
+        new Ausgabe(
+            new Aktivitaet(aktivitaet),
+            getPersonFromName(name),
+            getPersonenFromNames(personen2),
+            kosten,
+            erfasstAm));
   }
 
   public void addTransaktion(String zahler, String zahlungsempfaenger, Money betrag) {
@@ -83,27 +87,27 @@ public class Gruppe {
         new Transaktion(getPersonFromName(zahler), getPersonFromName(zahlungsempfaenger), betrag));
   }
 
-
-  public void addAusgabeToPerson(String aktivitaet, String name, List<String> personen2,
-      Money kosten) {
+  public void addAusgabeToPerson(
+      String aktivitaet, String name, List<String> personen2, Money kosten) {
     if (!geschlossen) {
       ausgabeGetaetigt = true;
       Person ausleger = getPersonFromName(name);
 
-      // Personen, die ausgelegt bekommen haben und später Geld zurückzahlen müssen, wenn sie nicht Ausleger sind
+      // Personen, die ausgelegt bekommen haben und später Geld zurückzahlen müssen, wenn sie nicht
+      // Ausleger sind
       List<Person> teilnehmer = getPersonenFromNames(personen2);
 
       if (!teilnehmer.isEmpty()) {
         // Ausgaben in Person, welche Ausgabe getätigt hat, speichern
-        Ausgabe newAusgabe = new Ausgabe(new Aktivitaet(aktivitaet), ausleger, teilnehmer, kosten,
-            Instant.now());
+        Ausgabe newAusgabe =
+            new Ausgabe(new Aktivitaet(aktivitaet), ausleger, teilnehmer, kosten, Instant.now());
         gruppenAusgaben.add(newAusgabe);
       }
-      // speichert Schulden der Teilnehmer mit Ausnahme vom Ausleger, falls dieser für sich selber bezahlt hat
+      // speichert Schulden der Teilnehmer mit Ausnahme vom Ausleger, falls dieser für sich selber
+      // bezahlt hat
 
     }
   }
-
 
   public void berechneTransaktionen() {
     // Rechnet die Ausgaben jeder Person aus und speichert sie im Ausgabenarray sumAusgaben
@@ -135,14 +139,13 @@ public class Gruppe {
     return Money.of(0, "EUR");
   }
 
-
   private void transaktionen(ArrayList<Person> nettoBetraege) {
-    //Person mit maximalem Netto-Betrag
+    // Person mit maximalem Netto-Betrag
     Person personMaxGutschrift = getPersonWithMaxNettoBetrag(nettoBetraege);
-    //Person mit minimalem Netto-Betrag
+    // Person mit minimalem Netto-Betrag
     Person personMaxSchulden = getPersonWithMinNettoBetrag(nettoBetraege);
 
-    //Falls alle Netto-Beträge 0 sind, ist bereits alles ausgeglichen
+    // Falls alle Netto-Beträge 0 sind, ist bereits alles ausgeglichen
     for (var entry : nettoBetraege) {
       if (entry.getNettoBetrag().isZero()) {
         ausgleich = true;
@@ -164,7 +167,8 @@ public class Gruppe {
     }
 
     // Minimum der NettoBeträge von personMaxSchulden und personMaxGutschrift wird gespeichert
-    // personMaxSchulden's NettoBetrag muss für diesen Prozess negiert werden, damit Rechnung später korrekt ausgleicht
+    // personMaxSchulden's NettoBetrag muss für diesen Prozess negiert werden, damit Rechnung später
+    // korrekt ausgleicht
     personMaxSchulden.setNettoBetrag(personMaxSchulden.getNettoBetrag().negate());
     List<Person> list = List.of(personMaxSchulden, personMaxGutschrift);
     Person minPerson = getPersonWithMinNettoBetrag(list);
@@ -194,11 +198,16 @@ public class Gruppe {
   }
 
   public List<TransaktionDetails> getTransaktionDetails() {
-    return transaktionen.stream().map(
-        t -> new TransaktionDetails(t.getPerson1Name(), t.getPerson2Name(), t.getNettoBetrag(),
-            t.getTransaktionsNachricht())).toList();
+    return transaktionen.stream()
+        .map(
+            t ->
+                new TransaktionDetails(
+                    t.getPerson1Name(),
+                    t.getPerson2Name(),
+                    t.getNettoBetrag(),
+                    t.getTransaktionsNachricht()))
+        .toList();
   }
-
 
   public void clearTransaktionen() {
     transaktionen.clear();
@@ -259,8 +268,12 @@ public class Gruppe {
   // Moneta 1.4.5 schreibt sich derselbe Betrag als "EUR 0.000...001" - die
   // Rekursion hielt nicht mehr an. Jetzt steht die Toleranz ausdruecklich da.
   private static boolean istAusgeglichen(Money betrag) {
-    return betrag.getNumber().numberValue(BigDecimal.class)
-        .setScale(2, RoundingMode.HALF_UP).signum() == 0;
+    return betrag
+            .getNumber()
+            .numberValue(BigDecimal.class)
+            .setScale(2, RoundingMode.HALF_UP)
+            .signum()
+        == 0;
   }
 
   Person getPersonWithMaxNettoBetrag(List<Person> nettoBetraege) {
@@ -304,10 +317,12 @@ public class Gruppe {
       return false;
     }
     Gruppe gruppe = (Gruppe) o;
-    return geschlossen == gruppe.geschlossen && Objects.equals(id, gruppe.id)
-        && Objects.equals(personen, gruppe.personen) && Objects.equals(
-        gruppenAusgaben, gruppe.gruppenAusgaben) && Objects.equals(transaktionen,
-        gruppe.transaktionen) && Objects.equals(gruppenName, gruppe.gruppenName);
+    return geschlossen == gruppe.geschlossen
+        && Objects.equals(id, gruppe.id)
+        && Objects.equals(personen, gruppe.personen)
+        && Objects.equals(gruppenAusgaben, gruppe.gruppenAusgaben)
+        && Objects.equals(transaktionen, gruppe.transaktionen)
+        && Objects.equals(gruppenName, gruppe.gruppenName);
   }
 
   @Override
@@ -320,9 +335,16 @@ public class Gruppe {
   }
 
   public List<AusgabenDetails> getAusgabenDetails() {
-    return gruppenAusgaben.stream().map(
-        a -> new AusgabenDetails(a.getAktivitaetName(), a.getAuslegerName(), a.getPersonenNamen(),
-            a.getGesamtKosten(), a.getErfasstAm())).toList();
+    return gruppenAusgaben.stream()
+        .map(
+            a ->
+                new AusgabenDetails(
+                    a.getAktivitaetName(),
+                    a.getAuslegerName(),
+                    a.getPersonenNamen(),
+                    a.getGesamtKosten(),
+                    a.getErfasstAm()))
+        .toList();
   }
 
   public UUID getId() {

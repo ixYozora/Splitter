@@ -1,15 +1,13 @@
 package propra2.splitter.service;
 
+import java.util.*;
 import org.javamoney.moneta.Money;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import propra2.splitter.domain.Gruppe;
 
-import java.util.*;
-
 @Service
 public class GruppenService {
-
 
   private final GruppenRepository repository;
 
@@ -23,7 +21,6 @@ public class GruppenService {
     return repository.save(gruppe);
   }
 
-
   public void closeGruppe(UUID id) {
     Gruppe gruppe = getSingleGruppe(id);
     gruppe.closeGroup();
@@ -31,14 +28,18 @@ public class GruppenService {
   }
 
   private GruppenDetails toGruppenDetails(Gruppe gruppe) {
-    return new GruppenDetails(gruppe.getId(), gruppe.getGruppenName(),
-        gruppe.getPersonenNamen(), gruppe.isGeschlossen());
+    return new GruppenDetails(
+        gruppe.getId(), gruppe.getGruppenName(), gruppe.getPersonenNamen(), gruppe.isGeschlossen());
   }
 
   // Wie oben, aber mit der Netto-Position der angemeldeten Person.
   private GruppenDetails toGruppenDetails(Gruppe gruppe, String person) {
-    return new GruppenDetails(gruppe.getId(), gruppe.getGruppenName(),
-        gruppe.getPersonenNamen(), gruppe.isGeschlossen(), gruppe.getNettoBetrag(person));
+    return new GruppenDetails(
+        gruppe.getId(),
+        gruppe.getGruppenName(),
+        gruppe.getPersonenNamen(),
+        gruppe.isGeschlossen(),
+        gruppe.getNettoBetrag(person));
   }
 
   public GruppenOnPage getGruppen() {
@@ -53,14 +54,14 @@ public class GruppenService {
 
   public void addPersonToGruppe(UUID id, String login) {
     Gruppe gruppe = getSingleGruppe(id);
-      if(gruppe.addPerson(login)) repository.save(gruppe);
+    if (gruppe.addPerson(login)) repository.save(gruppe);
   }
 
-  public void addAusgabeToGruppe(UUID id, String aktivitaet, String login, String teilnehmer,
-      Double cost) {
+  public void addAusgabeToGruppe(
+      UUID id, String aktivitaet, String login, String teilnehmer, Double cost) {
     Gruppe gruppe = getSingleGruppe(id);
-    gruppe.addAusgabeToPerson(aktivitaet, login, Arrays.stream(teilnehmer.split(", ")).toList(),
-        Money.of(cost, "EUR"));
+    gruppe.addAusgabeToPerson(
+        aktivitaet, login, Arrays.stream(teilnehmer.split(", ")).toList(), Money.of(cost, "EUR"));
     repository.save(gruppe);
   }
 
@@ -75,12 +76,12 @@ public class GruppenService {
   // angemeldeten Person direkt mitberechnet werden kann.
   public GruppenOnPage personToGruppeMatch(OAuth2User principle) {
     String login = principle.getAttribute("login");
-    return new GruppenOnPage(repository.findAll().stream()
-        .filter(gruppe -> gruppe.getPersonenNamen().stream()
-            .anyMatch(p -> Objects.equals(p, login)))
-        .map(gruppe -> toGruppenDetails(gruppe, login))
-        .toList());
+    return new GruppenOnPage(
+        repository.findAll().stream()
+            .filter(
+                gruppe ->
+                    gruppe.getPersonenNamen().stream().anyMatch(p -> Objects.equals(p, login)))
+            .map(gruppe -> toGruppenDetails(gruppe, login))
+            .toList());
   }
-
-
 }

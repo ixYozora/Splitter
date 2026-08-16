@@ -1,16 +1,15 @@
 package propra2.splitter.domain;
 
-import org.javamoney.moneta.Money;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import org.javamoney.moneta.Money;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 
 public class DomainTests {
 
@@ -43,7 +42,6 @@ public class DomainTests {
           isValid = false;
           break;
         }
-
       }
     }
     return isValid;
@@ -65,8 +63,7 @@ public class DomainTests {
 
     gruppe.addPerson("GitLisa");
 
-    assertThat(gruppe.getPersonen().get(1)).isEqualTo(
-        new Person("GitLisa"));
+    assertThat(gruppe.getPersonen().get(1)).isEqualTo(new Person("GitLisa"));
   }
 
   @Test
@@ -94,7 +91,6 @@ public class DomainTests {
     assertThat(ausgaben[0]).isEqualTo(Money.of(130, "EUR"));
   }
 
-
   @Test
   @DisplayName("Schulden einer Person werden korrekt ausgerechnet")
   void test_04() {
@@ -108,7 +104,6 @@ public class DomainTests {
 
     assertThat(schulden[1]).isEqualTo(Money.of(130, "EUR"));
   }
-
 
   @Test
   @DisplayName("Personen werden richtig gefiltert")
@@ -136,15 +131,18 @@ public class DomainTests {
     assertThat(personen).contains(personA);
   }
 
-
   @Test
   @DisplayName("Durchschnittskosten einer Ausgabe werden korrekt berechnet")
   void test_07() {
     Person personA = new Person("MaxHub");
     Person personB = new Person("GitLisa");
     Person personC = new Person("ErixHub");
-    Ausgabe ausgabe = new Ausgabe(new Aktivitaet("Pizza"), personA,
-        List.of(personA, personB, personC), Money.of(30, "EUR"));
+    Ausgabe ausgabe =
+        new Ausgabe(
+            new Aktivitaet("Pizza"),
+            personA,
+            List.of(personA, personB, personC),
+            Money.of(30, "EUR"));
 
     Money durchschnittskosten = ausgabe.getDurchschnittsKosten();
 
@@ -157,8 +155,12 @@ public class DomainTests {
     Person personA = new Person("MaxHub");
     Person personB = new Person("GitLisa");
     Person personC = new Person("ErixHub");
-    Ausgabe ausgabe = new Ausgabe(new Aktivitaet("Pizza"), personA,
-        List.of(personA, personB, personC), Money.of(30, "EUR"));
+    Ausgabe ausgabe =
+        new Ausgabe(
+            new Aktivitaet("Pizza"),
+            personA,
+            List.of(personA, personB, personC),
+            Money.of(30, "EUR"));
 
     Money kosten = ausgabe.getKosten();
 
@@ -176,8 +178,9 @@ public class DomainTests {
 
     gruppe.addAusgabeToPerson("Pizza", "MaxHub", List.of("GitLisa"), Money.of(20, "EUR"));
 
-    assertThat(gruppe.getGruppenAusgaben()).containsExactly
-        (new Ausgabe(new Aktivitaet("Pizza"), personA, List.of(personB), Money.of(20, "EUR")));
+    assertThat(gruppe.getGruppenAusgaben())
+        .containsExactly(
+            new Ausgabe(new Aktivitaet("Pizza"), personA, List.of(personB), Money.of(20, "EUR")));
   }
 
   @Test
@@ -191,8 +194,9 @@ public class DomainTests {
 
     gruppe.addAusgabeToPerson("Pizza", "MaxHub", List.of("GitLisa"), Money.of(20, "EUR"));
 
-    assertThat(gruppe.getGruppenAusgaben().get(0)).isEqualTo(
-        new Ausgabe(new Aktivitaet("Pizza"), personA, List.of(personB), Money.of(20, "EUR")));
+    assertThat(gruppe.getGruppenAusgaben().get(0))
+        .isEqualTo(
+            new Ausgabe(new Aktivitaet("Pizza"), personA, List.of(personB), Money.of(20, "EUR")));
   }
 
   @Test
@@ -225,10 +229,10 @@ public class DomainTests {
     assertThat(minPerson).isEqualTo(personB);
   }
 
-
   @Test
-  @DisplayName("isValid Utility Methode bestimmt richtig, wenn Kriterium 1 nicht erfüllt ist:" +
-      "eine Personen darf immer nur selber Überweisungen an andere tätigen oder Geld überwiesen bekommen, niemals beides")
+  @DisplayName(
+      "isValid Utility Methode bestimmt richtig, wenn Kriterium 1 nicht erfüllt ist:"
+          + "eine Personen darf immer nur selber Überweisungen an andere tätigen oder Geld überwiesen bekommen, niemals beides")
   void test_14() {
     Person personA = new Person("MaxHub");
     Person personB = new Person("GitLisa");
@@ -236,15 +240,16 @@ public class DomainTests {
     Transaktion transaktion1 = new Transaktion(personA, personB, Money.of(50, "EUR"));
     Transaktion transaktion2 = new Transaktion(personB, personA, Money.of(60, "EUR"));
     Transaktion transaktion3 = new Transaktion(personA, personB, Money.of(10, "EUR"));
-    List<Transaktion> transaktionen = new ArrayList<>(
-        List.of(transaktion1, transaktion2, transaktion3));
+    List<Transaktion> transaktionen =
+        new ArrayList<>(List.of(transaktion1, transaktion2, transaktion3));
 
     assertThat(isValid(transaktionen)).isFalse();
   }
 
   @Test
-  @DisplayName("isValid Utility Methode bestimmt richtig, wenn Kriterium 2 nicht erfüllt ist:" +
-      "es darf höchstens eine Überweisung zwischen zwei Personen geben")
+  @DisplayName(
+      "isValid Utility Methode bestimmt richtig, wenn Kriterium 2 nicht erfüllt ist:"
+          + "es darf höchstens eine Überweisung zwischen zwei Personen geben")
   void test_15() {
     Person personA = new Person("MaxHub");
     Person personB = new Person("GitLisa");
@@ -257,8 +262,9 @@ public class DomainTests {
   }
 
   @Test
-  @DisplayName("isValid Utility Methode bestimmt richtig, wenn Kriterium 2 nicht erfüllt ist:" +
-      "Niemand darf sich selber Geld überweisen")
+  @DisplayName(
+      "isValid Utility Methode bestimmt richtig, wenn Kriterium 2 nicht erfüllt ist:"
+          + "Niemand darf sich selber Geld überweisen")
   void test_16() {
     Person personA = new Person("MaxHub");
     Person personB = new Person("GitLisa");
@@ -284,8 +290,8 @@ public class DomainTests {
     gruppe.berechneTransaktionen();
     transaktionen = gruppe.getTransaktionen();
 
-    assertThat(transaktionen.get(0).getTransaktionsNachricht()).isEqualTo(
-        personB.getName() + " muss EUR 15.00 an " + personA.getName() + " zahlen");
+    assertThat(transaktionen.get(0).getTransaktionsNachricht())
+        .isEqualTo(personB.getName() + " muss EUR 15.00 an " + personA.getName() + " zahlen");
   }
 
   @Test
@@ -302,8 +308,8 @@ public class DomainTests {
     gruppe.berechneTransaktionen();
     transaktionen = gruppe.getTransaktionen();
 
-    assertThat(transaktionen.get(0).getTransaktionsNachricht()).isEqualTo(
-        personA.getName() + " muss EUR 5.00 an " + personB.getName() + " zahlen");
+    assertThat(transaktionen.get(0).getTransaktionsNachricht())
+        .isEqualTo(personA.getName() + " muss EUR 5.00 an " + personB.getName() + " zahlen");
   }
 
   @Test
@@ -320,8 +326,8 @@ public class DomainTests {
     gruppe.berechneTransaktionen();
     transaktionen = gruppe.getTransaktionen();
 
-    assertThat(transaktionen.get(0).getTransaktionsNachricht()).isEqualTo(
-        personB.getName() + " muss EUR 20.00 an " + personA.getName() + " zahlen");
+    assertThat(transaktionen.get(0).getTransaktionsNachricht())
+        .isEqualTo(personB.getName() + " muss EUR 20.00 an " + personA.getName() + " zahlen");
   }
 
   @Test
@@ -335,15 +341,15 @@ public class DomainTests {
     gruppe.addPerson(personB.getName());
     gruppe.addPerson(personC.getName());
     gruppe.addAusgabeToPerson("Pizza", "MaxHub", List.of("MaxHub", "GitLisa"), Money.of(10, "EUR"));
-    gruppe.addAusgabeToPerson("Kino", "GitLisa", List.of("GitLisa", "ErixHub"),
-        Money.of(10, "EUR"));
+    gruppe.addAusgabeToPerson(
+        "Kino", "GitLisa", List.of("GitLisa", "ErixHub"), Money.of(10, "EUR"));
     gruppe.addAusgabeToPerson("Kino", "ErixHub", List.of("ErixHub", "MaxHub"), Money.of(10, "EUR"));
 
     gruppe.berechneTransaktionen();
     List<Transaktion> transaktionen = gruppe.getTransaktionen();
 
-    assertThat(transaktionen.get(0).getTransaktionsNachricht()).isEqualTo(
-        "Es sind keine Ausgleichszahlungen notwendig.");
+    assertThat(transaktionen.get(0).getTransaktionsNachricht())
+        .isEqualTo("Es sind keine Ausgleichszahlungen notwendig.");
   }
 
   @Test
@@ -357,15 +363,15 @@ public class DomainTests {
     gruppe.addPerson(personB.getName());
     gruppe.addPerson(personC.getName());
     gruppe.addAusgabeToPerson("Pizza", "MaxHub", List.of("MaxHub", "GitLisa"), Money.of(10, "EUR"));
-    gruppe.addAusgabeToPerson("Kino", "GitLisa", List.of("GitLisa", "ErixHub"),
-        Money.of(10, "EUR"));
+    gruppe.addAusgabeToPerson(
+        "Kino", "GitLisa", List.of("GitLisa", "ErixHub"), Money.of(10, "EUR"));
     gruppe.addAusgabeToPerson("Kino", "ErixHub", List.of("ErixHub", "MaxHub"), Money.of(5, "EUR"));
 
     gruppe.berechneTransaktionen();
     transaktionen = gruppe.getTransaktionen();
 
-    assertThat(transaktionen.get(0).getTransaktionsNachricht()).isEqualTo(
-        personC.getName() + " muss EUR 2.50 an " + personA.getName() + " zahlen");
+    assertThat(transaktionen.get(0).getTransaktionsNachricht())
+        .isEqualTo(personC.getName() + " muss EUR 2.50 an " + personA.getName() + " zahlen");
   }
 
   @Test
@@ -378,12 +384,12 @@ public class DomainTests {
     Gruppe gruppe = Gruppe.erstelleGruppe(id, personA.getName(), "Reisegruppe");
     gruppe.addPerson(personB.getName());
     gruppe.addPerson(personC.getName());
-    gruppe.addAusgabeToPerson("Pizza", "Anton", List.of("Anton", "Berta", "Christian"),
-        Money.of(60, "EUR"));
-    gruppe.addAusgabeToPerson("Kino", "Berta", List.of("Anton", "Berta", "Christian"),
-        Money.of(30, "EUR"));
-    gruppe.addAusgabeToPerson("Kino", "Christian", List.of("Berta", "Christian"),
-        Money.of(100, "EUR"));
+    gruppe.addAusgabeToPerson(
+        "Pizza", "Anton", List.of("Anton", "Berta", "Christian"), Money.of(60, "EUR"));
+    gruppe.addAusgabeToPerson(
+        "Kino", "Berta", List.of("Anton", "Berta", "Christian"), Money.of(30, "EUR"));
+    gruppe.addAusgabeToPerson(
+        "Kino", "Christian", List.of("Berta", "Christian"), Money.of(100, "EUR"));
     String transaktion1 = personB.getName() + " muss EUR 30.00 an " + personA.getName() + " zahlen";
     String transaktion2 = personB.getName() + " muss EUR 20.00 an " + personC.getName() + " zahlen";
     String transaktion3 = personB.getName() + " muss EUR 50.00 an " + personA.getName() + " zahlen";
@@ -393,11 +399,13 @@ public class DomainTests {
     transaktionen = gruppe.getTransaktionen();
 
     assertThat(
-        transaktionen.get(0).getTransaktionsNachricht().equals(transaktion1) || transaktionen.get(0)
-            .getTransaktionsNachricht().equals(transaktion3)).isTrue();
+            transaktionen.get(0).getTransaktionsNachricht().equals(transaktion1)
+                || transaktionen.get(0).getTransaktionsNachricht().equals(transaktion3))
+        .isTrue();
     assertThat(
-        transaktionen.get(1).getTransaktionsNachricht().equals(transaktion2) || transaktionen.get(1)
-            .getTransaktionsNachricht().equals(transaktion4)).isTrue();
+            transaktionen.get(1).getTransaktionsNachricht().equals(transaktion2)
+                || transaktionen.get(1).getTransaktionsNachricht().equals(transaktion4))
+        .isTrue();
   }
 
   @Test
@@ -416,16 +424,16 @@ public class DomainTests {
     gruppe.addPerson(personD.getName());
     gruppe.addPerson(personE.getName());
     gruppe.addPerson(personF.getName());
-    gruppe.addAusgabeToPerson("Hotelzimmer", "A", List.of("A", "B", "C", "D", "E", "F"),
-        Money.of(564, "EUR"));
+    gruppe.addAusgabeToPerson(
+        "Hotelzimmer", "A", List.of("A", "B", "C", "D", "E", "F"), Money.of(564, "EUR"));
     gruppe.addAusgabeToPerson("Benzin (Hinweg)", "B", List.of("B", "A"), Money.of(38.58, "EUR"));
-    gruppe.addAusgabeToPerson("Benzin (Rückweg)", "B", List.of("B", "A", "D"),
-        Money.of(38.58, "EUR"));
+    gruppe.addAusgabeToPerson(
+        "Benzin (Rückweg)", "B", List.of("B", "A", "D"), Money.of(38.58, "EUR"));
     gruppe.addAusgabeToPerson("Benzin", "C", List.of("C", "E", "F"), Money.of(82.11, "EUR"));
-    gruppe.addAusgabeToPerson("Stadtour", "D", List.of("A", "B", "C", "D", "E", "F"),
-        Money.of(96, "EUR"));
-    gruppe.addAusgabeToPerson("Theatervorstellung", "F", List.of("B", "E", "F"),
-        Money.of(95.37, "EUR"));
+    gruppe.addAusgabeToPerson(
+        "Stadtour", "D", List.of("A", "B", "C", "D", "E", "F"), Money.of(96, "EUR"));
+    gruppe.addAusgabeToPerson(
+        "Theatervorstellung", "F", List.of("B", "E", "F"), Money.of(95.37, "EUR"));
     String transaction1 = personB.getName() + " muss EUR 96.78 an " + personA.getName() + " zahlen";
     String transaction2 = personC.getName() + " muss EUR 55.26 an " + personA.getName() + " zahlen";
     String transaction3 = personD.getName() + " muss EUR 26.86 an " + personA.getName() + " zahlen";
@@ -436,15 +444,15 @@ public class DomainTests {
     gruppe.berechneTransaktionen();
     transaktionen = gruppe.getTransaktionen();
 
-    assertThat(transaktionen.stream()
-        .map(Transaktion::getTransaktionsNachricht)).containsExactlyInAnyOrder(transaction1,
-        transaction2, transaction3, transaction4, transaction5);
+    assertThat(transaktionen.stream().map(Transaktion::getTransaktionsNachricht))
+        .containsExactlyInAnyOrder(
+            transaction1, transaction2, transaction3, transaction4, transaction5);
   }
-
 
   @Test
   @DisplayName("Szenario 7: Minimierung")
-    //Hier wird ein möglicher Ausgleich ausgerechnet (nicht der, der gegeben wurde), ist jedoch nicht minimal
+  // Hier wird ein möglicher Ausgleich ausgerechnet (nicht der, der gegeben wurde), ist jedoch nicht
+  // minimal
   void test_24() {
     Person personA = new Person("A");
     Person personB = new Person("B");
@@ -479,9 +487,9 @@ public class DomainTests {
     gruppe.berechneTransaktionen();
     transaktionen = gruppe.getTransaktionen();
 
-    assertThat(transaktionen.stream()
-        .map(Transaktion::getTransaktionsNachricht)).containsExactlyInAnyOrder(transaction1,
-        transaction2, transaction3, transaction4, transaction5, transaction6);
+    assertThat(transaktionen.stream().map(Transaktion::getTransaktionsNachricht))
+        .containsExactlyInAnyOrder(
+            transaction1, transaction2, transaction3, transaction4, transaction5, transaction6);
   }
 
   @Test
@@ -515,8 +523,8 @@ public class DomainTests {
     Gruppe gruppe = Gruppe.erstelleGruppe(id, "MaxHub", "Reisegruppe");
     gruppe.addPerson("GitLisa");
     gruppe.addPerson("ErixHub");
-    gruppe.addAusgabeToPerson("Pizza", "MaxHub", List.of("MaxHub", "GitLisa", "ErixHub"),
-        Money.of(30, "EUR"));
+    gruppe.addAusgabeToPerson(
+        "Pizza", "MaxHub", List.of("MaxHub", "GitLisa", "ErixHub"), Money.of(30, "EUR"));
 
     assertThat(gruppe.getNettoBetrag("MaxHub")).isEqualTo(Money.of(20, "EUR"));
     assertThat(gruppe.getNettoBetrag("GitLisa")).isEqualTo(Money.of(-10, "EUR"));
@@ -529,8 +537,7 @@ public class DomainTests {
     UUID id = UUID.randomUUID();
     Gruppe gruppe = Gruppe.erstelleGruppe(id, "MaxHub", "Reisegruppe");
     gruppe.addPerson("GitLisa");
-    gruppe.addAusgabeToPerson("Pizza", "MaxHub", List.of("MaxHub", "GitLisa"),
-        Money.of(10, "EUR"));
+    gruppe.addAusgabeToPerson("Pizza", "MaxHub", List.of("MaxHub", "GitLisa"), Money.of(10, "EUR"));
 
     // Mehrfach abrufen darf nichts aufsummieren
     assertThat(gruppe.getNettoBetrag("MaxHub")).isEqualTo(Money.of(5, "EUR"));
@@ -570,8 +577,8 @@ public class DomainTests {
     Gruppe gruppe = Gruppe.erstelleGruppe(id, "MaxHub", "Reisegruppe");
     gruppe.addPerson("GitLisa");
     gruppe.addPerson("ErixHub");
-    gruppe.addAusgabeToPerson("Pizza", "MaxHub", List.of("MaxHub", "GitLisa", "ErixHub"),
-        Money.of(30, "EUR"));
+    gruppe.addAusgabeToPerson(
+        "Pizza", "MaxHub", List.of("MaxHub", "GitLisa", "ErixHub"), Money.of(30, "EUR"));
 
     assertThat(gruppe.getAusgabenDetails().get(0).anteil()).isEqualTo(Money.of(10, "EUR"));
   }
@@ -584,6 +591,4 @@ public class DomainTests {
 
     assertThat(gruppe.getNettoBetrag("Fremder")).isEqualTo(Money.of(0, "EUR"));
   }
-
-
 }
