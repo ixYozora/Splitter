@@ -97,7 +97,7 @@ public class RestGruppenService {
         .filter(
             groupDetails ->
                 groupDetails.getPersonen().stream()
-                    .anyMatch(Person -> Objects.equals(Person, login)))
+                    .anyMatch(person -> Objects.equals(person, login)))
         .toList();
   }
 }

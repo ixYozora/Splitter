@@ -1,6 +1,8 @@
 package propra2.splitter.web;
 
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -163,7 +165,8 @@ public class RestControllerTests {
 
   @Test
   @DisplayName(
-      "Gruppeninformation für die jeweilige Gruppe ist nicht vorhanden, falls keine Gruppe mit der ID existiert und wirft Status NOTFOUND")
+      "Gruppeninformation für die jeweilige Gruppe ist nicht vorhanden, falls keine Gruppe mit"
+          + " der ID existiert und wirft Status NOTFOUND")
   void test_08() throws Exception {
 
     when(service.getGruppeInformationEntity(any())).thenReturn(any());
