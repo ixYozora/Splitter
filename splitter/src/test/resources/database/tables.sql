@@ -23,7 +23,8 @@ create table ausgabe_dto
     id UUID DEFAULT RANDOM_UUID() PRIMARY KEY,
     gruppe_dto UUID references gruppe_dto (id),
     gruppe_dto_key integer,
-    kosten numeric
+    kosten numeric,
+    erfasst_am timestamp with time zone default current_timestamp not null
 );
 
 create table teilnehmer_dto

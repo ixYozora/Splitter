@@ -2,6 +2,7 @@ package propra2.splitter.domain;
 
 import org.javamoney.moneta.Money;
 
+import java.time.Instant;
 import java.util.*;
 import propra2.splitter.stereotypes.AggregateRoot;
 
@@ -67,9 +68,12 @@ public class Gruppe {
     personen.add(person);
   }
 
-  public void addAusgabe(String aktivitaet, String name, List<String> personen2, Money kosten) {
+  // Nur fuer die Wiederherstellung aus der Datenbank: der Zeitpunkt kommt mit,
+  // statt neu gesetzt zu werden.
+  public void addAusgabe(String aktivitaet, String name, List<String> personen2, Money kosten,
+      Instant erfasstAm) {
     gruppenAusgaben.add(new Ausgabe(new Aktivitaet(aktivitaet), getPersonFromName(name),
-        getPersonenFromNames(personen2), kosten));
+        getPersonenFromNames(personen2), kosten, erfasstAm));
   }
 
   public void addTransaktion(String zahler, String zahlungsempfaenger, Money betrag) {
@@ -89,7 +93,8 @@ public class Gruppe {
 
       if (!teilnehmer.isEmpty()) {
         // Ausgaben in Person, welche Ausgabe getätigt hat, speichern
-        Ausgabe newAusgabe = new Ausgabe(new Aktivitaet(aktivitaet), ausleger, teilnehmer, kosten);
+        Ausgabe newAusgabe = new Ausgabe(new Aktivitaet(aktivitaet), ausleger, teilnehmer, kosten,
+            Instant.now());
         gruppenAusgaben.add(newAusgabe);
       }
       // speichert Schulden der Teilnehmer mit Ausnahme vom Ausleger, falls dieser für sich selber bezahlt hat
@@ -111,6 +116,21 @@ public class Gruppe {
       nettoBetraege.add(personen.get(i));
     }
     transaktionen(nettoBetraege);
+  }
+
+  // Netto-Position einer Person: was sie ausgelegt hat, minus was sie schuldet.
+  // Rechnet nur und veraendert nichts - anders als berechneTransaktionen, das die
+  // Betraege in die Personen schreibt und die Transaktionsliste aufbaut.
+  public Money getNettoBetrag(String person) {
+    Money[] sumAusgaben = berechneAusgaben();
+    Money[] sumSchulden = berechneSchulden();
+
+    for (int i = 0; i < personen.size(); i++) {
+      if (personen.get(i).getName().equals(person)) {
+        return sumAusgaben[i].subtract(sumSchulden[i]);
+      }
+    }
+    return Money.of(0, "EUR");
   }
 
 
@@ -287,7 +307,7 @@ public class Gruppe {
   public List<AusgabenDetails> getAusgabenDetails() {
     return gruppenAusgaben.stream().map(
         a -> new AusgabenDetails(a.getAktivitaetName(), a.getAuslegerName(), a.getPersonenNamen(),
-            a.getGesamtKosten())).toList();
+            a.getGesamtKosten(), a.getErfasstAm())).toList();
   }
 
   public UUID getId() {

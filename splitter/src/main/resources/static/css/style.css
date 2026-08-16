@@ -1,28 +1,1889 @@
-div.navbar {
+/* Splitter - Kontobuch-Optik: neutrales Papier, tiefe Tinte, linierte Zeilen.
+   Ein Schriftsystem (IBM Plex Sans + Plex Mono), ein Akzent (Tintenblau).
+   Rot und Gruen bleiben fuer Betraege reserviert - auch Fehler benutzen sie nicht. */
+
+@font-face {
+  font-family: "Plex Sans";
+  src: url("/fonts/ibm-plex-sans-400.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Plex Sans";
+  src: url("/fonts/ibm-plex-sans-500.woff2") format("woff2");
+  font-weight: 500;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Plex Sans";
+  src: url("/fonts/ibm-plex-sans-600.woff2") format("woff2");
+  font-weight: 600;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Plex Mono";
+  src: url("/fonts/ibm-plex-mono-400.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+
+:root {
+  color-scheme: light;
+
+  --desk: #e7e7ea;
+  --surface: #f4f4f5;
+  --surface-raised: #ffffff;
+  --ink: #18181b;
+  --ink-soft: #5c5c66;
+  --rule: #dedee2;
+  --rule-strong: #c2c2c9;
+  --accent: #1f3fbf;
+  --accent-wash: #eaeefb;
+
+  --font-sans: "Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  --font-mono: "Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* Fuenf Stufen, nichts unter 12px. Formularfelder liegen bewusst ueber 16px,
+     sonst zoomt iOS beim Fokus. */
+  --text-xl: 1.875rem;
+  --text-lg: 1.0625rem;
+  --text-md: 0.9375rem;
+  --text-sm: 0.8125rem;
+  --text-xs: 0.75rem;
+
+  --step: 8px;
+  --control-h: 44px;
+  --row-inset: 12px;
+  --measure: 52rem;
+  --gutter: calc(var(--step) * 3);
+  --radius: 4px;
+
+  /* Pfeilkreis und seine Verbindung zum Menü */
+  --disclosure-size: 22px;
+  --disclosure-inset: calc(var(--step) + var(--disclosure-size) / 2);
+
+  /* Kräftiges ease-out; die eingebauten Kurven sind für Auftritte zu weich. */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  /* Fuer kurze Wege. --ease-out ist so kopflastig, dass es bei sechs Pixeln
+     Strecke nach einem Sprung mit langem, unsichtbarem Nachlauf aussieht:
+     nach einem Drittel der Zeit sind schon vier Fuenftel erledigt. Diese Kurve
+     verteilt gleichmaessiger und laesst sich als Bewegung lesen. */
+  --ease-menu: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* Spaltenpapier: der Tisch ist der Bogen, aus dem das Blatt stammt.
+   Das 32px-Modul teilt die Blattbreite (--measure 52rem = 832px) genau 26-mal,
+   und die Phase calc(50% + 16px) legt beide Blattkanten auf eine Linie - die
+   Spalten draussen setzen also das Modul des Blattes ohne Rest fort.
+   Nur senkrecht: ein Kontobogen ist senkrecht liniert, und ein senkrechtes
+   Muster ist scrollfest, kostet also weder Repaint noch eine eigene Ebene. */
+.page {
+  margin: 0;
+  background-color: var(--desk);
+  background-image: linear-gradient(90deg, rgb(24 24 27 / 4%) 0 1px, transparent 1px);
+  background-size: 32px 100%;
+  background-position: calc(50% + 16px) 0;
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Papierkorn: fest, nicht anklickbar. Liegt ueber dem Text, aber unter allem,
+   was sich oeffnet - sonst waere das Konto-Menue das einzige Element unter dem Korn. */
+.page::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.032;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+}
+
+/* Browser-Oberflaechen gehoeren auch zum Entwurf */
+.page::selection,
+.page ::selection {
+  background: var(--accent-wash);
+  color: var(--ink);
+}
+
+.page {
+  caret-color: var(--accent);
+  accent-color: var(--accent);
+  scrollbar-color: var(--rule-strong) var(--desk);
+}
+
+.page *,
+.page *::before,
+.page *::after {
+  box-sizing: border-box;
+}
+
+.page [hidden] {
+  display: none !important;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.page :focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ---------- Kopfzeile ---------- */
+
+.topbar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(var(--step) * 2);
+  max-width: var(--measure);
+  margin: 0 auto;
+  padding: calc(var(--step) * 2) var(--gutter);
+}
+
+/* Linie buendig mit dem Inhalt, nicht mit dem Aussenrand */
+.topbar::after {
+  content: "";
+  position: absolute;
+  left: var(--gutter);
+  right: var(--gutter);
+  bottom: 0;
+  height: 1px;
+  background: var(--rule);
+}
+
+.wordmark {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  font-size: var(--text-md);
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.account {
+  position: relative;
+}
+
+/* Chrome ueberspringt die Stile eines geschlossenen <details> vollstaendig
+   (content-visibility: hidden auf ::details-content). Dann existiert beim
+   ersten Oeffnen kein Ausgangswert, von dem aus ueberblendet werden koennte,
+   und der Auftritt springt - genau einmal, danach laeuft er. Die Stile muessen
+   also berechnet bleiben. Unsichtbar und nicht bedienbar ist das Menue ohnehin
+   schon ueber visibility, dafuer ist content-visibility nicht noetig. */
+.account::details-content {
+  content-visibility: visible;
+}
+
+.account__trigger {
+  display: flex;
+  align-items: center;
+  gap: var(--step);
+  min-height: var(--control-h);
+  padding: 4px 8px 4px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  list-style: none;
+  transition: background 150ms ease;
+}
+
+.account__trigger::-webkit-details-marker {
+  display: none;
+}
+
+.account__trigger:hover {
+  background: var(--accent-wash);
+}
+
+.account__trigger:hover .account__name {
+  color: var(--accent);
+}
+
+.account__name {
+  font-size: var(--text-md);
+  color: var(--ink-soft);
+}
+
+/* Der Pfeil sitzt in einem Kreis - der Kreis ist der Punkt, aus dem die
+   Verbindung ins Menü kommt. */
+.account__disclosure {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: var(--disclosure-size);
+  height: var(--disclosure-size);
+  border: 1px solid var(--rule-strong);
+  border-radius: 999px;
+  background: var(--surface-raised);
+  transition: border-color 150ms ease;
+}
+
+.account__trigger:hover .account__disclosure {
+  border-color: var(--accent);
+}
+
+.account__chevron {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: var(--ink-soft);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 180ms var(--ease-out);
+}
+
+.account[open] .account__chevron {
+  transform: rotate(180deg);
+}
+
+.account__trigger:hover .account__chevron {
+  stroke: var(--accent);
+}
+
+/* Der Knick vom Kreis zum abgesetzten Menü. Er erklärt, warum das Menü nicht
+   unter dem Auslöser hängt, und existiert deshalb nur dort, wo das Menü auch
+   wirklich abgesetzt ist - unterhalb von 82rem entfällt er mit der Versetzung.
+   Zwei gerade Stücke mit einer Ecke, nicht ein durchgehender Bogen; die Rundung
+   sitzt allein im Knick, damit der Winkel als Winkel lesbar bleibt. */
+.account__connector {
+  display: none;
+  position: absolute;
+  left: calc(100% - var(--step));
+  top: calc(var(--control-h) / 2 - 20px);
+  width: 72px;
+  height: 70px;
+  z-index: 11;
+  pointer-events: none;
+  fill: none;
+  stroke: var(--rule-strong);
+  stroke-width: 1;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  visibility: hidden;
+  transition: visibility 0s linear 130ms;
+}
+
+.account[open] .account__connector {
+  visibility: visible;
+  transition: visibility 0s;
+}
+
+/* Die Linie zeichnet sich entlang ihres eigenen Verlaufs. Vorher wischte ein
+   clip-path den ganzen Kasten von oben herunter - das folgt dem Knick nicht,
+   sondern schiebt eine waagerechte Kante darueber. pathLength normiert die
+   Laenge auf 100, damit eine spaetere Aenderung der Geometrie diese Werte
+   nicht mitzieht. */
+.account__connector path {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  transition: stroke-dashoffset 130ms var(--ease-menu);
+}
+
+.account[open] .account__connector path {
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 160ms var(--ease-menu);
+}
+
+.account__avatar {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: 1px solid var(--rule-strong);
+  background: var(--accent-wash);
+  object-fit: cover;
+}
+
+.account__avatar--initial {
+  font-family: var(--font-mono);
+  font-size: var(--text-md);
+  color: var(--accent);
+}
+
+/* display beugt der UA-Regel vor, die Inhalte eines geschlossenen <details>
+   ausblendet - sonst laesst sich der Auftritt nicht bewegen. Sichtbarkeit und
+   Fokusfaehigkeit uebernimmt visibility, damit das Menue geschlossen weder
+   anklickbar noch im Tab-Fluss ist. */
+.account__menu {
+  position: absolute;
+  top: calc(100% + var(--step));
+  right: 0;
+  z-index: 10;
+  display: block;
+  min-width: 190px;
+  padding: var(--step);
+  background: var(--surface-raised);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 24px rgb(24 24 27 / 10%);
+  transform-origin: top right;
+  opacity: 0;
+  visibility: hidden;
+  /* Mehr Weg als vorher: sechs Pixel und drei Prozent Groesse sind zu wenig,
+     als dass das Auge daraus eine Bewegung machen koennte - es blieb ein Aufpoppen. */
+  transform: translateY(-10px) scale(0.96);
+  transition: opacity 130ms var(--ease-menu),
+              transform 130ms var(--ease-menu),
+              visibility 0s linear 130ms;
+}
+
+.account[open] .account__menu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+  transition: opacity 180ms var(--ease-menu),
+              transform 180ms var(--ease-menu),
+              visibility 0s;
+}
+
+/* Ab 82rem ist rechts neben dem Blatt Platz: das Menü rückt heraus, damit es
+   dem Blatt nicht mehr auf der Nase sitzt, und hängt am Bogen.
+   Der seitliche Versatz ist abgeleitet - zwischen Auslöserkante und Blattkante
+   liegt genau --gutter, plus zwei Schritte Luft.
+   Der Abstand nach unten (28px) muss dort enden, wo der Bogen endet:
+   --control-h + 28px = Bogenoberkante (--control-h / 2 - 20px) + 70px Höhe.
+   Wird eines der beiden geändert, muss das andere mit. */
+@media (min-width: 82rem) {
+  .account__connector {
+    display: block;
+  }
+
+  .account__menu {
+    left: calc(100% + var(--gutter) + var(--step) * 2);
+    right: auto;
+    top: calc(100% + 28px);
+    transform-origin: top left;
+  }
+
+  /* Nacheinander statt gleichzeitig: erst laeuft die Linie hinaus, dann kommt
+     das Menue an ihrem Ende an. Vorher liefen beide im Gleichschritt und das
+     Menue stand schon da, bevor die Linie es erreicht hatte. Die Verzoegerung
+     gilt nur hier - schmaler gibt es keine Linie, auf die zu warten waere. */
+  .account[open] .account__menu {
+    transition: opacity 180ms var(--ease-menu) 80ms,
+                transform 180ms var(--ease-menu) 80ms,
+                visibility 0s linear 80ms;
+  }
+}
+
+.account__handle {
+  margin: 0 0 var(--step);
+  padding: 0 var(--step) var(--step);
+  border-bottom: 1px solid var(--rule);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--ink-soft);
+}
+
+/* ---------- Blatt ---------- */
+
+/* Breite statt nur max-width: sonst liegt das Blatt unter 832px Viewport
+   randlos an der Bildschirmkante, mit Rahmen und Radius buendig am Rand. */
+.sheet {
+  width: calc(100% - var(--step) * 2);
+  max-width: var(--measure);
+  margin: calc(var(--step) * 3) auto calc(var(--step) * 8);
+  padding: calc(var(--step) * 5) var(--gutter) calc(var(--step) * 6);
+  background: var(--surface-raised);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  box-shadow: 0 1px 2px rgb(24 24 27 / 5%), 0 10px 30px rgb(24 24 27 / 6%);
+}
+
+.sheet__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: calc(var(--step) * 2);
+  flex-wrap: wrap;
+  margin-bottom: calc(var(--step) * 3);
+}
+
+.sheet__title {
+  margin: 0;
+  font-size: var(--text-xl);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.sheet__tally {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
+}
+
+.sheet__sep {
+  padding: 0 0.6ch;
+  color: var(--rule-strong);
+}
+
+/* ---------- Neue Gruppe ---------- */
+
+.compose {
+  margin-bottom: calc(var(--step) * 4);
+  padding: calc(var(--step) * 2);
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+}
+
+.compose__form {
+  display: flex;
+  align-items: center;
+  gap: var(--step);
+  flex-wrap: wrap;
+}
+
+.compose__input {
+  flex: 1;
+  min-width: 12rem;
+  height: var(--control-h);
+  padding: 0 12px;
+  background: var(--surface-raised);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius);
+  font-family: inherit;
+  font-size: var(--text-lg);
+  color: var(--ink);
+  transition: border-color 150ms ease;
+}
+
+.compose__input::placeholder {
+  color: var(--ink-soft);
+}
+
+.compose__input:focus-visible {
+  border-color: var(--accent);
+}
+
+/* Fehler ohne Rot: doppelte Tintenkante statt Signalfarbe */
+.compose__input[aria-invalid="true"] {
+  border-color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--ink);
+}
+
+.compose__hint {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--ink-soft);
+}
+
+.compose__error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-basis: 100%;
+  margin: 0;
+  font-size: var(--text-md);
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.compose__error-icon {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+}
+
+.button {
+  height: var(--control-h);
+  padding: 0 18px;
+  border: 1px solid var(--ink);
+  border-radius: var(--radius);
+  background: var(--ink);
+  color: var(--surface-raised);
+  font-family: inherit;
+  font-size: var(--text-md);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease, transform 100ms ease;
+}
+
+.button:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.button:active {
+  transform: translateY(1px);
+}
+
+.button:disabled {
+  background: var(--ink-soft);
+  border-color: var(--ink-soft);
+  cursor: progress;
+  transform: none;
+}
+
+.button--quiet {
   width: 100%;
-  background-color: #343a40;
-  overflow: auto;
+  height: auto;
+  min-height: 40px;
+  padding: 8px var(--step);
+  background: transparent;
+  border-color: transparent;
+  color: var(--ink);
+  text-align: left;
+}
+
+.button--quiet:hover {
+  background: var(--accent-wash);
+  border-color: transparent;
+  color: var(--accent);
+}
+
+/* ---------- Filterleiste ---------- */
+
+.controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(var(--step) * 2);
+  flex-wrap: wrap;
+  margin-bottom: calc(var(--step) * 2);
+}
+
+.search__field {
+  display: flex;
+  align-items: stretch;
+  gap: var(--step);
+  width: min(22rem, 100%);
+  height: var(--control-h);
+  padding: 0 12px;
+  background: var(--surface);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius);
+  transition: border-color 150ms ease;
+}
+
+/* Echter Ring statt einer 1,05:1-Aura - das Feld traegt den Fokus fuer das Eingabefeld */
+.search__field:focus-within {
+  border-color: var(--accent);
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.search__icon {
+  flex: none;
+  align-self: center;
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: var(--ink-soft);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+}
+
+.search__field:focus-within .search__icon {
+  stroke: var(--accent);
+}
+
+.search input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: 0;
+  font-family: inherit;
+  font-size: var(--text-lg);
+  color: var(--ink);
+}
+
+.search input::placeholder {
+  color: var(--ink-soft);
+}
+
+/* Der Ring liegt auf .search__field, deshalb hier bewusst keiner */
+.search input:focus-visible {
+  outline: none;
+}
+
+.segmented {
+  display: flex;
+  min-height: var(--control-h);
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.segmented input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.segmented label {
+  display: grid;
+  place-items: center;
+  padding: 11px 14px;
+  border-left: 1px solid var(--rule);
+  font-size: var(--text-sm);
+  color: var(--ink-soft);
+  background: var(--surface);
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease;
+}
+
+.segmented label:first-of-type {
+  border-left: 0;
+}
+
+.segmented label:hover {
+  background: var(--accent-wash);
+  color: var(--accent);
+}
+
+/* Ausgewaehlt ist nicht dasselbe wie ausloesbar: die gefuellte Tinte bleibt
+   dem Knopf vorbehalten, die Auswahl hebt sich durch Papier und Gewicht ab. */
+.segmented input:checked + label {
+  background: var(--surface-raised);
+  color: var(--ink);
+  font-weight: 600;
+  box-shadow: inset 0 -2px 0 var(--ink);
+}
+
+.segmented input:focus-visible + label {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+/* ---------- Gruppenliste ---------- */
+
+/* Negativer Rand: der Text steht buendig zur Ueberschrift, die Hover-Flaeche
+   darf trotzdem nach aussen laufen. */
+.ledger__columns,
+.ledger {
+  margin-inline: calc(var(--row-inset) * -1);
+}
+
+.ledger__columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 8rem 6rem 7rem;
+  gap: var(--step);
+  padding: 0 var(--row-inset) 6px;
+  border-bottom: 1px solid var(--ink);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.ledger__columns span:last-child {
+  text-align: right;
+}
+
+.ledger {
+  padding: 0;
+  list-style: none;
+}
+
+.ledger__row {
+  position: relative;
+}
+
+/* Die Linie gehoert zur Zeile selbst, nicht zur Nachbarschaft: so verschwindet
+   sie beim Filtern mit ihrer Zeile, und die letzte Zeile schliesst das Buch. */
+.ledger__row::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--rule);
+  transform-origin: left center;
+}
+
+.ledger__link {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 8rem 6rem 7rem;
+  align-items: center;
+  gap: var(--step);
+  padding: 14px var(--row-inset);
+  color: inherit;
+  text-decoration: none;
+  border-radius: var(--radius);
+  transition: background 150ms ease, color 150ms ease;
+}
+
+.ledger__link:hover {
+  background: var(--accent-wash);
+}
+
+.ledger__link:hover .ledger__name {
+  color: var(--accent);
+}
+
+.ledger__name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: var(--text-lg);
+  font-weight: 500;
+}
+
+.ledger__members {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
   white-space: nowrap;
 }
 
-div.navbar label{
-  color: white;
+.ledger__status {
+  font-size: var(--text-xs);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: right;
+  color: var(--ink-soft);
+  white-space: nowrap;
 }
 
-.geschlossen{
-  margin-right: 300px;
+.is-closed .ledger__name {
+  font-weight: 400;
+  color: var(--ink-soft);
 }
 
-.geöffnet{
-  margin-left: 300px;
+/* Betraege tragen Vorzeichen und Gewicht, keine Farbe. Was du schuldest, steht
+   in voller Tinte, weil es die Zeile ist, bei der du etwas tun musst. */
+.ledger__amount {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
 }
 
-div.navbar a {
-  display: inline-block;
-  float: left;
-  padding: 1px;
-  color: white;
+.is-schuld {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.is-guthaben {
+  color: var(--ink-soft);
+}
+
+.is-glatt {
+  color: var(--rule-strong);
+}
+
+/* Der Abschluss: eine schwere Linie trennt die Eintraege vom Stand, die
+   doppelte Linie darunter schliesst das Buch. */
+.abschluss {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: var(--step);
+  margin-inline: calc(var(--row-inset) * -1);
+  margin-top: calc(var(--step) * 2);
+  padding: 12px var(--row-inset);
+  border-top: 1px solid var(--ink);
+  border-bottom: 3px double var(--ink);
+}
+
+.abschluss__label {
+  font-size: var(--text-xs);
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.abschluss__betrag {
+  font-family: var(--font-mono);
+  font-size: var(--text-lg);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.abschluss__betrag.is-schuld {
+  font-weight: 600;
+}
+
+.abschluss__betrag.is-guthaben {
+  color: var(--ink);
+}
+
+.ledger__count {
+  margin: calc(var(--step) * 2) 0 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
+}
+
+.note {
+  margin: calc(var(--step) * 3) 0 0;
+  font-size: var(--text-md);
+  color: var(--ink-soft);
+}
+
+
+/* Der eine gestaltete Moment: die Linien werden gezogen, waehrend die Tinte
+   erscheint. Nur beim ersten Aufbau - .ledger--intro wird danach entfernt,
+   sonst liefe der Auftritt bei jedem Tastendruck im Suchfeld erneut. */
+@media (prefers-reduced-motion: no-preference) {
+  .ledger--intro .ledger__row::after {
+    animation: ruleIn 280ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+    animation-delay: calc(min(var(--i, 0), 8) * 40ms);
+  }
+
+  .ledger--intro .ledger__link {
+    animation: inkIn 280ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+    animation-delay: calc(min(var(--i, 0), 8) * 40ms);
+  }
+
+  @keyframes ruleIn {
+    from {
+      transform: scaleX(0);
+    }
+  }
+
+  @keyframes inkIn {
+    from {
+      opacity: 0;
+    }
+  }
+}
+
+/* ---------- Schmale Viewports ---------- */
+
+@media (max-width: 640px) {
+  .topbar,
+  .sheet {
+    --gutter: calc(var(--step) * 2);
+  }
+
+  .controls {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .search__field {
+    width: 100%;
+  }
+
+  .segmented label {
+    flex: 1;
+    text-align: center;
+  }
+
+  .ledger__columns {
+    display: none;
+  }
+
+  /* Name auf eigener Zeile, darunter Mitglieder, Status und Betrag nebeneinander */
+  .ledger__link {
+    grid-template-columns: auto auto minmax(0, 1fr);
+    row-gap: 2px;
+  }
+
+  .ledger__name {
+    grid-column: 1 / -1;
+  }
+
+  .ledger__status {
+    text-align: left;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page * {
+    transition-duration: 0.01ms !important;
+    transition-delay: 0s !important;
+  }
+
+  /* Das Auf- und Zublenden bleibt, die Bewegung faellt weg. */
+  .account__menu,
+  .account[open] .account__menu {
+    transform: none;
+  }
+
+  /* Die Linie steht sofort ganz da, statt sich zu zeichnen. */
+  .account__connector path,
+  .account[open] .account__connector path {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Wer mehr Kontrast angefordert hat, bekommt einen glatten Tisch: Linierung
+   und Korn fallen weg, das Blatt hebt sich dann staerker ab. */
+@media (prefers-contrast: more) {
+  .page {
+    background-image: none;
+    background-color: #dcdce1;
+  }
+
+  .page::after {
+    display: none;
+  }
+
+  .sheet {
+    border-color: var(--rule-strong);
+  }
+
+  .account__connector {
+    stroke: var(--ink);
+  }
+
+  .account__disclosure {
+    border-color: var(--ink);
+  }
+}
+
+/* ---------- Druck ---------- */
+
+@media print {
+  .page {
+    background: #ffffff;
+  }
+
+  .page::after,
+  .topbar .account,
+  .compose,
+  .controls,
+  .ledger__count {
+    display: none;
+  }
+
+  .sheet {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    box-shadow: none;
+  }
+}
+
+/* ================================================================
+   Gruppenseite
+   Zwei Spalten, weil Mitgliederliste und Ablagen gleichzeitig
+   sichtbar sein muessen - sonst laesst sich niemand hinueberziehen.
+   ================================================================ */
+
+.page-gruppe {
+  --measure: 64rem;
+}
+
+.werkbank {
+  display: grid;
+  grid-template-columns: 20rem minmax(0, 1fr);
+  grid-template-areas:
+    "kopf   kopf"
+    "leute  arbeit"
+    "fuss   fuss";
+  gap: calc(var(--step) * 3);
+  max-width: var(--measure);
+  margin: calc(var(--step) * 3) auto calc(var(--step) * 8);
+  padding: 0 var(--gutter);
+}
+
+.gruppe__head { grid-area: kopf; }
+.werkbank__leute { grid-area: leute; display: grid; gap: calc(var(--step) * 3); align-content: start; }
+.werkbank__arbeit { grid-area: arbeit; display: grid; gap: calc(var(--step) * 3); align-content: start; }
+.sheet--ausgleich { grid-area: fuss; }
+
+/* ---------- Kopf ---------- */
+
+.gruppe__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 24px;
+  margin-bottom: var(--step);
+  font-size: var(--text-sm);
+  color: var(--ink-soft);
   text-decoration: none;
-  font-size: 17px;
+}
 
+.gruppe__back:hover {
+  color: var(--accent);
+}
+
+.gruppe__back-icon {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.gruppe__title {
+  margin: 0;
+  font-size: var(--text-xl);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.gruppe__status {
+  margin: 4px 0 0;
+  font-size: var(--text-xs);
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+/* ---------- Blaetter dieser Seite ----------
+   Bewusst verschieden schwer: gleich grosse Karten waeren genau das
+   Karten-Raster, das der craft floor verbietet. */
+
+.page-gruppe .sheet {
+  width: auto;
+  max-width: none;
+  margin: 0;
+  padding: calc(var(--step) * 3);
+}
+
+.sheet--klein {
+  background: var(--surface);
+  box-shadow: none;
+}
+
+.sheet--komposer {
+  padding: calc(var(--step) * 4);
+}
+
+.sheet__label {
+  display: flex;
+  align-items: baseline;
+  gap: var(--step);
+  margin: 0 0 calc(var(--step) * 2);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.sheet__zahl {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+  color: var(--rule-strong);
+}
+
+/* ---------- Mitglied hinzufuegen ---------- */
+
+.mitglied__form {
+  display: flex;
+  align-items: center;
+  gap: var(--step);
+  flex-wrap: wrap;
+}
+
+.mitglied__input {
+  flex: 1;
+  min-width: 8rem;
+  height: var(--control-h);
+  padding: 0 12px;
+  background: var(--surface-raised);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius);
+  font-family: inherit;
+  font-size: var(--text-lg);
+  color: var(--ink);
+  transition: border-color 150ms ease;
+}
+
+.mitglied__input::placeholder { color: var(--ink-soft); }
+.mitglied__input:focus-visible { border-color: var(--accent); }
+.mitglied__input[aria-invalid="true"] {
+  border-color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--ink);
+}
+
+/* ---------- Mitglieder-Marken ---------- */
+
+.roster__hinweis {
+  margin: calc(var(--step) * -1) 0 calc(var(--step) * 1.5);
+  font-size: var(--text-sm);
+  color: var(--ink-soft);
+}
+
+.roster {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 2px;
+}
+
+/* Ausrollen und wieder einrollen. Hier wird bewusst die Hoehe bewegt und nicht
+   nur transform: die Liste soll alles unter sich mitschieben, und genau das
+   kann transform nicht. Das Skript setzt die Pixelwerte, damit die Kurve ueber
+   die echte Strecke laeuft statt ueber einen geratenen max-height-Wert. */
+.roster.is-gefaltet {
+  overflow: hidden;
+}
+
+.roster.is-bewegt {
+  overflow: hidden;
+  transition: height 260ms var(--ease-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .roster.is-bewegt { transition: none; }
+}
+
+/* Die Marke selbst ist der Knopf. Anfassen und ziehen, oder antippen und in
+   eine Ablage legen - beides greift dieselbe Flaeche an. */
+.token {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--step);
+  /* 28px Bild + 2 * 7px + 2 * 1px Rand = 44px Ziel. */
+  padding: 7px 8px;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: grab;
+  transition: border-color 150ms ease, background 150ms ease,
+              transform 160ms var(--ease-out);
+}
+
+.token:hover:not(:disabled) {
+  border-color: var(--rule);
+  background: var(--accent-wash);
+}
+
+.token:active:not(:disabled) {
+  cursor: grabbing;
+  transform: scale(0.98);
+}
+
+/* In der Hand: liegt sichtbar bereit, bis eine Ablage sie annimmt. */
+.token[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--accent-wash);
+}
+
+/* Geschlossene Gruppe - die Liste bleibt lesbar, nur nichts mehr zu tun. */
+.token:disabled {
+  cursor: default;
+  color: var(--ink);
+  opacity: 1;
+}
+
+.token__avatar {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  border: 1px solid var(--rule-strong);
+  background: var(--accent-wash);
+  object-fit: cover;
+}
+
+/* Ersatz, wenn GitHub den Namen nicht kennt - der Roster wird aus
+   Freitext gefuellt, ein Tippfehler liefert sonst ein kaputtes Bild. */
+.token__initial {
+  display: grid;
+  place-items: center;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--accent);
+}
+
+.token__name {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: var(--text-md);
+}
+
+.token__du {
+  flex: none;
+  font-size: var(--text-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+/* ---------- Komposer ---------- */
+
+.komposer { display: grid; gap: calc(var(--step) * 2); }
+
+.feld { display: grid; gap: 4px; }
+
+.feld__label {
+  font-size: var(--text-xs);
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.feld__input {
+  height: var(--control-h);
+  padding: 0 12px;
+  background: var(--surface-raised);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius);
+  font-family: inherit;
+  font-size: var(--text-lg);
+  color: var(--ink);
+  transition: border-color 150ms ease;
+}
+
+.feld__input::placeholder { color: var(--ink-soft); }
+.feld__input:focus-visible { border-color: var(--accent); }
+.feld__input[aria-invalid="true"] {
+  border-color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--ink);
+}
+
+.feld__fehler {
+  margin: 0;
+  font-size: var(--text-md);
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.feld--betrag { max-width: 12rem; }
+
+.feld__geld { position: relative; display: block; }
+.feld__geld .feld__input { width: 100%; padding-right: 28px; }
+
+.feld__einheit {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: var(--font-mono);
+  font-size: var(--text-md);
+  color: var(--ink-soft);
+}
+
+.komposer__fuss {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: calc(var(--step) * 2);
+  flex-wrap: wrap;
+}
+
+/* Ohne JavaScript sichtbar, sonst nicht. */
+.komposer__fallback { display: none; gap: calc(var(--step) * 2); }
+
+/* ---------- Ablagen ---------- */
+
+.ablagen {
+  display: grid;
+  grid-template-columns: 1fr 1.6fr;
+  gap: calc(var(--step) * 2);
+}
+
+.ablage {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: var(--step);
+  padding: var(--step);
+  background: var(--surface);
+  border: 1px dashed var(--rule-strong);
+  border-radius: var(--radius);
+  transition: border-color 150ms ease, background 150ms ease;
+}
+
+/* Der Ausleger ist genau einer, die Teilnehmer sind viele. Die eine Ablage ist
+   deshalb eine Zeile hoch, die andere waechst mit. */
+.ablage--einer { min-height: 6rem; }
+.ablage--viele { min-height: 6rem; }
+
+/* Etwas liegt in der Hand: den Ablegeplatz zeigt der Streifen darin, nicht
+   auch noch der Rahmen aussen herum - zwei gestrichelte Rechtecke ineinander
+   sind nur Laerm. */
+
+/* Der Zeiger steht genau ueber dieser hier. */
+.ablage.is-ziel {
+  border-color: var(--accent);
+  border-style: solid;
+  background: var(--accent-wash);
+}
+
+.ablage__inhalt {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ablage--einer .ablage__inhalt { display: grid; }
+
+/* Ruhend die Frage, in der Hand der Ablegeplatz - derselbe Knopf. */
+.ablage__ziel {
+  display: none;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: var(--text-md);
+  color: var(--ink-soft);
+  text-align: left;
+}
+
+.ablage:not(:has(.ablage__inhalt li)) .ablage__ziel,
+.ablage.is-bereit .ablage__ziel {
+  display: block;
+}
+
+.ablage__ziel:disabled {
+  color: var(--ink-soft);
+  cursor: default;
+}
+
+.ablage__ziel:not(:disabled) {
+  min-height: 34px;
+  padding: 6px 8px;
+  border: 1px dashed var(--accent);
+  border-radius: var(--radius);
+  color: var(--accent);
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+
+.ablage__ziel:not(:disabled):hover { background: var(--accent-wash); }
+
+/* Was jeder Teilnehmer traegt - dieselbe Division wie im Kassenbon. */
+.ablage__anteil {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-sm);
+  color: var(--ink-soft);
+}
+
+/* Eine abgelegte Person */
+.chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 4px 3px 3px;
+  background: var(--surface-raised);
+  border: 1px solid var(--rule-strong);
+  border-radius: 999px;
+  font-size: var(--text-sm);
+}
+
+@supports (transition-behavior: allow-discrete) {
+  .chip {
+    transition: opacity 150ms var(--ease-out), transform 150ms var(--ease-out);
+
+    @starting-style {
+      opacity: 0;
+      transform: scale(0.96);
+    }
+  }
+}
+
+/* Der Ausleger steht als volle Zeile da, die Teilnehmer als Pillen daneben.
+   Der Unterschied liegt in der Form, nicht in der Farbe. */
+.ablage--einer .chip {
+  padding: 4px 6px 4px 4px;
+  border-radius: var(--radius);
+  font-size: var(--text-md);
+}
+
+.ablage--einer .chip__avatar { width: 26px; height: 26px; }
+.ablage--einer .chip__name { font-weight: 500; }
+
+.chip__name {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.chip__avatar {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  border: 1px solid var(--rule);
+  object-fit: cover;
+}
+
+/* 24px, nicht kleiner - WCAG 2.2 AA 2.5.8 Zielgroesse. */
+.chip__weg {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.chip__weg svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: var(--ink-soft);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.chip__weg:hover { background: var(--accent-wash); }
+.chip__weg:hover svg { stroke: var(--accent); }
+
+/* ---------- Kassenbons ---------- */
+
+/* Spalten statt Raster: ein Bon ist so hoch wie seine Zeilen, und ein kurzer
+   rutscht unter einen langen, statt neben ihm Luft stehen zu lassen. Ein Raster
+   zwingt jede Reihe auf die Hoehe ihres laengsten Bons. */
+.bons {
+  columns: 11rem;
+  column-gap: calc(var(--step) * 2);
+}
+
+.bons .bon {
+  /* Ein Bon wird nie ueber zwei Spalten zerschnitten. */
+  break-inside: avoid;
+  margin-bottom: calc(var(--step) * 2);
+}
+
+/* Eingelegt, nicht aufgelegt: ein Bon liegt IM Blatt. Eine erhoehte Karte in
+   einer erhoehten Karte waere genau die verschachtelte Karte, die der craft
+   floor ausschliesst. */
+.bon {
+  padding: var(--step) 12px 12px;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+}
+
+.bon__aktivitaet {
+  margin: 0;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.bon__datum {
+  margin: 2px 0 var(--step);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
+}
+
+.bon__ausleger {
+  margin: 0 0 var(--step);
+  padding-bottom: var(--step);
+  border-bottom: 1px solid var(--rule);
+  font-size: var(--text-sm);
+  color: var(--ink-soft);
+}
+
+.bon__ausleger span { color: var(--ink); font-weight: 500; }
+
+.bon__zeilen {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 2px;
+}
+
+.bon__zeilen li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--step);
+  font-size: var(--text-sm);
+  color: var(--ink-soft);
+}
+
+.bon__betrag {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.bon__summe {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--step);
+  margin: var(--step) 0 0;
+  padding-top: 6px;
+  border-top: 3px double var(--ink);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+/* Ein Knopf fuer beide "+N"-Stellen: Mitgliederliste und Bons. */
+.mehr {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--control-h);
+  margin-top: calc(var(--step) * 2);
+  padding: 0 12px;
+  border: 1px dashed var(--rule-strong);
+  border-radius: var(--radius);
+  background: transparent;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: border-color 150ms ease, color 150ms ease, background 150ms ease;
+}
+
+.mehr:hover {
+  border-color: var(--accent);
+  background: var(--accent-wash);
+  color: var(--accent);
+}
+
+/* ---------- Ausgleich als Graph ----------
+   Die Marken sind echte HTML-Knoten ueber einer SVG-Ebene: so behalten Bild und
+   Name die normale Schrift- und Fehlerbehandlung, und das SVG traegt nur die
+   Kanten. Farbe steht nur fuer eine Sache, naemlich fuer die eigenen Kanten -
+   Betraege bleiben schwarz, wie ueberall sonst auf der Seite. */
+
+.graf {
+  position: relative;
+  margin-bottom: calc(var(--step) * 2);
+}
+
+.graf__linien {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.graf__kante {
+  fill: none;
+  stroke: var(--rule-strong);
+  stroke-linecap: round;
+}
+
+.graf__kante.is-du { stroke: var(--accent); }
+
+.graf__spitze { fill: var(--rule-strong); }
+.graf__spitze.is-du { fill: var(--accent); }
+
+.graf__platte { fill: var(--surface-raised); }
+
+.graf__wert {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+  fill: var(--ink);
+}
+
+.graf__wert.is-du { font-weight: 600; }
+
+/* Ein Knoten: Bild als Marke, Name darunter. */
+.graf__knoten {
+  position: absolute;
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  width: 8.25rem;
+}
+
+.graf__bild {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  border: 1px solid var(--rule-strong);
+  background: var(--accent-wash);
+  object-fit: cover;
+}
+
+.graf__knoten.is-du .graf__bild {
+  border-color: var(--accent);
+  border-width: 2px;
+}
+
+.graf__name {
+  max-width: 100%;
+  font-size: var(--text-xs);
+  line-height: 1.25;
+  text-align: center;
+  overflow-wrap: anywhere;
+  color: var(--ink-soft);
+}
+
+.graf__knoten.is-du .graf__name {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* Zwei Teile des Waldes haengen nicht zusammen - die Linie sagt genau das. */
+.graf__trenner {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px dashed var(--rule);
+}
+
+/* Schmal wird nicht gezeichnet: zwei Spalten mit Kurven dazwischen brauchen
+   Breite. Dort bleibt die Liste stehen. */
+@media (max-width: 40rem) {
+  .graf { display: none; }
+  .ausgleich.visually-hidden {
+    position: static;
+    width: auto;
+    height: auto;
+    margin: 0;
+    overflow: visible;
+    clip: auto;
+    clip-path: none;
+    white-space: normal;
+  }
+  #ausgleichListeKnopf { display: none; }
+}
+
+/* ---------- Ausgleich ---------- */
+
+.ausgleich {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 2px;
+}
+
+.ausgleich li {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--rule);
+  font-size: var(--text-md);
+}
+
+.ausgleich li:last-child { border-bottom: 0; }
+
+.ausgleich__aktionen {
+  display: flex;
+  gap: var(--step);
+  flex-wrap: wrap;
+  margin-top: calc(var(--step) * 2);
+}
+
+.button--rand {
+  background: transparent;
+  border-color: var(--rule-strong);
+  color: var(--ink);
+}
+
+.button--rand:hover {
+  background: var(--accent-wash);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ---------- Bonmappe ---------- */
+
+.bonmappe {
+  width: min(56rem, calc(100vw - var(--step) * 4));
+  max-height: min(40rem, calc(100vh - var(--step) * 8));
+  padding: 0;
+  background: var(--surface-raised);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius);
+  box-shadow: 0 1px 2px rgb(24 24 27 / 5%), 0 10px 30px rgb(24 24 27 / 8%);
+  color: var(--ink);
+}
+
+.bonmappe::backdrop {
+  background: rgb(24 24 27 / 32%);
+}
+
+.bonmappe__kopf {
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--step);
+  padding: calc(var(--step) * 2) calc(var(--step) * 3);
+  background: var(--surface-raised);
+  border-bottom: 1px solid var(--rule);
+}
+
+.bonmappe__kopf .sheet__label { margin: 0; }
+
+.bonmappe__zu {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius);
+  background: transparent;
+  cursor: pointer;
+  transition: border-color 150ms ease, background 150ms ease;
+}
+
+.bonmappe__zu svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: var(--ink-soft);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+}
+
+.bonmappe__zu:hover { border-color: var(--accent); background: var(--accent-wash); }
+.bonmappe__zu:hover svg { stroke: var(--accent); }
+
+/* Dieselbe Packung wie im Blatt. Vorher streckte das Raster jeden Bon auf die
+   Hoehe des laengsten in seiner Reihe - im Dialog mit vier Bons nebeneinander
+   war das fast nur Leerraum. */
+.bonmappe__inhalt {
+  columns: 13rem;
+  column-gap: calc(var(--step) * 2);
+  padding: calc(var(--step) * 3);
+  overflow-y: auto;
+}
+
+.bonmappe__inhalt .bon {
+  break-inside: avoid;
+  margin-bottom: calc(var(--step) * 2);
+}
+
+/* Auftritt: aus der Mitte, weil ein Dialog an keinem Ausloeser haengt. */
+.bonmappe,
+.bonmappe::backdrop {
+  transition: opacity 180ms var(--ease-out),
+              transform 180ms var(--ease-out),
+              overlay 180ms allow-discrete,
+              display 180ms allow-discrete;
+}
+
+.bonmappe { opacity: 0; transform: scale(0.97); }
+.bonmappe[open] { opacity: 1; transform: scale(1); }
+.bonmappe::backdrop { opacity: 0; }
+.bonmappe[open]::backdrop { opacity: 1; }
+
+@starting-style {
+  .bonmappe[open] { opacity: 0; transform: scale(0.97); }
+  .bonmappe[open]::backdrop { opacity: 0; }
+}
+
+/* ---------- Schmale Viewports ---------- */
+
+@media (max-width: 64rem) {
+  .werkbank {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "kopf" "leute" "arbeit" "fuss";
+  }
+
+  .ablagen { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bonmappe,
+  .bonmappe[open] { transform: none; }
+}
+
+/* ---------- Zustaende beim Ziehen ---------- */
+
+/* Schon auf dem Beleg. Bewusst nur leiser, nicht gesperrt: der Ausleger darf
+   auch Teilnehmer sein, das Aggregat rechnet genau diesen Fall heraus. */
+.token.is-verplant .token__name {
+  color: var(--ink-soft);
+}
+
+.token.is-quelle {
+  opacity: 0.4;
+}
+
+/* Die mitgezogene Kopie. Nur transform wird bewegt. */
+.token--geist {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 30;
+  pointer-events: none;
+  border-color: var(--accent);
+  background: var(--surface-raised);
+  box-shadow: 0 8px 20px rgb(24 24 27 / 14%);
+}
+
+/* Ziehen ohne Textauswahl */
+.roster {
+  touch-action: pan-y;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .token:active:not(:disabled) { transform: none; }
+  .chip { transition: none; }
+}
+
+.ausgleich li {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.ausgleich__von,
+.ausgleich__an {
+  font-weight: 500;
+}
+
+.ausgleich__wort {
+  color: var(--ink-soft);
+}
+
+.ausgleich__betrag {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  white-space: nowrap;
 }
