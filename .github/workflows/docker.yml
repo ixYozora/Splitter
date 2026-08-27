@@ -46,7 +46,7 @@ jobs:
         uses: actions/checkout@v7.0.1
 
       - name: set up buildx
-        uses: docker/setup-buildx-action@v4.2.0
+        uses: docker/setup-buildx-action@v4.3.0
 
       # load statt push: das Bild wird nirgends veroeffentlicht, muss aber
       # lokal vorliegen, damit der naechste Schritt es starten kann. Der
