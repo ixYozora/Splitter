@@ -5,21 +5,37 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
+import org.springframework.security.oauth2.client.oidc.web.logout.OidcClientInitiatedLogoutSuccessHandler;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
 
 @Configuration
 public class WebSecurityKonfiguration {
 
   @Bean
-  public SecurityFilterChain configure(HttpSecurity chainbuilder) throws Exception {
+  public SecurityFilterChain configure(
+      HttpSecurity chainbuilder, ClientRegistrationRepository clientRegistrationRepository)
+      throws Exception {
     chainbuilder
         .authorizeHttpRequests(configurer -> configurer.anyRequest().authenticated())
         .logout(
             e ->
-                e.clearAuthentication(true).invalidateHttpSession(true).deleteCookies("JSESSIONID"))
+                e.logoutSuccessHandler(oidcLogoutSuccessHandler(clientRegistrationRepository))
+                    .clearAuthentication(true)
+                    .invalidateHttpSession(true)
+                    .deleteCookies("JSESSIONID"))
         .oauth2Login(Customizer.withDefaults());
 
     return chainbuilder.build();
+  }
+
+  private LogoutSuccessHandler oidcLogoutSuccessHandler(
+      ClientRegistrationRepository clientRegistrationRepository) {
+    OidcClientInitiatedLogoutSuccessHandler successHandler =
+        new OidcClientInitiatedLogoutSuccessHandler(clientRegistrationRepository);
+    successHandler.setPostLogoutRedirectUri("{baseUrl}");
+    return successHandler;
   }
 
   // /error muss mit ausgenommen werden: Fehlerantworten laufen intern noch einmal ueber diesen
