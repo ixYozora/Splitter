@@ -1,0 +1,18 @@
+# Nur unter dem Profil "keycloak", das docker-compose.yml setzt. Sonst wuerde
+# issuer-uri schon beim Start eine Discovery-Anfrage ausloesen, und die schlaegt
+# in Tests und CI fehl, wo kein Keycloak laeuft.
+spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          keycloak:
+            client-id: ${KEYCLOAK_CLIENT_ID}
+            client-secret: ${KEYCLOAK_CLIENT_SECRET}
+            authorization-grant-type: authorization_code
+            scope: openid, profile, email
+        provider:
+          keycloak:
+            # Nicht localhost: Keycloak meldet sich unter diesem einen Namen, also
+            # braucht auch `bootRun` den /etc/hosts-Eintrag wie der Browser.
+            issuer-uri: ${KEYCLOAK_ISSUER_URI:http://keycloak:8080/realms/splitter}
