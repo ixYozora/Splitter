@@ -154,4 +154,19 @@ public class SpringDataGruppeInMemoryTest {
 
     assertThat(all).hasSize(2);
   }
+
+  @Test
+  @DisplayName("Ein 30 Zeichen langer Gruppenname passt in die Spalte")
+  void test_07() {
+    // Das Formular laesst 30 Zeichen zu; die Spalte war lange nur 20 breit.
+    String langerName = "a".repeat(30);
+    GruppeDTO dto =
+        new GruppeDTO(
+            null, langerName, List.of(new PersonDTO("MaxHub")), List.of(), List.of(), false, false);
+
+    GruppeDTO gespeichert = repository.save(dto);
+
+    assertThat(repository.findById(gespeichert.id()).orElseThrow().gruppenName())
+        .isEqualTo(langerName);
+  }
 }
