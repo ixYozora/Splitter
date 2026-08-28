@@ -41,7 +41,8 @@ public class WithOAuth2UserSecurityContextFactory
     OAuth2User principal =
         new DefaultOAuth2User(
             grantedAuthorities,
-            new HashMap<String, Object>(Map.of("id", withUser.id(), "login", withUser.login())),
+            new HashMap<String, Object>(
+                Map.of("id", withUser.id(), withUser.usernameAttribut(), withUser.login())),
             "id");
 
     Authentication auth =

@@ -19,7 +19,7 @@ public class GruppenService {
   }
 
   public Gruppe addGruppe(OAuth2User principle, String gruppenName) {
-    String login = principle.getAttribute("login");
+    String login = Benutzer.nameVon(principle);
     Gruppe gruppe = Gruppe.erstelleGruppe(null, login, gruppenName);
     return repository.save(gruppe);
   }
@@ -80,7 +80,7 @@ public class GruppenService {
   // Filtert auf der Gruppe statt auf den Details, damit der Netto-Betrag der
   // angemeldeten Person direkt mitberechnet werden kann.
   public GruppenOnPage personToGruppeMatch(OAuth2User principle) {
-    String login = principle.getAttribute("login");
+    String login = Benutzer.nameVon(principle);
     return new GruppenOnPage(
         repository.findAll().stream()
             .filter(

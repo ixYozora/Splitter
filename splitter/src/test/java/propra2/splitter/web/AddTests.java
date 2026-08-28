@@ -25,6 +25,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import propra2.splitter.config.WebSecurityKonfiguration;
 import propra2.splitter.domain.Gruppe;
 import propra2.splitter.helper.WithMockOAuth2User;
+import propra2.splitter.service.Benutzer;
 import propra2.splitter.service.GruppenService;
 
 @WebMvcTest(controllers = WebController.class)
@@ -228,5 +229,24 @@ public class AddTests {
         .andExpect(status().is3xxRedirection());
 
     verify(service).closeGruppe(gruppe.getId());
+  }
+
+  @Test
+  @WithMockOAuth2User(
+      login = "yozora",
+      usernameAttribut = "preferred_username",
+      clientRegistrationId = "keycloak")
+  @DisplayName("Auch über Keycloak angemeldet wird der eigene Name an den Service gereicht")
+  void test_11() throws Exception {
+
+    when(service.addGruppe(any(), anyString()))
+        .thenReturn(Gruppe.erstelleGruppe(UUID.randomUUID(), "yozora", "Gruppe"));
+
+    mvc.perform(post("/add").param("gruppenName", "Gruppe").with(csrf()))
+        .andExpect(status().is3xxRedirection());
+
+    ArgumentCaptor<OAuth2User> captor = ArgumentCaptor.forClass(OAuth2User.class);
+    verify(service).addGruppe(captor.capture(), eq("Gruppe"));
+    assertThat(Benutzer.nameVon(captor.getValue())).isEqualTo("yozora");
   }
 }

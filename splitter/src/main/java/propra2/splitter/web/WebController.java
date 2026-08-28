@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import propra2.splitter.domain.Gruppe;
+import propra2.splitter.service.Benutzer;
 import propra2.splitter.service.GruppenDetails;
 import propra2.splitter.service.GruppenOnPage;
 import propra2.splitter.service.GruppenService;
@@ -40,8 +41,8 @@ public class WebController {
             .reduce(Money.of(0, "EUR"), Money::add);
 
     model.addAttribute("gruppen", liste);
-    model.addAttribute("login", token.getPrincipal().getAttribute("login"));
-    model.addAttribute("avatarUrl", token.getPrincipal().getAttribute("avatar_url"));
+    model.addAttribute("login", Benutzer.nameVon(token.getPrincipal()));
+    model.addAttribute("avatarUrl", Benutzer.bildVon(token.getPrincipal()));
     model.addAttribute("offeneAnzahl", liste.details().size() - geschlossene);
     model.addAttribute("geschlosseneAnzahl", geschlossene);
     model.addAttribute("gesamtBetrag", gesamtBetrag);
@@ -82,8 +83,8 @@ public class WebController {
   private String gruppenSeiteFuellen(Model model, UUID id, OAuth2AuthenticationToken token) {
     Gruppe gruppe = service.getSingleGruppe(id);
     model.addAttribute("gruppe", gruppe);
-    model.addAttribute("login", token.getPrincipal().getAttribute("login"));
-    model.addAttribute("avatarUrl", token.getPrincipal().getAttribute("avatar_url"));
+    model.addAttribute("login", Benutzer.nameVon(token.getPrincipal()));
+    model.addAttribute("avatarUrl", Benutzer.bildVon(token.getPrincipal()));
 
     return "gruppe";
   }

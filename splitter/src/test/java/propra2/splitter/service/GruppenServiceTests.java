@@ -27,6 +27,12 @@ public class GruppenServiceTests {
     return new DefaultOAuth2User(List.of(), Map.of("login", login), "login");
   }
 
+  // Wie ihn Keycloak liefert: kein "login", der Name steckt in "preferred_username".
+  private DefaultOAuth2User mkKeycloakUser(String name) {
+    return new DefaultOAuth2User(
+        List.of(), Map.of("sub", "e5f0", "preferred_username", name), "sub");
+  }
+
   @Test
   @DisplayName("Service kann Gruppen hinzufügen")
   void test_01() {
@@ -225,5 +231,34 @@ public class GruppenServiceTests {
     service.addPersonToGruppe(gruppe.getId(), "GitLisa");
 
     verify(repository, never()).save(gruppe); // -> checks save only on from addPersonToGruppe
+  }
+
+  @Test
+  @DisplayName("Eine Anmeldung über Keycloak legt die Gruppe unter dem eigenen Namen an")
+  void test_15() {
+    GruppenService service = new GruppenService(repository);
+    when(repository.save(any(Gruppe.class))).thenAnswer(aufruf -> aufruf.getArgument(0));
+
+    Gruppe gruppe = service.addGruppe(mkKeycloakUser("yozora"), "Reisegruppe");
+
+    assertThat(gruppe.getPersonenNamen()).containsExactly("yozora");
+  }
+
+  @Test
+  @DisplayName("Zwei über Keycloak angemeldete Nutzer sehen nicht die Gruppen des anderen")
+  void test_16() {
+    GruppenService service = new GruppenService(repository);
+    UUID id = UUID.randomUUID();
+    UUID id2 = UUID.randomUUID();
+    when(repository.findAll())
+        .thenReturn(
+            List.of(
+                Gruppe.erstelleGruppe(id, "yozora", "Reisegruppe"),
+                Gruppe.erstelleGruppe(id2, "fremder", "Reisegruppe2")));
+
+    GruppenOnPage actualGruppen = service.personToGruppeMatch(mkKeycloakUser("yozora"));
+
+    assertThat(actualGruppen.details())
+        .containsExactly(new GruppenDetails(id, "Reisegruppe", List.of("yozora"), false));
   }
 }

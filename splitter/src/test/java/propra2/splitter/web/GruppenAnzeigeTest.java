@@ -193,4 +193,22 @@ public class GruppenAnzeigeTest {
     assertThat(html).contains("0,00 €");
     assertThat(html).contains("is-glatt");
   }
+
+  @Test
+  @WithMockOAuth2User(
+      login = "yozora",
+      usernameAttribut = "preferred_username",
+      clientRegistrationId = "keycloak")
+  @DisplayName("Die Startseite zeigt auch nach einer Anmeldung über Keycloak den Namen")
+  void test_10() throws Exception {
+    UUID id = UUID.randomUUID();
+    when(service.personToGruppeMatch(any()))
+        .thenReturn(
+            new GruppenOnPage(
+                List.of(new GruppenDetails(id, "Reisegruppe", List.of("yozora"), false))));
+
+    MvcResult result = mvc.perform(get("/")).andExpect(status().isOk()).andReturn();
+
+    assertThat(result.getResponse().getContentAsString()).contains("yozora");
+  }
 }
