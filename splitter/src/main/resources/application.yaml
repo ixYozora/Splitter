@@ -8,8 +8,8 @@ spring:
       client:
         registration:
           github:
-            client-id: ${CLIENT_ID}
-            client-secret: ${CLIENT_SECRET}
+            client-id: ${GITHUB_CLIENT_ID}
+            client-secret: ${GITHUB_CLIENT_SECRET}
             scope: read:public_repo
   datasource:
     password: ${POSTGRES_PASSWORD}

@@ -104,8 +104,8 @@ jobs:
           POSTGRES_USER: splitter
           POSTGRES_PASSWORD: splitter
           POSTGRES_DB: splitter
-          CLIENT_ID: dummy
-          CLIENT_SECRET: dummy
+          GITHUB_CLIENT_ID: dummy
+          GITHUB_CLIENT_SECRET: dummy
         run: |
           java -jar build/libs/*.jar > app.log 2>&1 &
           echo $! > app.pid

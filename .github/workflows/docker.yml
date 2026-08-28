@@ -68,8 +68,8 @@ jobs:
             -e POSTGRES_USER=splitter \
             -e POSTGRES_PASSWORD=splitter \
             -e POSTGRES_DB=splitter \
-            -e CLIENT_ID=dummy \
-            -e CLIENT_SECRET=dummy \
+            -e GITHUB_CLIENT_ID=dummy \
+            -e GITHUB_CLIENT_SECRET=dummy \
             splitter:ci
 
       # Mehr Luft als beim blanken Jar: lokal brauchte der Container 18s statt 8s.

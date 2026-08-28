@@ -18,18 +18,14 @@ services:
   app:
     build: .
     ports:
-      # Bound to the loopback interface: an SSH tunnel still reaches it, but the
-      # unauthenticated /api/** endpoints are not published to the LAN.
       - "127.0.0.1:9000:9000"
     depends_on:
       database:
         condition: service_healthy
     environment:
-      # Inside the compose network Postgres is reachable under its service name,
-      # not on localhost; application.yaml builds the URL around this.
       - POSTGRES_HOST=database
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - CLIENT_ID=${CLIENT_ID}
-      - CLIENT_SECRET=${CLIENT_SECRET}
+      - GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID}
+      - GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET}
