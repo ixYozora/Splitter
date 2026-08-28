@@ -390,7 +390,7 @@ public class SingleGruppeAnzeigeTest {
 
   @Test
   @WithMockOAuth2User(login = "MaxHub")
-  @DisplayName("Ein invalider GitHub-Name laesst den getippten Namen stehen")
+  @DisplayName("Ein invalider Name laesst den getippten Namen stehen")
   void test_16() throws Exception {
     UUID id = UUID.randomUUID();
     Gruppe gruppe = Gruppe.erstelleGruppe(id, "MaxHub", "Reisegruppe");
@@ -404,55 +404,54 @@ public class SingleGruppeAnzeigeTest {
             .andReturn();
     String html = result.getResponse().getContentAsString();
 
-    assertThat(html).contains("Invalider GitHub Name");
+    assertThat(html).contains("Invalider Name");
     assertThat(html).contains("value=\"!!\"");
     verify(service, never()).addPersonToGruppe(any(), any());
   }
 
   @Test
   @WithMockOAuth2User(login = "MaxHub")
-  @DisplayName("Namen bis 39 Zeichen werden angenommen, laengere nicht")
+  @DisplayName("Namen bis 64 Zeichen werden angenommen, laengere nicht")
   void test_17() throws Exception {
     UUID id = UUID.randomUUID();
     Gruppe gruppe = Gruppe.erstelleGruppe(id, "MaxHub", "Reisegruppe");
     when(service.getSingleGruppe(id)).thenReturn(gruppe);
 
-    // GitHub laesst 39 Zeichen zu - das Muster hier stand vorher auf 15 und
-    // sperrte solche Konten komplett aus.
-    String neununddreissig = "a".repeat(39);
+    // GitHub deckelt bei 39 Zeichen, mailfoermige Keycloak-Namen werden laenger.
+    String vierundsechzig = "a".repeat(64);
     mvc.perform(
             post("/gruppe/add")
                 .with(csrf())
                 .param("id", id.toString())
-                .param("login", neununddreissig))
+                .param("login", vierundsechzig))
         .andExpect(status().is3xxRedirection());
-    verify(service).addPersonToGruppe(id, neununddreissig);
+    verify(service).addPersonToGruppe(id, vierundsechzig);
 
     mvc.perform(
             post("/gruppe/add")
                 .with(csrf())
                 .param("id", id.toString())
-                .param("login", "a".repeat(40)))
+                .param("login", "a".repeat(65)))
         .andExpect(status().isOk());
-    verify(service, never()).addPersonToGruppe(id, "a".repeat(40));
+    verify(service, never()).addPersonToGruppe(id, "a".repeat(65));
   }
 
   @Test
   @WithMockOAuth2User(login = "MaxHub")
-  @DisplayName("Die uebrigen GitHub-Regeln gelten: keine doppelten oder aeusseren Bindestriche")
+  @DisplayName("Trennzeichen stehen nur einzeln und nur zwischen zwei Zeichen")
   void test_18() throws Exception {
     UUID id = UUID.randomUUID();
     Gruppe gruppe = Gruppe.erstelleGruppe(id, "MaxHub", "Reisegruppe");
     when(service.getSingleGruppe(id)).thenReturn(gruppe);
 
-    for (String gut : List.of("ab", "a", "Max-Hub", "a1-b2-c3")) {
+    // Punkt, Unterstrich und @ kommen dazu: so heissen Konten in Keycloak.
+    for (String gut : List.of("ab", "a", "Max-Hub", "a1-b2-c3", "max_hub", "local@dev.de")) {
       mvc.perform(post("/gruppe/add").with(csrf()).param("id", id.toString()).param("login", gut))
           .andExpect(status().is3xxRedirection());
       verify(service).addPersonToGruppe(id, gut);
     }
 
-    // Unterstriche kennt GitHub bei Konten nicht, das alte Muster liess sie zu.
-    for (String schlecht : List.of("-max", "max-", "ma--x", "max_hub", "ma x")) {
+    for (String schlecht : List.of("-max", "max-", "ma--x", "max_", ".max", "ma x", "a@@b")) {
       mvc.perform(
               post("/gruppe/add").with(csrf()).param("id", id.toString()).param("login", schlecht))
           .andExpect(status().isOk());

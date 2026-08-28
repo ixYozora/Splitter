@@ -99,7 +99,7 @@ public class WebController {
       OAuth2AuthenticationToken token) {
 
     if (bindingResult.hasErrors()) {
-      model.addAttribute("loginMessage", "Invalider GitHub Name");
+      model.addAttribute("loginMessage", "Invalider Name");
 
       return gruppenSeiteFuellen(model, id, token);
     }

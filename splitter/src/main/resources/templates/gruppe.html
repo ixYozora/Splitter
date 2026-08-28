@@ -76,9 +76,9 @@
       <h2 class="sheet__label" id="hinzufuegenTitel">Mitglied hinzufügen</h2>
       <form method="post" th:action="@{/gruppe/add}" th:object="${loginForm}" class="mitglied__form">
         <input type="hidden" name="id" th:value="${gruppe.id}">
-        <label class="visually-hidden" for="name">GitHub-Name</label>
+        <label class="visually-hidden" for="name">Benutzername</label>
         <input class="mitglied__input" id="name" type="text" name="login" th:field="*{login}"
-               autocomplete="off" placeholder="GitHub-Name"
+               autocomplete="off" placeholder="Benutzername"
                th:attr="aria-invalid=${loginMessage != null} ? 'true' : null">
         <button class="button" type="submit">Hinzufügen</button>
         <p class="compose__error" th:if="${loginMessage}">
@@ -87,7 +87,7 @@
             <line x1="8" y1="4.75" x2="8" y2="8.5"></line>
             <line x1="8" y1="11" x2="8" y2="11.01"></line>
           </svg>
-          <span th:text="${loginMessage}">Invalider GitHub Name</span>
+          <span th:text="${loginMessage}">Invalider Name</span>
         </p>
       </form>
     </section>
