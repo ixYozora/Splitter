@@ -45,13 +45,19 @@ public class RestController {
   }
 
   @PostMapping("/api/gruppen")
-  public ResponseEntity<UUID> addGruppen(@RequestBody GruppeEntity gruppenEntity) {
+  public ResponseEntity<UUID> addGruppen(
+      @RequestBody GruppeEntity gruppenEntity, OAuth2AuthenticationToken token) {
 
     // getPersonen() ist null, wenn das JSON das Feld nicht mitschickt.
     if (gruppenEntity.getName() == null) {
       return ResponseEntity.badRequest().body(null);
     } else if (gruppenEntity.getPersonen() == null || gruppenEntity.getPersonen().isEmpty()) {
       return ResponseEntity.badRequest().body(null);
+    }
+    // Eine Gruppe, in der man selbst nicht steht, koennte man hinterher nicht lesen.
+    if (token != null
+        && !gruppenEntity.getPersonen().contains(Benutzer.nameVon(token.getPrincipal()))) {
+      return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
     }
 
     return new ResponseEntity<>(service.addRestGruppe(gruppenEntity), HttpStatus.CREATED);

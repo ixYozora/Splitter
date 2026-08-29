@@ -97,8 +97,8 @@ jobs:
         run: ./gradlew bootJar
 
       # Die OAuth-Werte duerfen Platzhalter sein: die Anwendung registriert den
-      # Client beim Start, spricht aber nie mit GitHub, und /api/** liegt
-      # ohnehin ausserhalb der Sicherheitskette.
+      # Client beim Start, spricht aber nie mit GitHub, und /api/** verlangt
+      # unter dem Profil unten ohnehin keine Anmeldung.
       - name: start the app
         env:
           POSTGRES_USER: splitter
@@ -107,7 +107,7 @@ jobs:
           GITHUB_CLIENT_ID: dummy
           GITHUB_CLIENT_SECRET: dummy
           # run_tests.jar spricht /api/** ohne Anmeldung an; nur unter diesem
-          # Profil liegt die Schnittstelle ausserhalb der Sicherheitskette.
+          # Profil bekommt die Schnittstelle eine Kette, die niemanden abweist.
           SPRING_PROFILES_ACTIVE: open-api
         run: |
           java -jar build/libs/*.jar > app.log 2>&1 &

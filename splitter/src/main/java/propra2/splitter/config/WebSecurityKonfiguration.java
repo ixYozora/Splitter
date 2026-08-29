@@ -3,6 +3,7 @@ package propra2.splitter.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -19,7 +20,24 @@ import org.springframework.security.web.util.matcher.AnyRequestMatcher;
 @Configuration
 public class WebSecurityKonfiguration {
 
+  // Der Abnahmetest ruft die Schnittstelle ohne Anmeldung auf. Nur unter diesem Profil
+  // bekommt sie eine eigene Kette, die niemanden abweist.
   @Bean
+  @Order(1)
+  @Profile("open-api")
+  public SecurityFilterChain apiKette(HttpSecurity chainbuilder) throws Exception {
+    return chainbuilder
+        .securityMatcher("/api/**")
+        .authorizeHttpRequests(configurer -> configurer.anyRequest().permitAll())
+        // An einer Anfrage ohne Anmeldung haengt keine Sitzung, die ein fremdes
+        // Formular missbrauchen koennte; der Abnahmetest schickt also kein Token.
+        .csrf(
+            csrf -> csrf.ignoringRequestMatchers(PathPatternRequestMatcher.pathPattern("/api/**")))
+        .build();
+  }
+
+  @Bean
+  @Order(2)
   public SecurityFilterChain configure(
       HttpSecurity chainbuilder, ClientRegistrationRepository clientRegistrationRepository)
       throws Exception {
@@ -59,14 +77,5 @@ public class WebSecurityKonfiguration {
   @Bean
   public WebSecurityCustomizer customizer() {
     return web -> web.ignoring().requestMatchers("/error");
-  }
-
-  // Der Abnahmetest ruft die Schnittstelle ohne Anmeldung auf. Nur unter diesem
-  // Profil liegt sie ausserhalb der Sicherheitskette, sonst verlangt sie eine
-  // Anmeldung wie jede andere Seite auch.
-  @Bean
-  @Profile("open-api")
-  public WebSecurityCustomizer openApiCustomizer() {
-    return web -> web.ignoring().requestMatchers("/api/**");
   }
 }
