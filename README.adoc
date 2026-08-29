@@ -17,6 +17,12 @@ there.
 
 === Step 1: Clone the repository
 
+[source,bash]
+----
+git clone https://github.com/ixYozora/Splitter.git
+cd Splitter
+----
+
 === Step 2: Register a GitHub OAuth app
 
 Signing in goes through GitHub, so the application needs its own OAuth app. Create one under
