@@ -1,0 +1,52 @@
+{
+  "realm": "splitter",
+  "enabled": true,
+  "loginWithEmailAllowed": true,
+  "registrationAllowed": false,
+  "clients": [
+    {
+      "clientId": "${KEYCLOAK_CLIENT_ID}",
+      "name": "Splitter-app",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "${KEYCLOAK_CLIENT_SECRET}",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "rootUrl": "http://localhost:9000",
+      "baseUrl": "http://localhost:9000",
+      "redirectUris": [
+        "http://localhost:9000/login/oauth2/code/keycloak"
+      ],
+      "webOrigins": [
+        "http://localhost:9000"
+      ],
+      "frontchannelLogout": true,
+      "attributes": {
+        "post.logout.redirect.uris": "http://localhost:9000"
+      }
+    }
+  ],
+  "users": [
+    {
+      "username": "${KEYCLOAK_DEV_USER}",
+      "enabled": true,
+      "firstName": "Local",
+      "lastName": "Dev",
+      "email": "local@dev.de",
+      "emailVerified": true,
+      "realmRoles": [
+        "default-roles-splitter"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${KEYCLOAK_DEV_PASSWORD}",
+          "temporary": false
+        }
+      ]
+    }
+  ]
+}
