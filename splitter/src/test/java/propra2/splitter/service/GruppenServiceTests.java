@@ -1,6 +1,7 @@
 package propra2.splitter.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.mock;
@@ -16,6 +17,7 @@ import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import propra2.splitter.domain.Gruppe;
 
@@ -56,7 +58,7 @@ public class GruppenServiceTests {
     Gruppe gruppe = Gruppe.erstelleGruppe(id, "James", "Reisegruppe");
     when(repository.findById(any(UUID.class))).thenReturn(Optional.of(gruppe));
 
-    service.addPersonToGruppe(id, "James2");
+    service.addPersonToGruppe(mkUser("James"), id, "James2");
 
     verify(repository, times(1)).save(gruppe);
   }
@@ -75,8 +77,8 @@ public class GruppenServiceTests {
 
     Gruppe actualGruppe1 = service.addGruppe(mkUser("MaxHub"), "Reisegruppe1");
     Gruppe actualGruppe2 = service.addGruppe(mkUser("GitLisa"), "Reisegruppe2");
-    service.addPersonToGruppe(id, "MaxHub");
-    service.addPersonToGruppe(id2, "James");
+    service.addPersonToGruppe(mkUser("James"), id, "MaxHub");
+    service.addPersonToGruppe(mkUser("MaxHub"), id2, "James");
 
     verify(repository, times(1)).save(gruppe1);
     verify(repository, times(1)).save(gruppe2);
@@ -142,8 +144,8 @@ public class GruppenServiceTests {
     Gruppe gruppe = Gruppe.erstelleGruppe(id, "James", "Reisegruppe");
     when(repository.findById(any(UUID.class))).thenReturn(Optional.of(gruppe));
 
-    service.addPersonToGruppe(id, "GitLisa");
-    service.addAusgabeToGruppe(id, "Pizza", "James", "James, GitLisa", 40.00);
+    service.addPersonToGruppe(mkUser("James"), id, "GitLisa");
+    service.addAusgabeToGruppe(mkUser("James"), id, "Pizza", "James", "James, GitLisa", 40.00);
 
     verify(repository, times(2)).save(gruppe);
   }
@@ -155,10 +157,12 @@ public class GruppenServiceTests {
     UUID id = UUID.randomUUID();
     Gruppe gruppe = Gruppe.erstelleGruppe(id, "James", "Reisegruppe");
     when(repository.findById(any(UUID.class))).thenReturn(Optional.of(gruppe));
-    service.addPersonToGruppe(id, "GitLisa");
+    service.addPersonToGruppe(mkUser("James"), id, "GitLisa");
 
-    service.addAusgabeToGruppe(gruppe.getId(), "pizza", "James", "James, GitLisa", 40.00);
-    service.addAusgabeToGruppe(gruppe.getId(), "club", "James", "James, GitLisa", 40.00);
+    service.addAusgabeToGruppe(
+        mkUser("James"), gruppe.getId(), "pizza", "James", "James, GitLisa", 40.00);
+    service.addAusgabeToGruppe(
+        mkUser("James"), gruppe.getId(), "club", "James", "James, GitLisa", 40.00);
 
     verify(repository, times(3)).save(gruppe);
   }
@@ -171,9 +175,9 @@ public class GruppenServiceTests {
     Gruppe gruppe = Gruppe.erstelleGruppe(id, "James", "Reisegruppe");
     when(repository.findById(any(UUID.class))).thenReturn(Optional.of(gruppe));
 
-    service.addPersonToGruppe(id, "GitLisa");
-    service.addAusgabeToGruppe(id, "pizza", "James", "James, GitLisa", 40.00);
-    service.transaktionBerechnen(id);
+    service.addPersonToGruppe(mkUser("James"), id, "GitLisa");
+    service.addAusgabeToGruppe(mkUser("James"), id, "pizza", "James", "James, GitLisa", 40.00);
+    service.transaktionBerechnen(mkUser("James"), id);
 
     verify(repository, times(3)).save(gruppe);
   }
@@ -186,10 +190,12 @@ public class GruppenServiceTests {
     Gruppe gruppe = Gruppe.erstelleGruppe(id, "James", "Reisegruppe");
     when(repository.findById(any(UUID.class))).thenReturn(Optional.of(gruppe));
 
-    service.addAusgabeToGruppe(gruppe.getId(), "pizza", "James", "James, GitLisa", 40.00);
-    service.transaktionBerechnen(gruppe.getId());
-    service.addAusgabeToGruppe(gruppe.getId(), "club", "James", "James, GitLisa", 40.00);
-    service.transaktionBerechnen(gruppe.getId());
+    service.addAusgabeToGruppe(
+        mkUser("James"), gruppe.getId(), "pizza", "James", "James, GitLisa", 40.00);
+    service.transaktionBerechnen(mkUser("James"), gruppe.getId());
+    service.addAusgabeToGruppe(
+        mkUser("James"), gruppe.getId(), "club", "James", "James, GitLisa", 40.00);
+    service.transaktionBerechnen(mkUser("James"), gruppe.getId());
 
     verify(repository, times(4)).save(gruppe);
   }
@@ -202,7 +208,7 @@ public class GruppenServiceTests {
     Gruppe gruppe = Gruppe.erstelleGruppe(id, "James", "Reisegruppe");
     when(repository.findById(any(UUID.class))).thenReturn(Optional.of(gruppe));
 
-    service.closeGruppe(gruppe.getId());
+    service.closeGruppe(mkUser("James"), gruppe.getId());
 
     verify(repository).save(gruppe);
   }
@@ -225,10 +231,10 @@ public class GruppenServiceTests {
     UUID id = UUID.randomUUID();
     Gruppe gruppe = Gruppe.erstelleGruppe(id, "James", "Reisegruppe");
     when(repository.findById(any(UUID.class))).thenReturn(Optional.of(gruppe));
-    service.closeGruppe(gruppe.getId());
+    service.closeGruppe(mkUser("James"), gruppe.getId());
 
     clearInvocations(repository); // clears the first save call from closeGroup
-    service.addPersonToGruppe(gruppe.getId(), "GitLisa");
+    service.addPersonToGruppe(mkUser("James"), gruppe.getId(), "GitLisa");
 
     verify(repository, never()).save(gruppe); // -> checks save only on from addPersonToGruppe
   }
@@ -260,5 +266,43 @@ public class GruppenServiceTests {
 
     assertThat(actualGruppen.details())
         .containsExactly(new GruppenDetails(id, "Reisegruppe", List.of("yozora"), false));
+  }
+
+  @Test
+  @DisplayName("Wer nicht Mitglied ist, bekommt die Gruppe nicht zu sehen")
+  void test_17() {
+    GruppenService service = new GruppenService(repository);
+    UUID id = UUID.randomUUID();
+    when(repository.findById(any(UUID.class)))
+        .thenReturn(Optional.of(Gruppe.erstelleGruppe(id, "James", "Reisegruppe")));
+
+    assertThatThrownBy(() -> service.getSingleGruppeFuerMitglied(mkUser("Fremder"), id))
+        .isInstanceOf(AccessDeniedException.class);
+
+    assertThat(service.getSingleGruppeFuerMitglied(mkUser("James"), id).getGruppenName())
+        .isEqualTo("Reisegruppe");
+  }
+
+  @Test
+  @DisplayName("Die Gruppen-ID allein berechtigt zu keiner Aenderung")
+  void test_18() {
+    GruppenService service = new GruppenService(repository);
+    UUID id = UUID.randomUUID();
+    Gruppe gruppe = Gruppe.erstelleGruppe(id, "James", "Reisegruppe");
+    when(repository.findById(any(UUID.class))).thenReturn(Optional.of(gruppe));
+    DefaultOAuth2User fremder = mkUser("Fremder");
+
+    assertThatThrownBy(() -> service.addPersonToGruppe(fremder, id, "GitLisa"))
+        .isInstanceOf(AccessDeniedException.class);
+    assertThatThrownBy(
+            () -> service.addAusgabeToGruppe(fremder, id, "Pizza", "James", "James", 40.00))
+        .isInstanceOf(AccessDeniedException.class);
+    assertThatThrownBy(() -> service.transaktionBerechnen(fremder, id))
+        .isInstanceOf(AccessDeniedException.class);
+    assertThatThrownBy(() -> service.closeGruppe(fremder, id))
+        .isInstanceOf(AccessDeniedException.class);
+
+    verify(repository, never()).save(any(Gruppe.class));
+    assertThat(gruppe.getPersonenNamen()).containsExactly("James");
   }
 }

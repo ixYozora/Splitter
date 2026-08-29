@@ -67,7 +67,7 @@ public class AddTests {
                 .with(csrf()))
         .andExpect(status().is3xxRedirection());
 
-    verify(service).addPersonToGruppe(gruppe.getId(), "Gitlisa");
+    verify(service).addPersonToGruppe(any(), eq(gruppe.getId()), eq("Gitlisa"));
   }
 
   @Test
@@ -76,7 +76,7 @@ public class AddTests {
   void test_03() throws Exception {
 
     Gruppe gruppe = Gruppe.erstelleGruppe(UUID.randomUUID(), "MaxHub", "Reisegruppe");
-    when(service.getSingleGruppe(gruppe.getId())).thenReturn(gruppe);
+    when(service.getSingleGruppeFuerMitglied(any(), eq(gruppe.getId()))).thenReturn(gruppe);
 
     mvc.perform(
             post("/gruppe/add")
@@ -85,7 +85,7 @@ public class AddTests {
                 .with(csrf()))
         .andExpect(status().isOk());
 
-    verify(service, never()).addPersonToGruppe(any(), anyString());
+    verify(service, never()).addPersonToGruppe(any(), any(), anyString());
   }
 
   @Test
@@ -95,7 +95,7 @@ public class AddTests {
 
     Gruppe gruppe = Gruppe.erstelleGruppe(UUID.randomUUID(), "MaxHub", "Reisegruppe");
     gruppe.addPerson("GitLisa");
-    when(service.getSingleGruppe(gruppe.getId())).thenReturn(gruppe);
+    when(service.getSingleGruppeFuerMitglied(any(), eq(gruppe.getId()))).thenReturn(gruppe);
 
     mvc.perform(
             post("/gruppe/add/ausgaben")
@@ -107,7 +107,9 @@ public class AddTests {
                 .with(csrf()))
         .andExpect(status().is3xxRedirection());
 
-    verify(service).addAusgabeToGruppe(gruppe.getId(), "pizza", "MaxHub", "GitLisa", 40.00);
+    verify(service)
+        .addAusgabeToGruppe(
+            any(), eq(gruppe.getId()), eq("pizza"), eq("MaxHub"), eq("GitLisa"), eq(40.00));
   }
 
   @Test
@@ -117,7 +119,7 @@ public class AddTests {
 
     Gruppe gruppe = Gruppe.erstelleGruppe(UUID.randomUUID(), "MaxHub", "Reisegruppe");
     gruppe.addPerson("GitLisa");
-    when(service.getSingleGruppe(gruppe.getId())).thenReturn(gruppe);
+    when(service.getSingleGruppeFuerMitglied(any(), eq(gruppe.getId()))).thenReturn(gruppe);
 
     mvc.perform(
             post("/gruppe/add/ausgaben")
@@ -130,7 +132,7 @@ public class AddTests {
         .andExpect(status().isOk());
 
     verify(service, never())
-        .addAusgabeToGruppe(any(), anyString(), anyString(), anyString(), anyDouble());
+        .addAusgabeToGruppe(any(), any(), anyString(), anyString(), anyString(), anyDouble());
   }
 
   @Test
@@ -140,7 +142,7 @@ public class AddTests {
 
     Gruppe gruppe = Gruppe.erstelleGruppe(UUID.randomUUID(), "MaxHub", "Reisegruppe");
     gruppe.addPerson("GitLisa");
-    when(service.getSingleGruppe(gruppe.getId())).thenReturn(gruppe);
+    when(service.getSingleGruppeFuerMitglied(any(), eq(gruppe.getId()))).thenReturn(gruppe);
 
     mvc.perform(
             post("/gruppe/add/ausgaben")
@@ -153,7 +155,7 @@ public class AddTests {
         .andExpect(status().isOk());
 
     verify(service, never())
-        .addAusgabeToGruppe(any(), anyString(), anyString(), anyString(), anyDouble());
+        .addAusgabeToGruppe(any(), any(), anyString(), anyString(), anyString(), anyDouble());
   }
 
   @Test
@@ -163,7 +165,7 @@ public class AddTests {
 
     Gruppe gruppe = Gruppe.erstelleGruppe(UUID.randomUUID(), "MaxHub", "Reisegruppe");
     gruppe.addPerson("GitLisa");
-    when(service.getSingleGruppe(gruppe.getId())).thenReturn(gruppe);
+    when(service.getSingleGruppeFuerMitglied(any(), eq(gruppe.getId()))).thenReturn(gruppe);
 
     mvc.perform(
             post("/gruppe/add/ausgaben")
@@ -176,7 +178,7 @@ public class AddTests {
         .andExpect(status().isOk());
 
     verify(service, never())
-        .addAusgabeToGruppe(any(), anyString(), anyString(), anyString(), anyDouble());
+        .addAusgabeToGruppe(any(), any(), anyString(), anyString(), anyString(), anyDouble());
   }
 
   @Test
@@ -186,7 +188,7 @@ public class AddTests {
 
     Gruppe gruppe = Gruppe.erstelleGruppe(UUID.randomUUID(), "MaxHub", "Reisegruppe");
     gruppe.addPerson("GitLisa");
-    when(service.getSingleGruppe(gruppe.getId())).thenReturn(gruppe);
+    when(service.getSingleGruppeFuerMitglied(any(), eq(gruppe.getId()))).thenReturn(gruppe);
 
     mvc.perform(
             post("/gruppe/add/ausgaben")
@@ -199,7 +201,7 @@ public class AddTests {
         .andExpect(status().isOk());
 
     verify(service, never())
-        .addAusgabeToGruppe(any(), anyString(), anyString(), anyString(), anyDouble());
+        .addAusgabeToGruppe(any(), any(), anyString(), anyString(), anyString(), anyDouble());
   }
 
   @Test
@@ -215,7 +217,7 @@ public class AddTests {
                 .with(csrf()))
         .andExpect(status().is3xxRedirection());
 
-    verify(service).transaktionBerechnen(gruppe.getId());
+    verify(service).transaktionBerechnen(any(), eq(gruppe.getId()));
   }
 
   @Test
@@ -228,7 +230,7 @@ public class AddTests {
     mvc.perform(post("/gruppe/close").param("id", gruppe.getId().toString()).with(csrf()))
         .andExpect(status().is3xxRedirection());
 
-    verify(service).closeGruppe(gruppe.getId());
+    verify(service).closeGruppe(any(), eq(gruppe.getId()));
   }
 
   @Test

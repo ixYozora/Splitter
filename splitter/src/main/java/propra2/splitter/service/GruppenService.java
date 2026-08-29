@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import org.javamoney.moneta.Money;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import propra2.splitter.domain.Gruppe;
@@ -24,8 +25,8 @@ public class GruppenService {
     return repository.save(gruppe);
   }
 
-  public void closeGruppe(UUID id) {
-    Gruppe gruppe = getSingleGruppe(id);
+  public void closeGruppe(OAuth2User principle, UUID id) {
+    Gruppe gruppe = getSingleGruppeFuerMitglied(principle, id);
     gruppe.closeGroup();
     repository.save(gruppe);
   }
@@ -51,27 +52,43 @@ public class GruppenService {
     return new GruppenOnPage(gruppenDetails);
   }
 
-  public Gruppe getSingleGruppe(UUID id) {
+  // Paketsichtbar: von aussen fuehrt der Weg nur ueber die gepruefte Variante.
+  Gruppe getSingleGruppe(UUID id) {
     return repository.findById(id).orElseThrow();
   }
 
-  public void addPersonToGruppe(UUID id, String login) {
+  // Die Gruppen-ID ist kein Ausweis. Ohne diese Pruefung kann jeder Angemeldete
+  // jede Gruppe lesen und aendern, sobald er ihre ID kennt.
+  public Gruppe getSingleGruppeFuerMitglied(OAuth2User principle, UUID id) {
     Gruppe gruppe = getSingleGruppe(id);
+    if (!gruppe.getPersonenNamen().contains(Benutzer.nameVon(principle))) {
+      throw new AccessDeniedException("Kein Mitglied der Gruppe " + id);
+    }
+    return gruppe;
+  }
+
+  public void addPersonToGruppe(OAuth2User principle, UUID id, String login) {
+    Gruppe gruppe = getSingleGruppeFuerMitglied(principle, id);
     if (gruppe.addPerson(login)) {
       repository.save(gruppe);
     }
   }
 
   public void addAusgabeToGruppe(
-      UUID id, String aktivitaet, String login, String teilnehmer, Double cost) {
-    Gruppe gruppe = getSingleGruppe(id);
+      OAuth2User principle,
+      UUID id,
+      String aktivitaet,
+      String login,
+      String teilnehmer,
+      Double cost) {
+    Gruppe gruppe = getSingleGruppeFuerMitglied(principle, id);
     gruppe.addAusgabeToPerson(
         aktivitaet, login, Arrays.stream(teilnehmer.split(", ")).toList(), Money.of(cost, "EUR"));
     repository.save(gruppe);
   }
 
-  public void transaktionBerechnen(UUID id) {
-    Gruppe gruppe = getSingleGruppe(id);
+  public void transaktionBerechnen(OAuth2User principle, UUID id) {
+    Gruppe gruppe = getSingleGruppeFuerMitglied(principle, id);
     gruppe.clearTransaktionen();
     gruppe.berechneTransaktionen();
     repository.save(gruppe);

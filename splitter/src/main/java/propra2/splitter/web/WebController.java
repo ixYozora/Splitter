@@ -81,7 +81,7 @@ public class WebController {
   // Gemeinsam fuer die GET-Seite und die Fehlerwege der beiden POSTs; ein Redirect wuerde das
   // Formular leeren, also wird direkt gerendert.
   private String gruppenSeiteFuellen(Model model, UUID id, OAuth2AuthenticationToken token) {
-    Gruppe gruppe = service.getSingleGruppe(id);
+    Gruppe gruppe = service.getSingleGruppeFuerMitglied(token.getPrincipal(), id);
     model.addAttribute("gruppe", gruppe);
     model.addAttribute("login", Benutzer.nameVon(token.getPrincipal()));
     model.addAttribute("avatarUrl", Benutzer.bildVon(token.getPrincipal()));
@@ -104,7 +104,7 @@ public class WebController {
       return gruppenSeiteFuellen(model, id, token);
     }
 
-    service.addPersonToGruppe(id, loginForm.login());
+    service.addPersonToGruppe(token.getPrincipal(), id, loginForm.login());
 
     return "redirect:/gruppe?id=" + id;
   }
@@ -138,6 +138,7 @@ public class WebController {
     }
 
     service.addAusgabeToGruppe(
+        token.getPrincipal(),
         id,
         ausgabenForm.aktivitaet(),
         ausgabenForm.zahler(),
@@ -149,16 +150,19 @@ public class WebController {
 
   @PostMapping("/gruppe/add/ausgaben/transaktion")
   public String berechneTransaktion(
-      @RequestParam(name = "id", value = "id", required = false) UUID id) {
+      @RequestParam(name = "id", value = "id", required = false) UUID id,
+      OAuth2AuthenticationToken token) {
 
-    service.transaktionBerechnen(id);
+    service.transaktionBerechnen(token.getPrincipal(), id);
 
     return "redirect:/gruppe?id=" + id;
   }
 
   @PostMapping("/gruppe/close")
-  public String schließGruppe(@RequestParam(name = "id", value = "id", required = false) UUID id) {
-    service.closeGruppe(id);
+  public String schließGruppe(
+      @RequestParam(name = "id", value = "id", required = false) UUID id,
+      OAuth2AuthenticationToken token) {
+    service.closeGruppe(token.getPrincipal(), id);
     return "redirect:/gruppe?id=" + id;
   }
 }
