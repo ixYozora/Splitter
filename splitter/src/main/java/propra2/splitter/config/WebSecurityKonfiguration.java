@@ -21,8 +21,7 @@ import org.springframework.security.web.util.matcher.AnyRequestMatcher;
 public class WebSecurityKonfiguration {
 
   // Der Abnahmetest ruft die Schnittstelle ohne Anmeldung auf. Nur unter diesem Profil
-  // bekommt sie eine eigene Kette, die niemanden abweist; ohne Anmeldung greift auch
-  // kein CSRF-Token.
+  // bekommt sie eine eigene Kette, die niemanden abweist.
   @Bean
   @Order(1)
   @Profile("open-api")
@@ -30,6 +29,10 @@ public class WebSecurityKonfiguration {
     return chainbuilder
         .securityMatcher("/api/**")
         .authorizeHttpRequests(configurer -> configurer.anyRequest().permitAll())
+        // An einer Anfrage ohne Anmeldung haengt keine Sitzung, die ein fremdes
+        // Formular missbrauchen koennte; der Abnahmetest schickt also kein Token.
+        .csrf(
+            csrf -> csrf.ignoringRequestMatchers(PathPatternRequestMatcher.pathPattern("/api/**")))
         .build();
   }
 
