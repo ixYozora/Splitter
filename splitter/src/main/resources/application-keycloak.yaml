@@ -1,4 +1,4 @@
-# Nur unter dem Profil "keycloak", das docker-compose.yml setzt. Sonst wuerde
+# Nur unter dem Profil "keycloak", das die .env einschaltet. Sonst wuerde
 # issuer-uri schon beim Start eine Discovery-Anfrage ausloesen, und die schlaegt
 # in Tests und CI fehl, wo kein Keycloak laeuft.
 spring:
