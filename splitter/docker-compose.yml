@@ -46,7 +46,10 @@ services:
 
   keycloak:
     image: quay.io/keycloak/keycloak:26.7
-    command: start-dev
+    # --import-realm zieht keycloak/splitter-realm.json, aber nur solange es das
+    # Realm noch nicht gibt (Strategie IGNORE_EXISTING). Spaetere Aenderungen im
+    # Adminbereich ueberschreibt es also nicht.
+    command: start-dev --import-realm
     ports:
       # Same reasoning as the app: reachable through an SSH tunnel, not from the LAN.
       - "127.0.0.1:8080:8080"
@@ -60,10 +63,15 @@ services:
       # DNS, so the issuer string is identical from all three and token
       # validation passes.
       - KC_HOSTNAME=http://keycloak:8080
+      # Beide Werte stehen als ${...} in der Realm-Datei und werden beim Import
+      # eingesetzt, damit kein Passwort im Repo landet.
+      - KEYCLOAK_CLIENT_SECRET=${KEYCLOAK_CLIENT_SECRET}
+      - KEYCLOAK_DEV_PASSWORD=${KEYCLOAK_DEV_PASSWORD}
     volumes:
       # start-dev keeps realms and users in an embedded H2 file; without this they
       # would be gone after every `docker compose down`.
       - keycloak-data:/opt/keycloak/data
+      - ./keycloak:/opt/keycloak/data/import:ro
     healthcheck:
       # The image ships no curl, so bash talks to the management port directly.
       # HTTP/1.0 on purpose: the endpoint rejects a 1.1 request built this way.
