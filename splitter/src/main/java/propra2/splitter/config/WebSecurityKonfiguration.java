@@ -2,13 +2,19 @@ package propra2.splitter.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.oauth2.client.oidc.web.logout.OidcClientInitiatedLogoutSuccessHandler;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.HttpStatusEntryPoint;
+import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
+import org.springframework.security.web.util.matcher.AnyRequestMatcher;
 
 @Configuration
 public class WebSecurityKonfiguration {
@@ -19,6 +25,16 @@ public class WebSecurityKonfiguration {
       throws Exception {
     chainbuilder
         .authorizeHttpRequests(configurer -> configurer.anyRequest().authenticated())
+        // Ein Aufruf der Schnittstelle soll 401 bekommen und nicht auf die
+        // Anmeldeseite umgeleitet werden. Der zweite Eintrag muss sein: bleibt er
+        // weg, gilt der erste fuer jede Anfrage und auch der Browser bekommt 401.
+        .exceptionHandling(
+            e ->
+                e.defaultAuthenticationEntryPointFor(
+                        new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED),
+                        PathPatternRequestMatcher.pathPattern("/api/**"))
+                    .defaultAuthenticationEntryPointFor(
+                        new LoginUrlAuthenticationEntryPoint("/login"), AnyRequestMatcher.INSTANCE))
         .logout(
             e ->
                 e.logoutSuccessHandler(oidcLogoutSuccessHandler(clientRegistrationRepository))
@@ -38,10 +54,19 @@ public class WebSecurityKonfiguration {
     return successHandler;
   }
 
-  // /error muss mit ausgenommen werden: Fehlerantworten laufen intern noch einmal ueber diesen
-  // Pfad, nicht mehr ueber /api/**, und kamen sonst als 302 zum Login an.
+  // /error muss ausgenommen werden: Fehlerantworten laufen intern noch einmal ueber
+  // diesen Pfad und kamen sonst als 302 zum Login an.
   @Bean
   public WebSecurityCustomizer customizer() {
-    return web -> web.ignoring().requestMatchers("/api/**", "/error");
+    return web -> web.ignoring().requestMatchers("/error");
+  }
+
+  // Der Abnahmetest ruft die Schnittstelle ohne Anmeldung auf. Nur unter diesem
+  // Profil liegt sie ausserhalb der Sicherheitskette, sonst verlangt sie eine
+  // Anmeldung wie jede andere Seite auch.
+  @Bean
+  @Profile("open-api")
+  public WebSecurityCustomizer openApiCustomizer() {
+    return web -> web.ignoring().requestMatchers("/api/**");
   }
 }

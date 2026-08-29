@@ -70,6 +70,7 @@ jobs:
             -e POSTGRES_DB=splitter \
             -e GITHUB_CLIENT_ID=dummy \
             -e GITHUB_CLIENT_SECRET=dummy \
+            -e SPRING_PROFILES_ACTIVE=open-api \
             splitter:ci
 
       # Mehr Luft als beim blanken Jar: lokal brauchte der Container 18s statt 8s.
