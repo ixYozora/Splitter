@@ -144,9 +144,10 @@ bottom.
 
 ==== Members: "Mitglieder"
 
-Enter a GitHub name under *Mitglied hinzufügen* and press *Hinzufügen*. Members appear below as
-tokens with their GitHub avatar, and your own carries the mark *du*. Once a group has more than six
-members the list folds up and *+x weitere* expands it. A closed group always shows everyone.
+Enter a user name under *Mitglied hinzufügen* and press *Hinzufügen* — the name the member signs in
+with at GitHub or Keycloak. Members appear below as tokens carrying their initial, and your own
+carries the mark *du*. Once a group has more than six members the list folds up and *+x weitere*
+expands it. A closed group always shows everyone.
 
 Members can be added only while the group has no expenses. The first recorded expense fixes the
 roster.
