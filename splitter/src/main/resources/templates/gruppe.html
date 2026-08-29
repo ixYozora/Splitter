@@ -108,9 +108,8 @@
                   th:attr="data-name=${mitglied},
                            disabled=${geschlossen} ? 'disabled' : null,
                            aria-describedby=${geschlossen} ? null : 'rosterHinweis'">
-            <img class="token__avatar" alt="" width="28" height="28"
-                 th:src="'https://github.com/' + ${mitglied} + '.png?size=64'"
-                 th:attr="data-initial=${#strings.toUpperCase(#strings.substring(mitglied,0,1))}">
+            <span class="token__avatar token__initial" aria-hidden="true"
+                  th:text="${#strings.toUpperCase(#strings.substring(mitglied,0,1))}">M</span>
             <span class="token__name" th:text="${mitglied}">MaxHub</span>
             <span class="token__du" th:if="${mitglied == login}">du</span>
           </button>

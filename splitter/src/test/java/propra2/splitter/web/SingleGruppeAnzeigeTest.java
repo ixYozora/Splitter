@@ -242,7 +242,7 @@ public class SingleGruppeAnzeigeTest {
 
   @Test
   @WithMockOAuth2User(login = "MaxHub")
-  @DisplayName("Jedes Mitglied bekommt eine Marke mit seinem GitHub-Bild")
+  @DisplayName("Jedes Mitglied bekommt eine Marke mit seinem Anfangsbuchstaben")
   void test_10() throws Exception {
     UUID id = UUID.randomUUID();
     Gruppe gruppe = Gruppe.erstelleGruppe(id, "MaxHub", "Reisegruppe");
@@ -255,8 +255,10 @@ public class SingleGruppeAnzeigeTest {
             .andReturn();
     String html = result.getResponse().getContentAsString();
 
-    assertThat(html).contains("https://github.com/MaxHub.png?size=64");
-    assertThat(html).contains("https://github.com/GitLisa.png?size=64");
+    // Kein Bild von github.com: der Name gehoert zu keinem bestimmten Anbieter.
+    assertThat(html).doesNotContain("github.com");
+    assertThat(html).contains("token__avatar token__initial");
+    assertThat(html).contains(">M<").contains(">G<");
     assertThat(html).contains("data-name=\"GitLisa\"");
   }
 
