@@ -6,11 +6,13 @@ import java.util.Set;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import propra2.splitter.service.AusgabeEntity;
+import propra2.splitter.service.Benutzer;
 import propra2.splitter.service.GruppeEntity;
 import propra2.splitter.service.GruppeInformationEntity;
 import propra2.splitter.service.RestGruppenService;
@@ -25,8 +27,20 @@ public class RestController {
     this.service = service;
   }
 
+  // Die Gruppen-ID ist kein Ausweis. Unter dem Profil "open-api" laeuft die Schnittstelle
+  // ohne Anmeldung, dann ist token null und es gibt niemanden zu pruefen.
+  private static boolean nichtMitglied(
+      OAuth2AuthenticationToken token, GruppeInformationEntity gruppe) {
+    return token != null && !gruppe.personen().contains(Benutzer.nameVon(token.getPrincipal()));
+  }
+
   @GetMapping("/api/user/{githublogin}/gruppen")
-  public ResponseEntity<List<GruppeEntity>> gruppenSeite(@PathVariable String githublogin) {
+  public ResponseEntity<List<GruppeEntity>> gruppenSeite(
+      @PathVariable String githublogin, OAuth2AuthenticationToken token) {
+    if (token != null && !Benutzer.nameVon(token.getPrincipal()).equals(githublogin)) {
+      return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+    }
+
     return new ResponseEntity<>(service.personRestMatch(githublogin), HttpStatus.OK);
   }
 
@@ -44,24 +58,33 @@ public class RestController {
   }
 
   @GetMapping("/api/gruppen/{id}")
-  public ResponseEntity<GruppeInformationEntity> gruppenInfo(@PathVariable @Valid String id) {
+  public ResponseEntity<GruppeInformationEntity> gruppenInfo(
+      @PathVariable @Valid String id, OAuth2AuthenticationToken token) {
     try {
-      if (service.getGruppeInformationEntity(UUID.fromString(id)) == null) {
+      GruppeInformationEntity gruppe = service.getGruppeInformationEntity(UUID.fromString(id));
+      if (gruppe == null) {
         return ResponseEntity.notFound().build();
       }
+      if (nichtMitglied(token, gruppe)) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+      }
 
-      return new ResponseEntity<>(
-          service.getGruppeInformationEntity(UUID.fromString(id)), HttpStatus.OK);
+      return new ResponseEntity<>(gruppe, HttpStatus.OK);
     } catch (IllegalArgumentException exception) {
       return ResponseEntity.notFound().build();
     }
   }
 
   @PostMapping("/api/gruppen/{id}/schliessen")
-  public ResponseEntity<String> schliesseGruppe(@PathVariable String id) {
+  public ResponseEntity<String> schliesseGruppe(
+      @PathVariable String id, OAuth2AuthenticationToken token) {
     try {
-      if (service.getGruppeInformationEntity(UUID.fromString(id)) == null) {
+      GruppeInformationEntity gruppe = service.getGruppeInformationEntity(UUID.fromString(id));
+      if (gruppe == null) {
         return ResponseEntity.notFound().build();
+      }
+      if (nichtMitglied(token, gruppe)) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
       }
 
       return new ResponseEntity<>(
@@ -73,11 +96,16 @@ public class RestController {
 
   @PostMapping("/api/gruppen/{id}/auslagen")
   public ResponseEntity<AusgabeEntity> addAusgabe(
-      @PathVariable String id, @RequestBody AusgabeEntity ausgabenEntity) {
+      @PathVariable String id,
+      @RequestBody AusgabeEntity ausgabenEntity,
+      OAuth2AuthenticationToken token) {
     try {
       GruppeInformationEntity gruppe = service.getGruppeInformationEntity(UUID.fromString(id));
       if (gruppe == null) {
         return ResponseEntity.notFound().build();
+      }
+      if (nichtMitglied(token, gruppe)) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
       }
       if (gruppe.geschlossen()) {
         return ResponseEntity.status(409).build();
@@ -105,10 +133,15 @@ public class RestController {
   }
 
   @GetMapping("/api/gruppen/{id}/ausgleich")
-  public ResponseEntity<List<TransaktionEntity>> getAusgleichszahlungen(@PathVariable String id) {
+  public ResponseEntity<List<TransaktionEntity>> getAusgleichszahlungen(
+      @PathVariable String id, OAuth2AuthenticationToken token) {
     try {
-      if (service.getGruppeInformationEntity(UUID.fromString(id)) == null) {
+      GruppeInformationEntity gruppe = service.getGruppeInformationEntity(UUID.fromString(id));
+      if (gruppe == null) {
         return ResponseEntity.notFound().build();
+      }
+      if (nichtMitglied(token, gruppe)) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
       }
       return new ResponseEntity<>(service.getRestTransaktionen(UUID.fromString(id)), HttpStatus.OK);
     } catch (IllegalArgumentException exception) {
