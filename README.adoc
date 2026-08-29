@@ -77,11 +77,15 @@ fails. Add the name to your hosts file once:
 echo "127.0.0.1 keycloak" | sudo tee -a /etc/hosts
 ----
 
-Then fill in `KEYCLOAK_ADMIN`, `KEYCLOAK_ADMIN_PASSWORD`, `KEYCLOAK_CLIENT_SECRET` and
-`KEYCLOAK_DEV_PASSWORD` in `.env` — any values you like — and start the stack as in step 4.
-Keycloak reads `splitter/keycloak/splitter-realm.json` on its first start and creates the realm,
-the client and a user `yozora` with the password you chose. The login page then offers both
-providers, and the admin console is at *http://keycloak:8080*.
+Then fill in the `KEYCLOAK_*` values in `.env` — all of them are yours to choose — and start the
+stack as in step 4. Keycloak reads `splitter/keycloak/splitter-realm.json` on its first start and
+creates the realm, the client, and the account named by `KEYCLOAK_DEV_USER` with the password
+next to it. That name is your identity in the application, so it is also the name to add as a
+group member. The login page then offers both providers, and the admin console is at
+*http://keycloak:8080*.
+
+The realm is called *splitter* and that is not configurable: Keycloak takes the realm name from
+the file name, so the two would have to change together.
 
 The import only runs while the realm does not exist yet, so it never overwrites changes you make in
 the admin console. To start over from the file, remove the volume:

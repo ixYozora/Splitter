@@ -31,7 +31,7 @@
   ],
   "users": [
     {
-      "username": "yozora",
+      "username": "${KEYCLOAK_DEV_USER}",
       "enabled": true,
       "firstName": "Local",
       "lastName": "Dev",

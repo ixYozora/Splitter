@@ -63,9 +63,12 @@ services:
       # DNS, so the issuer string is identical from all three and token
       # validation passes.
       - KC_HOSTNAME=http://keycloak:8080
-      # Beide Werte stehen als ${...} in der Realm-Datei und werden beim Import
-      # eingesetzt, damit kein Passwort im Repo landet.
+      # Diese vier stehen als ${...} in der Realm-Datei und werden beim Import
+      # eingesetzt, damit keine Zugangsdaten im Repo landen. Der Realmname selbst
+      # geht nicht: den liest Keycloak aus dem Dateinamen.
+      - KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID}
       - KEYCLOAK_CLIENT_SECRET=${KEYCLOAK_CLIENT_SECRET}
+      - KEYCLOAK_DEV_USER=${KEYCLOAK_DEV_USER}
       - KEYCLOAK_DEV_PASSWORD=${KEYCLOAK_DEV_PASSWORD}
     volumes:
       # start-dev keeps realms and users in an embedded H2 file; without this they
