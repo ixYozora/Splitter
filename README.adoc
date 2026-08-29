@@ -72,9 +72,9 @@ it is not published to your network.
 
 === Step 5: Add Keycloak as a second sign-in provider (optional)
 
-The compose file can bring a Keycloak up alongside the application, so you can sign in with a local
-account instead of your GitHub identity. It is a local development convenience and it is off by
-default. The OAuth app from step 2 stays required either way.
+Keycloak runs *alongside* GitHub, not in place of it: with it switched on the login page offers
+both and you pick one per sign-in. It is a local development convenience and it is off by default.
+The OAuth app from step 2 stays required either way.
 
 Keycloak has to answer under the *same* address for your browser and for the application container,
 otherwise the issuer in the token does not match the one the application asked for and the login
@@ -85,7 +85,7 @@ fails. Add the name to your hosts file once:
 echo "127.0.0.1 keycloak" | sudo tee -a /etc/hosts
 ----
 
-Then fill in the `KEYCLOAK_*` values in `.env` — all of them are yours to choose — and set the two
+Fill in the `KEYCLOAK_*` values in `.env` — all of them are yours to choose — and set the two
 switches sitting above them:
 
 [source,properties]
@@ -94,12 +94,23 @@ COMPOSE_PROFILES=keycloak
 SPRING_PROFILES_ACTIVE=keycloak
 ----
 
-The first adds the Keycloak container to the stack, the second tells the application to offer it.
-Empty them again to go back to GitHub alone. Start as in step 4: Keycloak reads
-`splitter/keycloak/splitter-realm.json` on its first start and creates the realm, the client, and
-the account named by `KEYCLOAK_DEV_USER` with the password next to it. That name is your identity
-in the application, so it is also the name to add as a group member. The login page then offers
-both providers, and the admin console is at *http://keycloak:8080*.
+`COMPOSE_PROFILES` adds the Keycloak container to the stack, `SPRING_PROFILES_ACTIVE` makes the
+application offer it. Neither takes effect until you start again — no rebuild, the image is
+unchanged:
+
+[source,bash]
+----
+docker compose up
+----
+
+Compose starts Keycloak, recreates the application container with the new setting and leaves the
+database alone. The login page then shows *GitHub* and *Keycloak* side by side. To go back to
+GitHub only, empty both switches and run the same command again.
+
+On its first start Keycloak reads `splitter/keycloak/splitter-realm.json` and creates the realm, the
+client, and the account named by `KEYCLOAK_DEV_USER` with the password next to it. That name is your
+identity in the application, so it is also the name to add as a group member. The admin console is
+at *http://keycloak:8080*.
 
 The realm is called *splitter* and that is not configurable: Keycloak takes the realm name from
 the file name, so the two would have to change together.
