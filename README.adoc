@@ -25,8 +25,10 @@ cd Splitter
 
 === Step 2: Register a GitHub OAuth app
 
-Signing in goes through GitHub, so the application needs its own OAuth app. Create one under
-*Settings > Developer settings > OAuth Apps > New OAuth App* and fill out the form as follows:
+Signing in goes through GitHub, so the application needs its own OAuth app. It registers that
+client at startup and refuses to start without one, so this step is required even if you only ever
+sign in through Keycloak. Create one under *Settings > Developer settings > OAuth Apps > New OAuth
+App* and fill out the form as follows:
 
 * Your desired name for the project as the *Application name*.
 * Use *http://localhost:9000* as the *Homepage URL*, as our application runs on port 9000.
@@ -53,8 +55,8 @@ ignores the file. Never commit it.
 
 === Step 4: Start it
 
-`docker compose` reads `.env` by itself and waits for the database to be healthy before it starts
-the application:
+`docker compose` reads `.env` by itself and waits for the database — and for Keycloak, if you
+switch it on in step 5 — to be healthy before it starts the application:
 
 [source,bash]
 ----
@@ -68,10 +70,11 @@ change. Flyway applies the schema on startup, so there is nothing to import by h
 The application then answers at *http://localhost:9000*. It is bound to the loopback interface, so
 it is not published to your network.
 
-=== Step 5: Sign in with Keycloak instead of GitHub (optional)
+=== Step 5: Add Keycloak as a second sign-in provider (optional)
 
-The compose file can bring a Keycloak up alongside the application, so you can sign in without a
-GitHub account. It is a local development convenience and it is off by default.
+The compose file can bring a Keycloak up alongside the application, so you can sign in with a local
+account instead of your GitHub identity. It is a local development convenience and it is off by
+default. The OAuth app from step 2 stays required either way.
 
 Keycloak has to answer under the *same* address for your browser and for the application container,
 otherwise the issuer in the token does not match the one the application asked for and the login
