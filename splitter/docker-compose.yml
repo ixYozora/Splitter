@@ -9,6 +9,11 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      # Ohne diesen Eintrag legt das Image ein namenloses Volume an. Das haengt am
+      # Container, ist nach einem `down` nicht mehr zuzuordnen und faellt bei
+      # `down -v` weg -- der ganze Bestand also mit.
+      - db-data:/var/lib/postgresql
     healthcheck:
       # The app runs Flyway on startup, so it must not start before Postgres
       # actually accepts connections.
@@ -68,4 +73,5 @@ services:
       retries: 20
 
 volumes:
+  db-data:
   keycloak-data:
