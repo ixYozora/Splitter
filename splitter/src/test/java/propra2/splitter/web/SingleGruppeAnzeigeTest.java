@@ -521,4 +521,17 @@ public class SingleGruppeAnzeigeTest {
 
     mvc.perform(get("/gruppe").param("id", id.toString())).andExpect(status().isForbidden());
   }
+
+  @Test
+  @WithMockOAuth2User(login = "MaxHub")
+  @DisplayName("Die Formulare der Seite tragen ein CSRF-Token")
+  void test_22() throws Exception {
+    UUID id = UUID.randomUUID();
+    when(service.getSingleGruppeFuerMitglied(any(), eq(id)))
+        .thenReturn(Gruppe.erstelleGruppe(id, "MaxHub", "Reisegruppe"));
+
+    MvcResult result = mvc.perform(get("/gruppe").param("id", id.toString())).andReturn();
+
+    assertThat(result.getResponse().getContentAsString()).contains("name=\"_csrf\"");
+  }
 }
