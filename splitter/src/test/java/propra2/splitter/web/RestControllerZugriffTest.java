@@ -144,4 +144,32 @@ public class RestControllerZugriffTest {
 
     mvc.perform(MockMvcRequestBuilders.get("/api/user/MaxHub/gruppen")).andExpect(status().isOk());
   }
+
+  @Test
+  @DisplayName("Eine Gruppe ohne den eigenen Namen legt die Schnittstelle nicht an")
+  @WithMockOAuth2User(login = "GitLisa")
+  void test_11() throws Exception {
+    mvc.perform(
+            MockMvcRequestBuilders.post("/api/gruppen")
+                .with(csrf())
+                .contentType("application/json")
+                .content("{\"name\":\"Reisegruppe\",\"personen\":[\"MaxHub\"]}"))
+        .andExpect(status().isForbidden());
+
+    verify(service, never()).addRestGruppe(any());
+  }
+
+  @Test
+  @DisplayName("Eine Gruppe mit dem eigenen Namen legt sie weiterhin an")
+  @WithMockOAuth2User(login = "GitLisa")
+  void test_12() throws Exception {
+    mvc.perform(
+            MockMvcRequestBuilders.post("/api/gruppen")
+                .with(csrf())
+                .contentType("application/json")
+                .content("{\"name\":\"Reisegruppe\",\"personen\":[\"MaxHub\",\"GitLisa\"]}"))
+        .andExpect(status().isCreated());
+
+    verify(service).addRestGruppe(any());
+  }
 }
