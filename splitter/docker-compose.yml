@@ -2,7 +2,9 @@ services:
   database:
     image: postgres:18-alpine
     ports:
-      - "5432:5432"
+      # Ans Loopback gebunden: Docker haengt seine Regeln vor die von ufw, ein
+      # offener Port waere also in jedem Netz erreichbar, in dem der Rechner haengt.
+      - "127.0.0.1:5432:5432"
     environment:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
