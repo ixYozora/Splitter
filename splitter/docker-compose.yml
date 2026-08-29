@@ -51,7 +51,8 @@ services:
     # Adminbereich ueberschreibt es also nicht.
     command: start-dev --import-realm
     ports:
-      # Same reasoning as the app: reachable through an SSH tunnel, not from the LAN.
+      # Loopback like the other two ports: a development Keycloak has no
+      # business being reachable from the network.
       - "127.0.0.1:8080:8080"
     environment:
       - KC_BOOTSTRAP_ADMIN_USERNAME=${KEYCLOAK_ADMIN}
