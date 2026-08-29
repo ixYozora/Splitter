@@ -10,7 +10,12 @@ class Person {
   final String name;
   Money nettoBetrag = Money.of(0, "EUR");
 
+  // Ein Anbieter ohne das erwartete Namensattribut hat hier frueher null
+  // hinterlassen; die Gruppe war danach nicht mehr anzeigbar.
   Person(String name) {
+    if (name == null || name.isBlank()) {
+      throw new IllegalArgumentException("Eine Person braucht einen Namen");
+    }
     this.name = name;
   }
 

@@ -3,6 +3,7 @@ package propra2.splitter.web;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -22,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -43,7 +45,7 @@ public class SingleGruppeAnzeigeTest {
   @DisplayName("Die interne Gruppenseite ist erreichbar")
   void test_01() throws Exception {
     UUID id = UUID.randomUUID();
-    when(service.getSingleGruppe(id))
+    when(service.getSingleGruppeFuerMitglied(any(), eq(id)))
         .thenReturn(Gruppe.erstelleGruppe(id, "MaxHub", "Reisegruppe"));
     String error = "invalider GitHub Name";
 
@@ -65,7 +67,7 @@ public class SingleGruppeAnzeigeTest {
     gruppe.addPerson("GitLisa");
     String error = "invalider GitHub Name";
 
-    when(service.getSingleGruppe(gruppe.getId())).thenReturn(gruppe);
+    when(service.getSingleGruppeFuerMitglied(any(), eq(gruppe.getId()))).thenReturn(gruppe);
 
     mvc.perform(
             get("/gruppe")
@@ -84,7 +86,7 @@ public class SingleGruppeAnzeigeTest {
     Gruppe gruppe = Gruppe.erstelleGruppe(id, "MaxHub", "Reisegruppe");
     gruppe.addPerson("GitLisa");
     String error = "invalider GitHub Name";
-    when(service.getSingleGruppe(gruppe.getId())).thenReturn(gruppe);
+    when(service.getSingleGruppeFuerMitglied(any(), eq(gruppe.getId()))).thenReturn(gruppe);
 
     mvc.perform(
             get("/gruppe")
@@ -104,7 +106,7 @@ public class SingleGruppeAnzeigeTest {
     gruppe.addPerson("GitLisa");
     gruppe.addAusgabeToPerson("pizza", "MaxHub", List.of("GitLisa"), Money.of(400, "EUR"));
     String error = "invalider GitHub Name";
-    when(service.getSingleGruppe(gruppe.getId())).thenReturn(gruppe);
+    when(service.getSingleGruppeFuerMitglied(any(), eq(gruppe.getId()))).thenReturn(gruppe);
 
     mvc.perform(
             get("/gruppe")
@@ -129,7 +131,7 @@ public class SingleGruppeAnzeigeTest {
     gruppe.addAusgabeToPerson("pizza", "MaxHub", List.of("GitLisa"), Money.of(400, "EUR"));
     gruppe.berechneTransaktionen();
     String error = "invalider GitHub Name";
-    when(service.getSingleGruppe(gruppe.getId())).thenReturn(gruppe);
+    when(service.getSingleGruppeFuerMitglied(any(), eq(gruppe.getId()))).thenReturn(gruppe);
 
     mvc.perform(
             get("/gruppe")
@@ -152,7 +154,7 @@ public class SingleGruppeAnzeigeTest {
     UUID id = UUID.randomUUID();
     Gruppe gruppe = Gruppe.erstelleGruppe(id, "MaxHub", "Reisegruppe");
     String error = "invalider GitHub Name";
-    when(service.getSingleGruppe(gruppe.getId())).thenReturn(gruppe);
+    when(service.getSingleGruppeFuerMitglied(any(), eq(gruppe.getId()))).thenReturn(gruppe);
 
     MvcResult result =
         mvc.perform(
@@ -179,7 +181,7 @@ public class SingleGruppeAnzeigeTest {
     Gruppe gruppe = Gruppe.erstelleGruppe(id, "MaxHub", "Reisegruppe");
     String error = "invalider GitHub Name";
     gruppe.addPerson("GitLisa");
-    when(service.getSingleGruppe(gruppe.getId())).thenReturn(gruppe);
+    when(service.getSingleGruppeFuerMitglied(any(), eq(gruppe.getId()))).thenReturn(gruppe);
 
     MvcResult result =
         mvc.perform(
@@ -202,7 +204,7 @@ public class SingleGruppeAnzeigeTest {
     Gruppe gruppe = Gruppe.erstelleGruppe(id, "MaxHub", "Reisegruppe");
     String error = "invalider GitHub Name";
     gruppe.addPerson("GitLisa");
-    when(service.getSingleGruppe(gruppe.getId())).thenReturn(gruppe);
+    when(service.getSingleGruppeFuerMitglied(any(), eq(gruppe.getId()))).thenReturn(gruppe);
 
     MvcResult result =
         mvc.perform(
@@ -225,7 +227,7 @@ public class SingleGruppeAnzeigeTest {
     Gruppe gruppe = Gruppe.erstelleGruppe(id, "MaxHub", "Reisegruppe");
     String error = "invalider GitHub Name";
     gruppe.addPerson("GitLisa");
-    when(service.getSingleGruppe(gruppe.getId())).thenReturn(gruppe);
+    when(service.getSingleGruppeFuerMitglied(any(), eq(gruppe.getId()))).thenReturn(gruppe);
 
     MvcResult result =
         mvc.perform(
@@ -242,12 +244,12 @@ public class SingleGruppeAnzeigeTest {
 
   @Test
   @WithMockOAuth2User(login = "MaxHub")
-  @DisplayName("Jedes Mitglied bekommt eine Marke mit seinem GitHub-Bild")
+  @DisplayName("Jedes Mitglied bekommt eine Marke mit seinem Anfangsbuchstaben")
   void test_10() throws Exception {
     UUID id = UUID.randomUUID();
     Gruppe gruppe = Gruppe.erstelleGruppe(id, "MaxHub", "Reisegruppe");
     gruppe.addPerson("GitLisa");
-    when(service.getSingleGruppe(gruppe.getId())).thenReturn(gruppe);
+    when(service.getSingleGruppeFuerMitglied(any(), eq(gruppe.getId()))).thenReturn(gruppe);
 
     MvcResult result =
         mvc.perform(
@@ -255,8 +257,10 @@ public class SingleGruppeAnzeigeTest {
             .andReturn();
     String html = result.getResponse().getContentAsString();
 
-    assertThat(html).contains("https://github.com/MaxHub.png?size=64");
-    assertThat(html).contains("https://github.com/GitLisa.png?size=64");
+    // Kein Bild von github.com: der Name gehoert zu keinem bestimmten Anbieter.
+    assertThat(html).doesNotContain("github.com");
+    assertThat(html).contains("token__avatar token__initial");
+    assertThat(html).contains(">M<").contains(">G<");
     assertThat(html).contains("data-name=\"GitLisa\"");
   }
 
@@ -268,7 +272,7 @@ public class SingleGruppeAnzeigeTest {
     Gruppe gruppe = Gruppe.erstelleGruppe(id, "MaxHub", "Reisegruppe");
     gruppe.addPerson("GitLisa");
     gruppe.closeGroup();
-    when(service.getSingleGruppe(gruppe.getId())).thenReturn(gruppe);
+    when(service.getSingleGruppeFuerMitglied(any(), eq(gruppe.getId()))).thenReturn(gruppe);
 
     MvcResult result =
         mvc.perform(
@@ -291,7 +295,7 @@ public class SingleGruppeAnzeigeTest {
     UUID id = UUID.randomUUID();
     Gruppe gruppe = Gruppe.erstelleGruppe(id, "MaxHub", "Reisegruppe");
     gruppe.addPerson("GitLisa");
-    when(service.getSingleGruppe(gruppe.getId())).thenReturn(gruppe);
+    when(service.getSingleGruppeFuerMitglied(any(), eq(gruppe.getId()))).thenReturn(gruppe);
 
     MvcResult result =
         mvc.perform(
@@ -311,7 +315,7 @@ public class SingleGruppeAnzeigeTest {
     UUID id = UUID.randomUUID();
     Gruppe gruppe = Gruppe.erstelleGruppe(id, "MaxHub", "Reisegruppe");
     gruppe.addPerson("GitLisa");
-    when(service.getSingleGruppe(gruppe.getId())).thenReturn(gruppe);
+    when(service.getSingleGruppeFuerMitglied(any(), eq(gruppe.getId()))).thenReturn(gruppe);
 
     MvcResult result =
         mvc.perform(
@@ -335,7 +339,7 @@ public class SingleGruppeAnzeigeTest {
     UUID id = UUID.randomUUID();
     Gruppe gruppe = Gruppe.erstelleGruppe(id, "MaxHub", "Reisegruppe");
     gruppe.addPerson("GitLisa");
-    when(service.getSingleGruppe(id)).thenReturn(gruppe);
+    when(service.getSingleGruppeFuerMitglied(any(), eq(id))).thenReturn(gruppe);
 
     // Betrag ist kein gueltiger Double - vorher warf der Redirect die ganze
     // Zuordnung weg.
@@ -368,7 +372,7 @@ public class SingleGruppeAnzeigeTest {
     UUID id = UUID.randomUUID();
     Gruppe gruppe = Gruppe.erstelleGruppe(id, "MaxHub", "Reisegruppe");
     gruppe.addPerson("GitLisa");
-    when(service.getSingleGruppe(id)).thenReturn(gruppe);
+    when(service.getSingleGruppeFuerMitglied(any(), eq(id))).thenReturn(gruppe);
 
     MvcResult result =
         mvc.perform(
@@ -385,16 +389,16 @@ public class SingleGruppeAnzeigeTest {
 
     assertThat(html).contains("Bitte eine Aktivität eintragen");
     assertThat(html).contains("value=\"GitLisa\"");
-    verify(service, never()).addAusgabeToGruppe(any(), any(), any(), any(), any());
+    verify(service, never()).addAusgabeToGruppe(any(), any(), any(), any(), any(), any());
   }
 
   @Test
   @WithMockOAuth2User(login = "MaxHub")
-  @DisplayName("Ein invalider GitHub-Name laesst den getippten Namen stehen")
+  @DisplayName("Ein invalider Name laesst den getippten Namen stehen")
   void test_16() throws Exception {
     UUID id = UUID.randomUUID();
     Gruppe gruppe = Gruppe.erstelleGruppe(id, "MaxHub", "Reisegruppe");
-    when(service.getSingleGruppe(id)).thenReturn(gruppe);
+    when(service.getSingleGruppeFuerMitglied(any(), eq(id))).thenReturn(gruppe);
 
     MvcResult result =
         mvc.perform(
@@ -404,59 +408,58 @@ public class SingleGruppeAnzeigeTest {
             .andReturn();
     String html = result.getResponse().getContentAsString();
 
-    assertThat(html).contains("Invalider GitHub Name");
+    assertThat(html).contains("Invalider Name");
     assertThat(html).contains("value=\"!!\"");
-    verify(service, never()).addPersonToGruppe(any(), any());
+    verify(service, never()).addPersonToGruppe(any(), any(), any());
   }
 
   @Test
   @WithMockOAuth2User(login = "MaxHub")
-  @DisplayName("Namen bis 39 Zeichen werden angenommen, laengere nicht")
+  @DisplayName("Namen bis 64 Zeichen werden angenommen, laengere nicht")
   void test_17() throws Exception {
     UUID id = UUID.randomUUID();
     Gruppe gruppe = Gruppe.erstelleGruppe(id, "MaxHub", "Reisegruppe");
-    when(service.getSingleGruppe(id)).thenReturn(gruppe);
+    when(service.getSingleGruppeFuerMitglied(any(), eq(id))).thenReturn(gruppe);
 
-    // GitHub laesst 39 Zeichen zu - das Muster hier stand vorher auf 15 und
-    // sperrte solche Konten komplett aus.
-    String neununddreissig = "a".repeat(39);
+    // GitHub deckelt bei 39 Zeichen, mailfoermige Keycloak-Namen werden laenger.
+    String vierundsechzig = "a".repeat(64);
     mvc.perform(
             post("/gruppe/add")
                 .with(csrf())
                 .param("id", id.toString())
-                .param("login", neununddreissig))
+                .param("login", vierundsechzig))
         .andExpect(status().is3xxRedirection());
-    verify(service).addPersonToGruppe(id, neununddreissig);
+    verify(service).addPersonToGruppe(any(), eq(id), eq(vierundsechzig));
 
     mvc.perform(
             post("/gruppe/add")
                 .with(csrf())
                 .param("id", id.toString())
-                .param("login", "a".repeat(40)))
+                .param("login", "a".repeat(65)))
         .andExpect(status().isOk());
-    verify(service, never()).addPersonToGruppe(id, "a".repeat(40));
+    verify(service, never()).addPersonToGruppe(any(), eq(id), eq("a".repeat(65)));
   }
 
   @Test
   @WithMockOAuth2User(login = "MaxHub")
-  @DisplayName("Die uebrigen GitHub-Regeln gelten: keine doppelten oder aeusseren Bindestriche")
+  @DisplayName("Trennzeichen stehen nur einzeln und nur zwischen zwei Zeichen")
   void test_18() throws Exception {
     UUID id = UUID.randomUUID();
     Gruppe gruppe = Gruppe.erstelleGruppe(id, "MaxHub", "Reisegruppe");
-    when(service.getSingleGruppe(id)).thenReturn(gruppe);
+    when(service.getSingleGruppeFuerMitglied(any(), eq(id))).thenReturn(gruppe);
 
-    for (String gut : List.of("ab", "a", "Max-Hub", "a1-b2-c3")) {
+    // Punkt, Unterstrich und @ kommen dazu: so heissen Konten in Keycloak.
+    for (String gut : List.of("ab", "a", "Max-Hub", "a1-b2-c3", "max_hub", "local@dev.de")) {
       mvc.perform(post("/gruppe/add").with(csrf()).param("id", id.toString()).param("login", gut))
           .andExpect(status().is3xxRedirection());
-      verify(service).addPersonToGruppe(id, gut);
+      verify(service).addPersonToGruppe(any(), eq(id), eq(gut));
     }
 
-    // Unterstriche kennt GitHub bei Konten nicht, das alte Muster liess sie zu.
-    for (String schlecht : List.of("-max", "max-", "ma--x", "max_hub", "ma x")) {
+    for (String schlecht : List.of("-max", "max-", "ma--x", "max_", ".max", "ma x", "a@@b")) {
       mvc.perform(
               post("/gruppe/add").with(csrf()).param("id", id.toString()).param("login", schlecht))
           .andExpect(status().isOk());
-      verify(service, never()).addPersonToGruppe(id, schlecht);
+      verify(service, never()).addPersonToGruppe(any(), eq(id), eq(schlecht));
     }
   }
 
@@ -469,7 +472,7 @@ public class SingleGruppeAnzeigeTest {
     gruppe.addPerson("GitLisa");
     gruppe.addAusgabeToPerson("pizza", "MaxHub", List.of("GitLisa"), Money.of(400, "EUR"));
     gruppe.berechneTransaktionen();
-    when(service.getSingleGruppe(id)).thenReturn(gruppe);
+    when(service.getSingleGruppeFuerMitglied(any(), eq(id))).thenReturn(gruppe);
 
     MvcResult result = mvc.perform(get("/gruppe").param("id", id.toString())).andReturn();
     String html = result.getResponse().getContentAsString();
@@ -492,7 +495,7 @@ public class SingleGruppeAnzeigeTest {
     gruppe.addAusgabeToPerson("pizza", "MaxHub", List.of("MaxHub", "GitLisa"), Money.of(20, "EUR"));
     gruppe.addAusgabeToPerson("bier", "GitLisa", List.of("MaxHub", "GitLisa"), Money.of(20, "EUR"));
     gruppe.berechneTransaktionen();
-    when(service.getSingleGruppe(id)).thenReturn(gruppe);
+    when(service.getSingleGruppeFuerMitglied(any(), eq(id))).thenReturn(gruppe);
 
     MvcResult result = mvc.perform(get("/gruppe").param("id", id.toString())).andReturn();
     String html = result.getResponse().getContentAsString();
@@ -506,5 +509,16 @@ public class SingleGruppeAnzeigeTest {
     // auch in "20,00 €" auf dem Kassenbon.
     assertThat(html).doesNotContain("ausgleich__betrag");
     assertThat(html).doesNotContain("id=\"ausgleichListe\"");
+  }
+
+  @Test
+  @WithMockOAuth2User(login = "MaxHub")
+  @DisplayName("Eine fremde Gruppe wird mit 403 abgewiesen statt angezeigt")
+  void test_21() throws Exception {
+    UUID id = UUID.randomUUID();
+    when(service.getSingleGruppeFuerMitglied(any(), eq(id)))
+        .thenThrow(new AccessDeniedException("Kein Mitglied der Gruppe " + id));
+
+    mvc.perform(get("/gruppe").param("id", id.toString())).andExpect(status().isForbidden());
   }
 }

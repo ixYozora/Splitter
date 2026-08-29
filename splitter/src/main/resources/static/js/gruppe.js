@@ -9,20 +9,15 @@
   var komposer = document.getElementById("komposerForm");
 
   // ---------- Avatare ----------
-  // Unbekannte GitHub-Namen liefern 404, und der Roster wird aus Freitext gefuellt.
-  function avatarErsatz(img, buchstabe, klasse) {
-    img.addEventListener("error", function () {
-      var ersatz = document.createElement("span");
-      ersatz.className = klasse + " token__initial";
-      ersatz.textContent = buchstabe || "?";
-      ersatz.setAttribute("aria-hidden", "true");
-      img.replaceWith(ersatz);
-    });
+  // Der Name im Roster gehoert zu keinem bestimmten Anbieter, ein Bild dazu gibt
+  // es also nicht: jedes Mitglied bekommt seinen Anfangsbuchstaben.
+  function initiale(name, klasse) {
+    var ersatz = document.createElement("span");
+    ersatz.className = klasse + " token__initial";
+    ersatz.textContent = name.charAt(0).toUpperCase() || "?";
+    ersatz.setAttribute("aria-hidden", "true");
+    return ersatz;
   }
-
-  Array.prototype.forEach.call(document.querySelectorAll(".token__avatar"), function (img) {
-    avatarErsatz(img, img.getAttribute("data-initial"), "token__avatar");
-  });
 
   var werkbank = document.querySelector(".werkbank");
   var login = werkbank ? werkbank.getAttribute("data-login") : null;
@@ -104,14 +99,7 @@
   // ---------- Bausteine ----------
 
   function avatarFuer(name) {
-    var img = document.createElement("img");
-    img.className = "chip__avatar";
-    img.alt = "";
-    img.width = 22;
-    img.height = 22;
-    img.src = "https://github.com/" + encodeURIComponent(name) + ".png?size=64";
-    avatarErsatz(img, name.charAt(0).toUpperCase(), "chip__avatar");
-    return img;
+    return initiale(name, "chip__avatar");
   }
 
   function chip(name, ziel) {
@@ -598,14 +586,7 @@
         el.style.right = "0";
       }
 
-      var bild = document.createElement("img");
-      bild.className = "graf__bild";
-      bild.alt = "";
-      bild.width = R * 2;
-      bild.height = R * 2;
-      bild.src = "https://github.com/" + encodeURIComponent(name) + ".png?size=96";
-      avatarErsatz(bild, name.charAt(0).toUpperCase(), "graf__bild");
-      el.appendChild(bild);
+      el.appendChild(initiale(name, "graf__bild"));
 
       var text = document.createElement("span");
       text.className = "graf__name";

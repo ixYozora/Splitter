@@ -706,4 +706,25 @@ public class DomainTests {
     assertThat(gruppe.getNettoBetrag("GitLisa")).isEqualTo(Money.of(-5, "EUR"));
     assertThat(gruppe.getNettoBetrag("ErixHub")).isEqualTo(Money.of(-5, "EUR"));
   }
+
+  @Test
+  @DisplayName("Eine Gruppe laesst sich nicht ohne Namen des Gruenders anlegen")
+  void test_40() {
+    UUID id = UUID.randomUUID();
+
+    assertThatThrownBy(() -> Gruppe.erstelleGruppe(id, null, "Reisegruppe"))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Namen");
+  }
+
+  @Test
+  @DisplayName("Ein Mitglied ohne Namen wird nicht aufgenommen")
+  void test_41() {
+    UUID id = UUID.randomUUID();
+    Gruppe gruppe = Gruppe.erstelleGruppe(id, "MaxHub", "Reisegruppe");
+
+    assertThatThrownBy(() -> gruppe.addPerson(null)).isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> gruppe.addPerson("  ")).isInstanceOf(IllegalArgumentException.class);
+    assertThat(gruppe.getPersonenNamen()).containsExactly("MaxHub");
+  }
 }

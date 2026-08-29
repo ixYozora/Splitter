@@ -40,8 +40,10 @@ cd splitter
 cp .env.example .env
 ----
 
-`.env` holds five variables: the Postgres database name, user and password, which you pick yourself,
-plus the `CLIENT_ID` and `CLIENT_SECRET` from step 2. Git ignores the file. Never commit it.
+`.env` holds the Postgres database name, user and password, which you pick yourself, plus the
+`GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` from step 2. Pick a `KEYCLOAK_ADMIN` and
+`KEYCLOAK_ADMIN_PASSWORD` too; the two `KEYCLOAK_CLIENT_*` values only exist after step 5 and can
+stay empty for now. Git ignores the file. Never commit it.
 
 === Step 4: Start it
 
@@ -60,13 +62,44 @@ change. Flyway applies the schema on startup, so there is nothing to import by h
 The application then answers at *http://localhost:9000*. It is bound to the loopback interface, so
 it is not published to your network.
 
+=== Step 5: Sign in with Keycloak instead of GitHub (optional)
+
+Alongside GitHub the compose setup runs a Keycloak, so you can sign in without a GitHub account.
+It is a local development convenience and is off unless you configure it.
+
+Keycloak has to answer under the *same* address for your browser and for the application container,
+otherwise the issuer in the token does not match the one the application asked for and the login
+fails. Add the name to your hosts file once:
+
+[source,bash]
+----
+echo "127.0.0.1 keycloak" | sudo tee -a /etc/hosts
+----
+
+Then open *http://keycloak:8080*, sign in with the admin values from your `.env`, and:
+
+* create a realm named *splitter*;
+* inside it create a client, switch on *Client authentication*, and set the valid redirect URI to
+  *http://localhost:9000/login/oauth2/code/keycloak* and the valid post logout redirect URI to
+  *http://localhost:9000*;
+* copy the client ID and the secret from its *Credentials* tab into `KEYCLOAK_CLIENT_ID` and
+  `KEYCLOAK_CLIENT_SECRET` in `.env`;
+* create at least one user with a password.
+
+Run `docker compose up -d` again afterwards. The login page now offers both providers.
+
+The Keycloak client registration lives in `application-keycloak.yaml` and only loads under the
+`keycloak` Spring profile, which `docker-compose.yml` sets. A plain `./gradlew bootRun` and the test
+suite therefore stay on GitHub alone and need no Keycloak running.
+
 == Guide to the Web Interface
 
 === Signing in
 
-Opening the site sends you to GitHub. Once you authorise the OAuth app you land on your group
-overview. Your GitHub login is your identity in the application, and group membership is matched on
-it, so members are added by GitHub name and not as free text.
+Opening the site offers you GitHub and, if you set it up in step 5, Keycloak. Once you authorise
+the app you land on your group overview. Your user name at that provider is your identity in the
+application, and group membership is matched on it, so members are added by that name and not as
+free text.
 
 The account menu at the top right shows who is signed in and holds *Abmelden* (sign out).
 

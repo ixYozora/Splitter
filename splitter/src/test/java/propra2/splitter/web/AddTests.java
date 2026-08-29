@@ -25,6 +25,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import propra2.splitter.config.WebSecurityKonfiguration;
 import propra2.splitter.domain.Gruppe;
 import propra2.splitter.helper.WithMockOAuth2User;
+import propra2.splitter.service.Benutzer;
 import propra2.splitter.service.GruppenService;
 
 @WebMvcTest(controllers = WebController.class)
@@ -66,7 +67,7 @@ public class AddTests {
                 .with(csrf()))
         .andExpect(status().is3xxRedirection());
 
-    verify(service).addPersonToGruppe(gruppe.getId(), "Gitlisa");
+    verify(service).addPersonToGruppe(any(), eq(gruppe.getId()), eq("Gitlisa"));
   }
 
   @Test
@@ -75,7 +76,7 @@ public class AddTests {
   void test_03() throws Exception {
 
     Gruppe gruppe = Gruppe.erstelleGruppe(UUID.randomUUID(), "MaxHub", "Reisegruppe");
-    when(service.getSingleGruppe(gruppe.getId())).thenReturn(gruppe);
+    when(service.getSingleGruppeFuerMitglied(any(), eq(gruppe.getId()))).thenReturn(gruppe);
 
     mvc.perform(
             post("/gruppe/add")
@@ -84,7 +85,7 @@ public class AddTests {
                 .with(csrf()))
         .andExpect(status().isOk());
 
-    verify(service, never()).addPersonToGruppe(any(), anyString());
+    verify(service, never()).addPersonToGruppe(any(), any(), anyString());
   }
 
   @Test
@@ -94,7 +95,7 @@ public class AddTests {
 
     Gruppe gruppe = Gruppe.erstelleGruppe(UUID.randomUUID(), "MaxHub", "Reisegruppe");
     gruppe.addPerson("GitLisa");
-    when(service.getSingleGruppe(gruppe.getId())).thenReturn(gruppe);
+    when(service.getSingleGruppeFuerMitglied(any(), eq(gruppe.getId()))).thenReturn(gruppe);
 
     mvc.perform(
             post("/gruppe/add/ausgaben")
@@ -106,7 +107,9 @@ public class AddTests {
                 .with(csrf()))
         .andExpect(status().is3xxRedirection());
 
-    verify(service).addAusgabeToGruppe(gruppe.getId(), "pizza", "MaxHub", "GitLisa", 40.00);
+    verify(service)
+        .addAusgabeToGruppe(
+            any(), eq(gruppe.getId()), eq("pizza"), eq("MaxHub"), eq("GitLisa"), eq(40.00));
   }
 
   @Test
@@ -116,7 +119,7 @@ public class AddTests {
 
     Gruppe gruppe = Gruppe.erstelleGruppe(UUID.randomUUID(), "MaxHub", "Reisegruppe");
     gruppe.addPerson("GitLisa");
-    when(service.getSingleGruppe(gruppe.getId())).thenReturn(gruppe);
+    when(service.getSingleGruppeFuerMitglied(any(), eq(gruppe.getId()))).thenReturn(gruppe);
 
     mvc.perform(
             post("/gruppe/add/ausgaben")
@@ -129,7 +132,7 @@ public class AddTests {
         .andExpect(status().isOk());
 
     verify(service, never())
-        .addAusgabeToGruppe(any(), anyString(), anyString(), anyString(), anyDouble());
+        .addAusgabeToGruppe(any(), any(), anyString(), anyString(), anyString(), anyDouble());
   }
 
   @Test
@@ -139,7 +142,7 @@ public class AddTests {
 
     Gruppe gruppe = Gruppe.erstelleGruppe(UUID.randomUUID(), "MaxHub", "Reisegruppe");
     gruppe.addPerson("GitLisa");
-    when(service.getSingleGruppe(gruppe.getId())).thenReturn(gruppe);
+    when(service.getSingleGruppeFuerMitglied(any(), eq(gruppe.getId()))).thenReturn(gruppe);
 
     mvc.perform(
             post("/gruppe/add/ausgaben")
@@ -152,7 +155,7 @@ public class AddTests {
         .andExpect(status().isOk());
 
     verify(service, never())
-        .addAusgabeToGruppe(any(), anyString(), anyString(), anyString(), anyDouble());
+        .addAusgabeToGruppe(any(), any(), anyString(), anyString(), anyString(), anyDouble());
   }
 
   @Test
@@ -162,7 +165,7 @@ public class AddTests {
 
     Gruppe gruppe = Gruppe.erstelleGruppe(UUID.randomUUID(), "MaxHub", "Reisegruppe");
     gruppe.addPerson("GitLisa");
-    when(service.getSingleGruppe(gruppe.getId())).thenReturn(gruppe);
+    when(service.getSingleGruppeFuerMitglied(any(), eq(gruppe.getId()))).thenReturn(gruppe);
 
     mvc.perform(
             post("/gruppe/add/ausgaben")
@@ -175,7 +178,7 @@ public class AddTests {
         .andExpect(status().isOk());
 
     verify(service, never())
-        .addAusgabeToGruppe(any(), anyString(), anyString(), anyString(), anyDouble());
+        .addAusgabeToGruppe(any(), any(), anyString(), anyString(), anyString(), anyDouble());
   }
 
   @Test
@@ -185,7 +188,7 @@ public class AddTests {
 
     Gruppe gruppe = Gruppe.erstelleGruppe(UUID.randomUUID(), "MaxHub", "Reisegruppe");
     gruppe.addPerson("GitLisa");
-    when(service.getSingleGruppe(gruppe.getId())).thenReturn(gruppe);
+    when(service.getSingleGruppeFuerMitglied(any(), eq(gruppe.getId()))).thenReturn(gruppe);
 
     mvc.perform(
             post("/gruppe/add/ausgaben")
@@ -198,7 +201,7 @@ public class AddTests {
         .andExpect(status().isOk());
 
     verify(service, never())
-        .addAusgabeToGruppe(any(), anyString(), anyString(), anyString(), anyDouble());
+        .addAusgabeToGruppe(any(), any(), anyString(), anyString(), anyString(), anyDouble());
   }
 
   @Test
@@ -214,7 +217,7 @@ public class AddTests {
                 .with(csrf()))
         .andExpect(status().is3xxRedirection());
 
-    verify(service).transaktionBerechnen(gruppe.getId());
+    verify(service).transaktionBerechnen(any(), eq(gruppe.getId()));
   }
 
   @Test
@@ -227,6 +230,25 @@ public class AddTests {
     mvc.perform(post("/gruppe/close").param("id", gruppe.getId().toString()).with(csrf()))
         .andExpect(status().is3xxRedirection());
 
-    verify(service).closeGruppe(gruppe.getId());
+    verify(service).closeGruppe(any(), eq(gruppe.getId()));
+  }
+
+  @Test
+  @WithMockOAuth2User(
+      login = "yozora",
+      usernameAttribut = "preferred_username",
+      clientRegistrationId = "keycloak")
+  @DisplayName("Auch über Keycloak angemeldet wird der eigene Name an den Service gereicht")
+  void test_11() throws Exception {
+
+    when(service.addGruppe(any(), anyString()))
+        .thenReturn(Gruppe.erstelleGruppe(UUID.randomUUID(), "yozora", "Gruppe"));
+
+    mvc.perform(post("/add").param("gruppenName", "Gruppe").with(csrf()))
+        .andExpect(status().is3xxRedirection());
+
+    ArgumentCaptor<OAuth2User> captor = ArgumentCaptor.forClass(OAuth2User.class);
+    verify(service).addGruppe(captor.capture(), eq("Gruppe"));
+    assertThat(Benutzer.nameVon(captor.getValue())).isEqualTo("yozora");
   }
 }

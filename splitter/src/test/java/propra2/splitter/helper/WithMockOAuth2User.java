@@ -15,6 +15,9 @@ public @interface WithMockOAuth2User {
 
   String login() default "username";
 
+  // GitHub liefert den Namen als "login", Keycloak als "preferred_username".
+  String usernameAttribut() default "login";
+
   String[] roles() default {"USER"};
 
   String[] authorities() default {};

@@ -2,7 +2,9 @@ services:
   database:
     image: postgres:18-alpine
     ports:
-      - "5432:5432"
+      # Ans Loopback gebunden: Docker haengt seine Regeln vor die von ufw, ein
+      # offener Port waere also in jedem Netz erreichbar, in dem der Rechner haengt.
+      - "127.0.0.1:5432:5432"
     environment:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
@@ -18,18 +20,52 @@ services:
   app:
     build: .
     ports:
-      # Bound to the loopback interface: an SSH tunnel still reaches it, but the
-      # unauthenticated /api/** endpoints are not published to the LAN.
       - "127.0.0.1:9000:9000"
     depends_on:
       database:
         condition: service_healthy
+      keycloak:
+        condition: service_healthy
     environment:
-      # Inside the compose network Postgres is reachable under its service name,
-      # not on localhost; application.yaml builds the URL around this.
       - POSTGRES_HOST=database
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - CLIENT_ID=${CLIENT_ID}
-      - CLIENT_SECRET=${CLIENT_SECRET}
+      - GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID}
+      - GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET}
+      - KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID}
+      - KEYCLOAK_CLIENT_SECRET=${KEYCLOAK_CLIENT_SECRET}
+      - KEYCLOAK_ISSUER_URI=http://keycloak:8080/realms/splitter
+      # Erst dieses Profil zieht application-keycloak.yaml dazu.
+      - SPRING_PROFILES_ACTIVE=keycloak
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.7
+    command: start-dev
+    ports:
+      # Same reasoning as the app: reachable through an SSH tunnel, not from the LAN.
+      - "127.0.0.1:8080:8080"
+    environment:
+      - KC_BOOTSTRAP_ADMIN_USERNAME=${KEYCLOAK_ADMIN}
+      - KC_BOOTSTRAP_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD}
+      # Health lives on the management port 9000, which stays inside the network.
+      - KC_HEALTH_ENABLED=true
+      # One fixed base URL for everyone. The browser and a host-side `bootRun`
+      # reach it through the /etc/hosts entry, the app container through compose
+      # DNS, so the issuer string is identical from all three and token
+      # validation passes.
+      - KC_HOSTNAME=http://keycloak:8080
+    volumes:
+      # start-dev keeps realms and users in an embedded H2 file; without this they
+      # would be gone after every `docker compose down`.
+      - keycloak-data:/opt/keycloak/data
+    healthcheck:
+      # The image ships no curl, so bash talks to the management port directly.
+      # HTTP/1.0 on purpose: the endpoint rejects a 1.1 request built this way.
+      test: ['CMD-SHELL', 'exec 3<>/dev/tcp/127.0.0.1/9000; printf "GET /health/ready HTTP/1.0\r\n\r\n" >&3; grep -q "200 OK" <&3']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  keycloak-data:

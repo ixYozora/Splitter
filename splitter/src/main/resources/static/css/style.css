@@ -1185,8 +1185,8 @@
   object-fit: cover;
 }
 
-/* Ersatz, wenn GitHub den Namen nicht kennt - der Roster wird aus
-   Freitext gefuellt, ein Tippfehler liefert sonst ein kaputtes Bild. */
+/* Steht ueberall statt eines Profilbildes: der Name im Roster ist Freitext und
+   gehoert zu keinem Anbieter, von dem sich ein Bild holen liesse. */
 .token__initial {
   display: grid;
   place-items: center;
