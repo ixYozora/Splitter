@@ -8,7 +8,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.oauth2.client.oidc.web.logout.OidcClientInitiatedLogoutSuccessHandler;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.web.SecurityFilterChain;
@@ -31,7 +30,6 @@ public class WebSecurityKonfiguration {
     return chainbuilder
         .securityMatcher("/api/**")
         .authorizeHttpRequests(configurer -> configurer.anyRequest().permitAll())
-        .csrf(AbstractHttpConfigurer::disable)
         .build();
   }
 
