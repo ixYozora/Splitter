@@ -41,10 +41,9 @@ cp .env.example .env
 ----
 
 `.env` holds the Postgres database name, user and password, which you pick yourself, plus the
-`GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` from step 2. The remaining `KEYCLOAK_*` values are
-yours to choose as well — Keycloak takes them over on its first start. Leave them empty if you only
-want GitHub, and see step 5 before you start anything if you want both. Git ignores the file. Never
-commit it.
+`GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` from step 2. That is all the application needs — the
+`KEYCLOAK_*` block below stays empty unless you want the second sign-in provider from step 5. Git
+ignores the file. Never commit it.
 
 === Step 4: Start it
 
@@ -65,8 +64,8 @@ it is not published to your network.
 
 === Step 5: Sign in with Keycloak instead of GitHub (optional)
 
-Alongside GitHub the compose setup runs a Keycloak, so you can sign in without a GitHub account.
-It is a local development convenience.
+The compose file can bring a Keycloak up alongside the application, so you can sign in without a
+GitHub account. It is a local development convenience and it is off by default.
 
 Keycloak has to answer under the *same* address for your browser and for the application container,
 otherwise the issuer in the token does not match the one the application asked for and the login
@@ -77,12 +76,21 @@ fails. Add the name to your hosts file once:
 echo "127.0.0.1 keycloak" | sudo tee -a /etc/hosts
 ----
 
-Then fill in the `KEYCLOAK_*` values in `.env` — all of them are yours to choose — and start the
-stack as in step 4. Keycloak reads `splitter/keycloak/splitter-realm.json` on its first start and
-creates the realm, the client, and the account named by `KEYCLOAK_DEV_USER` with the password
-next to it. That name is your identity in the application, so it is also the name to add as a
-group member. The login page then offers both providers, and the admin console is at
-*http://keycloak:8080*.
+Then fill in the `KEYCLOAK_*` values in `.env` — all of them are yours to choose — and set the two
+switches sitting above them:
+
+[source,properties]
+----
+COMPOSE_PROFILES=keycloak
+SPRING_PROFILES_ACTIVE=keycloak
+----
+
+The first adds the Keycloak container to the stack, the second tells the application to offer it.
+Empty them again to go back to GitHub alone. Start as in step 4: Keycloak reads
+`splitter/keycloak/splitter-realm.json` on its first start and creates the realm, the client, and
+the account named by `KEYCLOAK_DEV_USER` with the password next to it. That name is your identity
+in the application, so it is also the name to add as a group member. The login page then offers
+both providers, and the admin console is at *http://keycloak:8080*.
 
 The realm is called *splitter* and that is not configurable: Keycloak takes the realm name from
 the file name, so the two would have to change together.
@@ -97,8 +105,8 @@ docker volume rm splitter_keycloak-data
 ----
 
 The Keycloak client registration lives in `application-keycloak.yaml` and only loads under the
-`keycloak` Spring profile, which `docker-compose.yml` sets. A plain `./gradlew bootRun` and the test
-suite therefore stay on GitHub alone and need no Keycloak running.
+`keycloak` Spring profile. A plain `./gradlew bootRun`, the test suite and a compose run without
+the two switches therefore stay on GitHub alone and need no Keycloak running.
 
 == Guide to the Web Interface
 
@@ -136,9 +144,10 @@ bottom.
 
 ==== Members: "Mitglieder"
 
-Enter a GitHub name under *Mitglied hinzufügen* and press *Hinzufügen*. Members appear below as
-tokens with their GitHub avatar, and your own carries the mark *du*. Once a group has more than six
-members the list folds up and *+x weitere* expands it. A closed group always shows everyone.
+Enter a user name under *Mitglied hinzufügen* and press *Hinzufügen* — the name the member signs in
+with at GitHub or Keycloak. Members appear below as tokens carrying their initial, and your own
+carries the mark *du*. Once a group has more than six members the list folds up and *+x weitere*
+expands it. A closed group always shows everyone.
 
 Members can be added only while the group has no expenses. The first recorded expense fixes the
 roster.

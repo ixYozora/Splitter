@@ -29,8 +29,12 @@ services:
     depends_on:
       database:
         condition: service_healthy
+      # required: false, weil der Keycloak-Dienst unter einem Compose-Profil
+      # liegt. Ist es aus, faellt die Abhaengigkeit weg statt die Datei
+      # ungueltig zu machen; ist es an, wartet die App wie zuvor auf gesund.
       keycloak:
         condition: service_healthy
+        required: false
     environment:
       - POSTGRES_HOST=database
       - POSTGRES_DB=${POSTGRES_DB}
@@ -38,20 +42,26 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID}
       - GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET}
-      - KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID}
-      - KEYCLOAK_CLIENT_SECRET=${KEYCLOAK_CLIENT_SECRET}
+      # Ohne Keycloak bleiben die drei leer und werden nie gelesen: erst das
+      # Spring-Profil unten zieht application-keycloak.yaml dazu.
+      - KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID:-}
+      - KEYCLOAK_CLIENT_SECRET=${KEYCLOAK_CLIENT_SECRET:-}
       - KEYCLOAK_ISSUER_URI=http://keycloak:8080/realms/splitter
-      # Erst dieses Profil zieht application-keycloak.yaml dazu.
-      - SPRING_PROFILES_ACTIVE=keycloak
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-}
 
   keycloak:
     image: quay.io/keycloak/keycloak:26.7
+    # Laeuft nur mit COMPOSE_PROFILES=keycloak in der .env. Ohne das startet
+    # `docker compose up` Datenbank und App allein, und die Anmeldung geht
+    # ueber GitHub.
+    profiles: ["keycloak"]
     # --import-realm zieht keycloak/splitter-realm.json, aber nur solange es das
     # Realm noch nicht gibt (Strategie IGNORE_EXISTING). Spaetere Aenderungen im
     # Adminbereich ueberschreibt es also nicht.
     command: start-dev --import-realm
     ports:
-      # Same reasoning as the app: reachable through an SSH tunnel, not from the LAN.
+      # Loopback like the other two ports: a development Keycloak has no
+      # business being reachable from the network.
       - "127.0.0.1:8080:8080"
     environment:
       - KC_BOOTSTRAP_ADMIN_USERNAME=${KEYCLOAK_ADMIN}
