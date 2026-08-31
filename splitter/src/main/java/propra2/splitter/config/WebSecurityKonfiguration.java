@@ -5,7 +5,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.oauth2.client.oidc.web.logout.OidcClientInitiatedLogoutSuccessHandler;
@@ -42,7 +41,19 @@ public class WebSecurityKonfiguration {
       HttpSecurity chainbuilder, ClientRegistrationRepository clientRegistrationRepository)
       throws Exception {
     chainbuilder
-        .authorizeHttpRequests(configurer -> configurer.anyRequest().authenticated())
+        // Die Anmeldeseite laedt Stil, Schrift und ihr Skript, bevor jemand angemeldet
+        // ist; ohne diese Freigabe kaeme sie ungestaltet an.
+        .authorizeHttpRequests(
+            configurer ->
+                configurer
+                    .requestMatchers(
+                        PathPatternRequestMatcher.pathPattern("/login"),
+                        PathPatternRequestMatcher.pathPattern("/css/**"),
+                        PathPatternRequestMatcher.pathPattern("/js/**"),
+                        PathPatternRequestMatcher.pathPattern("/fonts/**"))
+                    .permitAll()
+                    .anyRequest()
+                    .authenticated())
         // Ein Aufruf der Schnittstelle soll 401 bekommen und nicht auf die
         // Anmeldeseite umgeleitet werden. Der zweite Eintrag muss sein: bleibt er
         // weg, gilt der erste fuer jede Anfrage und auch der Browser bekommt 401.
@@ -59,7 +70,9 @@ public class WebSecurityKonfiguration {
                     .clearAuthentication(true)
                     .invalidateHttpSession(true)
                     .deleteCookies("JSESSIONID"))
-        .oauth2Login(Customizer.withDefaults());
+        // Ohne loginPage() stellt Spring ab dem zweiten Anbieter seine eigene
+        // Anmeldeseite vor die von AnmeldungController.
+        .oauth2Login(login -> login.loginPage("/login"));
 
     return chainbuilder.build();
   }
