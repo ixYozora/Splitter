@@ -157,6 +157,76 @@
     anteilVorschau.hidden = false;
   }
 
+  // ---------- Rolle auf dem Beleg ----------
+  // Verplant allein reicht nicht: der Ausleger darf auch Teilnehmer sein, und
+  // genau dieser Fall ist der haeufigste. Die Rolle steht darum ausgeschrieben
+  // am rechten Rand der Zeile, dieselbe Zeichnung wie an der Ablage daneben.
+
+  var SVG_NS = "http://www.w3.org/2000/svg";
+
+  function svgKnoten(name, attribute) {
+    var el = document.createElementNS(SVG_NS, name);
+    Object.keys(attribute).forEach(function (schluessel) {
+      el.setAttribute(schluessel, attribute[schluessel]);
+    });
+    return el;
+  }
+
+  // Der Pfeil verlaesst den Strich: das Geld ging von hier hinaus.
+  function zeichnungAusleger() {
+    var svg = svgKnoten("svg", {
+      viewBox: "0 0 16 16", "aria-hidden": "true", focusable: "false"
+    });
+    svg.appendChild(svgKnoten("line", { x1: "3.6", y1: "4", x2: "3.6", y2: "12" }));
+    svg.appendChild(svgKnoten("line", { x1: "6", y1: "8", x2: "12", y2: "8" }));
+    svg.appendChild(svgKnoten("polyline", { points: "9.6,5.4 12.4,8 9.6,10.6" }));
+    return svg;
+  }
+
+  // Das Geteiltzeichen - dieselbe Division wie AusgabenDetails.anteil().
+  function zeichnungTeilnehmer() {
+    var svg = svgKnoten("svg", {
+      viewBox: "0 0 16 16", "aria-hidden": "true", focusable: "false"
+    });
+    svg.appendChild(svgKnoten("line", { x1: "3.4", y1: "8", x2: "12.6", y2: "8" }));
+    svg.appendChild(svgKnoten("circle", { "class": "punkt", cx: "8", cy: "4.7", r: "1.15" }));
+    svg.appendChild(svgKnoten("circle", { "class": "punkt", cx: "8", cy: "11.3", r: "1.15" }));
+    return svg;
+  }
+
+  function rolle(art, satz, zeichnung) {
+    var el = document.createElement("span");
+    el.className = "rolle rolle--" + art;
+    el.appendChild(zeichnung());
+
+    // Die Zeichnung ist stumm, vorgelesen wird der Satz.
+    var vorlesen = document.createElement("span");
+    vorlesen.className = "visually-hidden";
+    vorlesen.textContent = satz;
+    el.appendChild(vorlesen);
+
+    return el;
+  }
+
+  function rollenZeichnen(marke, istAusleger, istTeilnehmer) {
+    var alte = marke.querySelector(".rollen");
+    if (alte) {
+      alte.remove();
+    }
+    if (!istAusleger && !istTeilnehmer) {
+      return;
+    }
+    var behaelter = document.createElement("span");
+    behaelter.className = "rollen";
+    if (istAusleger) {
+      behaelter.appendChild(rolle("ausleger", "hat ausgelegt", zeichnungAusleger));
+    }
+    if (istTeilnehmer) {
+      behaelter.appendChild(rolle("teilnehmer", "ist Teilnehmer", zeichnungTeilnehmer));
+    }
+    marke.appendChild(behaelter);
+  }
+
   function zeichnen() {
     auslegerListe.textContent = "";
     if (ausleger) {
@@ -173,8 +243,10 @@
 
     marken.forEach(function (marke) {
       var name = marke.getAttribute("data-name");
-      marke.classList.toggle("is-verplant",
-          name === ausleger || teilnehmer.indexOf(name) !== -1);
+      var istAusleger = name === ausleger;
+      var istTeilnehmer = teilnehmer.indexOf(name) !== -1;
+      marke.classList.toggle("is-verplant", istAusleger || istTeilnehmer);
+      rollenZeichnen(marke, istAusleger, istTeilnehmer);
       marke.setAttribute("aria-pressed", name === inHand ? "true" : "false");
     });
 

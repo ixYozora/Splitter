@@ -146,7 +146,19 @@
              Einer gegen viele: die Form der Ablage sagt schon, welche welche ist. -->
         <div class="ablagen nur-js">
           <div class="ablage ablage--einer" data-ablage="ausleger">
-            <span class="feld__label" id="auslegerLabel">Ausleger</span>
+            <!-- Der Schluessel zur Marke, die das Skript im Roster zeichnet. Stumm
+                 gestellt: der Name der Liste soll "Ausleger" bleiben. -->
+            <span class="feld__label" id="auslegerLabel">Ausleger
+              <span class="rollen rollen--legende" aria-hidden="true">
+                <span class="rolle rolle--ausleger">
+                  <svg viewBox="0 0 16 16" focusable="false">
+                    <line x1="3.6" y1="4" x2="3.6" y2="12"></line>
+                    <line x1="6" y1="8" x2="12" y2="8"></line>
+                    <polyline points="9.6,5.4 12.4,8 9.6,10.6"></polyline>
+                  </svg>
+                </span>
+              </span>
+            </span>
             <ul class="ablage__inhalt" id="auslegerListe" aria-labelledby="auslegerLabel"></ul>
             <button type="button" class="ablage__ziel" id="auslegerZiel"
                     data-ablage-ziel="ausleger" aria-describedby="auslegerLabel" disabled>
@@ -157,7 +169,17 @@
           </div>
 
           <div class="ablage ablage--viele" data-ablage="teilnehmer">
-            <span class="feld__label" id="teilnehmerLabel">Teilnehmer</span>
+            <span class="feld__label" id="teilnehmerLabel">Teilnehmer
+              <span class="rollen rollen--legende" aria-hidden="true">
+                <span class="rolle rolle--teilnehmer">
+                  <svg viewBox="0 0 16 16" focusable="false">
+                    <line x1="3.4" y1="8" x2="12.6" y2="8"></line>
+                    <circle class="punkt" cx="8" cy="4.7" r="1.15"></circle>
+                    <circle class="punkt" cx="8" cy="11.3" r="1.15"></circle>
+                  </svg>
+                </span>
+              </span>
+            </span>
             <ul class="ablage__inhalt" id="teilnehmerListe" aria-labelledby="teilnehmerLabel"></ul>
             <button type="button" class="ablage__ziel" id="teilnehmerZiel"
                     data-ablage-ziel="teilnehmer" aria-describedby="teilnehmerLabel" disabled>
