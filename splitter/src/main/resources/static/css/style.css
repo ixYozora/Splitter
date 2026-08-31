@@ -1071,6 +1071,25 @@
   color: var(--rule-strong);
 }
 
+/* Wie viele schon auf dem Beleg liegen. Beantwortet "habe ich alle?", ohne
+   dass eine einzige Zeile gelesen werden muss; bei null blendet das Skript
+   sie aus. */
+.sheet__verplant {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink-soft);
+}
+
+.sheet--roster .sheet__label {
+  display: flex;
+  align-items: baseline;
+  gap: var(--step);
+}
+
 /* ---------- Mitglied hinzufuegen ---------- */
 
 .mitglied__form {

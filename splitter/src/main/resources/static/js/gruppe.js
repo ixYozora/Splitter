@@ -227,6 +227,21 @@
     marke.appendChild(behaelter);
   }
 
+  // Beantwortet "habe ich alle?", ohne eine einzige Zeile zu lesen. Bei null
+  // steht da nichts - eine Null ist keine Auskunft, nur Rauschen.
+  var verplantZahl = document.getElementById("verplantZahl");
+
+  function verplantZaehlen() {
+    if (!verplantZahl) {
+      return;
+    }
+    var wieViele = marken.filter(function (m) {
+      return m.classList.contains("is-verplant");
+    }).length;
+    verplantZahl.textContent = wieViele + " verplant";
+    verplantZahl.hidden = wieViele === 0;
+  }
+
   function zeichnen() {
     auslegerListe.textContent = "";
     if (ausleger) {
@@ -249,6 +264,7 @@
       rollenZeichnen(marke, istAusleger, istTeilnehmer);
       marke.setAttribute("aria-pressed", name === inHand ? "true" : "false");
     });
+    verplantZaehlen();
 
     // Ruhend stellt der Knopf die Frage, in der Hand ist er der Ablegeplatz.
     ablagen.forEach(function (ablage) {

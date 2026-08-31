@@ -95,6 +95,10 @@
     <section class="sheet sheet--roster" aria-labelledby="mitgliederTitel">
       <h2 class="sheet__label" id="mitgliederTitel">
         Mitglieder<span class="sheet__zahl" th:text="${#lists.size(mitglieder)}">3</span>
+        <!-- Das Skript traegt die Zahl ein und blendet sie bei null wieder aus;
+             ohne Skript wird nichts zugeordnet, also steht hier auch nichts. -->
+        <span class="sheet__verplant nur-js" id="verplantZahl"
+              th:unless="${geschlossen}" hidden></span>
       </h2>
 
       <!-- Ohne die Marken-Knoepfe von frueher muss der Weg einmal dastehen. -->
