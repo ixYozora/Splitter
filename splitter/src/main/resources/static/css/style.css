@@ -1071,6 +1071,25 @@
   color: var(--rule-strong);
 }
 
+/* Wie viele schon auf dem Beleg liegen. Beantwortet "habe ich alle?", ohne
+   dass eine einzige Zeile gelesen werden muss; bei null blendet das Skript
+   sie aus. */
+.sheet__verplant {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink-soft);
+}
+
+.sheet--roster .sheet__label {
+  display: flex;
+  align-items: baseline;
+  gap: var(--step);
+}
+
 /* ---------- Mitglied hinzufuegen ---------- */
 
 .mitglied__form {
@@ -1210,6 +1229,52 @@
   color: var(--ink-soft);
 }
 
+/* ---------- Rolle auf dem Beleg ----------
+   Wer schon auf dem Beleg liegt, traegt es am rechten Rand seiner Zeile.
+
+   Ohne Flaeche, ohne Rahmen, ohne Fuellung: der Akzent sagt auf dieser Seite
+   ueberall "hierauf fasst du gerade" - Fokus, Ueberfahren, die Marke in der
+   Hand, die Ablage unter dem Zeiger. Verplant ist aber keine Handlung,
+   sondern eine Tatsache, und die traegt ein Kontobuch in Tinte ein. Es ist
+   dieselbe Regel, nach der die Uebersicht Schuld von Guthaben trennt:
+   Vorzeichen und Gewicht, kein Farbton.
+
+   Nie Farbe allein (WCAG 1.4.1): die beiden Zeichnungen sind verschieden,
+   die Staerke kommt oben drauf. */
+
+.rollen {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.rolle {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  line-height: 1;
+}
+
+/* Der Ausleger ist genau einer und der Posten, der die Ausgabe traegt. */
+.rolle--ausleger { color: var(--ink); }
+
+/* Die Teilnehmer sind viele und die Routine daran. */
+.rolle--teilnehmer { color: var(--ink-soft); }
+
+.rolle svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentcolor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.rolle svg .punkt { fill: currentcolor; stroke: none; }
+
 /* ---------- Komposer ---------- */
 
 .komposer { display: grid; gap: calc(var(--step) * 2); }
@@ -1300,6 +1365,20 @@
    deshalb eine Zeile hoch, die andere waechst mit. */
 .ablage--einer { min-height: 6rem; }
 .ablage--viele { min-height: 6rem; }
+
+/* Die Rolle steht dort, wo ihr Wort steht - damit braucht die Zeichnung im
+   Roster weder Legende noch Tooltip. */
+.ablage > .feld__label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.rollen--legende { pointer-events: none; }
+
+/* Die Beschriftung selbst steht in --ink-soft; volle Tinte waere im Kopf der
+   Ablage der einzige dunkle Fleck. */
+.rollen--legende .rolle--ausleger { color: var(--ink-soft); }
 
 /* Etwas liegt in der Hand: den Ablegeplatz zeigt der Streifen darin, nicht zusaetzlich
    der Rahmen aussen herum. */
@@ -1793,10 +1872,14 @@
 
 /* ---------- Zustaende beim Ziehen ---------- */
 
-/* Schon auf dem Beleg. Bewusst nur leiser, nicht gesperrt: der Ausleger darf
-   auch Teilnehmer sein, das Aggregat rechnet genau diesen Fall heraus. */
+/* Schon auf dem Beleg. Fester statt leiser: leiser ist die Richtung, die
+   "weniger wichtig" bedeutet, und verplant ist das Gegenteil davon. Gesperrt
+   wird trotzdem nichts - der Ausleger darf auch Teilnehmer sein, das Aggregat
+   rechnet genau diesen Fall heraus. Welche Rolle es ist, sagt die Marke am
+   rechten Rand der Zeile. */
 .token.is-verplant .token__name {
-  color: var(--ink-soft);
+  color: var(--ink);
+  font-weight: 500;
 }
 
 .token.is-quelle {
