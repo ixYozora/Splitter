@@ -1267,13 +1267,13 @@
   width: 16px;
   height: 16px;
   fill: none;
-  stroke: currentColor;
+  stroke: currentcolor;
   stroke-width: 1.8;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 
-.rolle svg .punkt { fill: currentColor; stroke: none; }
+.rolle svg .punkt { fill: currentcolor; stroke: none; }
 
 /* ---------- Komposer ---------- */
 
