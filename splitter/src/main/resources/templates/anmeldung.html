@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Anmelden · Splitter</title>
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+        href="../static/fonts/ibm-plex-sans-400.woff2" th:href="@{/fonts/ibm-plex-sans-400.woff2}">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+        href="../static/fonts/ibm-plex-sans-500.woff2" th:href="@{/fonts/ibm-plex-sans-500.woff2}">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+        href="../static/fonts/ibm-plex-sans-600.woff2" th:href="@{/fonts/ibm-plex-sans-600.woff2}">
+  <link rel="stylesheet" href="../static/css/style.css" th:href="@{/css/style.css}">
+</head>
+<body class="page page-anmeldung">
+<!--
+  THESIS: Eine Tuer, kein Vorraum. Die Anmeldeseite bekommt nicht das uebliche
+  Moebel (Produktversprechen, Illustration, "Willkommen zurueck"), sondern ein
+  einzelnes kleines Blatt auf demselben Tisch wie das Kontobuch.
+  OWN-WORLD: Geerbt. Tisch #e7e7ea mit 32px-Spaltenlinierung und Papierkorn,
+  weisses Blatt, Plex Sans, Tinte #18181b, ein Akzent Tintenblau #1f3fbf,
+  Radius 4px, 44px hohe Bedienelemente.
+  STORY: Du bist nicht angemeldet. Du siehst die Wortmarke, eine Ueberschrift und
+  die Tuer, die du tatsaechlich benutzt. Keycloak steht darunter, wenn es laeuft.
+  FIRST VIEWPORT: Kopfzeile nur mit Wortmarke, darunter mittig ein 384px breites
+  Blatt: Ueberschrift, gefuellter Tinten-Knopf fuer GitHub, "oder"-Linie, zweite
+  Tuer mit Umriss. Das Blatt ist 384px breit, weil seine Kanten damit genau auf
+  der Linierung des Tisches liegen (192px = 6 x 32px zu jeder Seite).
+  FORM: Die Tuer. Die Flaeche liegt auf dem Knopf, nicht auf der Ueberschrift -
+  umgekehrt zur ueblichen Anmeldeseite, weil der Knopf hier die ganze Seite ist.
+-->
+
+<main class="anmeldung">
+  <!-- Die Wortmarke steht auf dem Tisch neben dem Blatt, nicht im Blatt: sie
+       ist die Kennung der Anwendung und keine Zeile ueber der Ueberschrift. -->
+  <p class="anmeldung__wortmarke">Splitter</p>
+
+  <div class="sheet anmeldung__blatt">
+    <h1 class="sheet__title">Anmelden</h1>
+
+    <p class="anmeldung__fehler" th:if="${fehler}">
+      <svg class="anmeldung__fehler-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+        <circle cx="8" cy="8" r="6.25"></circle>
+        <line x1="8" y1="4.75" x2="8" y2="8.5"></line>
+        <line x1="8" y1="11" x2="8" y2="11.01"></line>
+      </svg>
+      <span>Die Anmeldung wurde nicht abgeschlossen. Wähle unten noch einmal einen Zugang.</span>
+    </p>
+
+    <th:block th:each="tuer, iter : ${tueren}">
+      <a class="button anmeldung__tuer" href="#"
+         th:classappend="${iter.first} ? _ : 'button--outline'"
+         th:href="@{'/oauth2/authorization/' + ${tuer.id()}}">
+        <th:block th:switch="${tuer.id()}">
+          <svg class="anmeldung__marke" viewBox="0 0 24 24" th:case="'github'"
+               aria-hidden="true" focusable="false">
+            <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"></path>
+          </svg>
+          <svg class="anmeldung__marke" viewBox="0 0 24 24" th:case="'keycloak'"
+               aria-hidden="true" focusable="false">
+            <path d="m18.742 1.182-12.493.002C4.155 4.784 2.079 8.393 0 12.002c2.071 3.612 4.162 7.214 6.252 10.816l12.49-.004 3.089-5.404h2.158v-.002H24L23.996 6.59h-2.168zM8.327 4.792h2.081l1.04 1.8-3.12 5.413 3.117 5.403-1.035 1.81H8.327a2047.566 2047.566 0 0 0-4.168-7.204C5.547 9.606 6.937 7.2 8.327 4.792Zm6.241 0 2.086.003c1.393 2.405 2.78 4.813 4.166 7.222l-4.167 7.2h-2.08c-.382-.562-1.038-1.808-1.038-1.808l3.123-5.405-3.124-5.413z"></path>
+          </svg>
+        </th:block>
+        <span class="anmeldung__tuer-text"
+              th:text="'Mit ' + ${tuer.name()} + ' anmelden'">Mit GitHub anmelden</span>
+      </a>
+
+      <!-- Steht nur zwischen zwei Tueren; laeuft Keycloak nicht, faellt es weg. -->
+      <p class="anmeldung__oder" th:if="${!iter.last}">oder</p>
+    </th:block>
+  </div>
+</main>
+
+<script src="../static/js/anmeldung.js" th:src="@{/js/anmeldung.js}" defer></script>
+</body>
+</html>
