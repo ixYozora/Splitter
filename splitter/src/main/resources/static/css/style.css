@@ -491,6 +491,12 @@
 }
 
 .button {
+  /* inline-flex, weil derselbe Knopf auf der Anmeldeseite ein <a> mit Marke und
+     Beschriftung ist. Fuer die reinen <button> aendert das nichts. */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
   height: var(--control-h);
   padding: 0 18px;
   border: 1px solid var(--ink);
@@ -500,6 +506,7 @@
   font-family: inherit;
   font-size: var(--text-md);
   font-weight: 500;
+  text-decoration: none;
   cursor: pointer;
   transition: background 150ms ease, border-color 150ms ease, transform 100ms ease;
 }
@@ -521,6 +528,7 @@
 }
 
 .button--quiet {
+  justify-content: flex-start;
   width: 100%;
   height: auto;
   min-height: 40px;
@@ -857,7 +865,8 @@
 
 @media (max-width: 640px) {
   .topbar,
-  .sheet {
+  .sheet,
+  .anmeldung__wortmarke {
     --gutter: calc(var(--step) * 2);
   }
 
@@ -1930,4 +1939,159 @@
   font-variant-numeric: tabular-nums;
   font-weight: 600;
   white-space: nowrap;
+}
+
+/* ================================================================
+   Anmeldung - eine Tuer, kein Vorraum. Ein kleines Blatt auf
+   demselben Tisch, die Flaeche liegt auf dem Knopf statt auf der
+   Ueberschrift: der Knopf ist hier die ganze Seite.
+   ================================================================ */
+
+.page-anmeldung {
+  /* 384px = 6 x 64px. Die Linierung liegt im 32px-Raster mit einer Linie in der
+     Mitte des Fensters, also treffen die Blattkanten (+/-192px) genau zwei
+     Linien. Jede Breite, die kein Vielfaches von 64px ist, schiebt sie dazwischen. */
+  --tuerbreite: 24rem;
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  min-height: 100svh;
+  /* Auf den anderen Seiten deckt das Blatt den Tisch fast zu, hier ist der Tisch
+     fast alles. Bei 4% waere er eine leere Flaeche, und die Kantenregistrierung
+     des Blattes waere nicht zu sehen. */
+  background-image: linear-gradient(90deg, rgb(24 24 27 / 7%) 0 1px, transparent 1px);
+}
+
+/* Wortmarke und Blatt sind eine Gruppe, keine Kopfzeile ueber einer Karte. */
+.anmeldung {
+  display: grid;
+  justify-items: center;
+  gap: calc(var(--step) * 1.5);
+  width: 100%;
+  /* Die geometrische Mitte liegt fuer das Auge zu tief. */
+  margin-bottom: calc(var(--step) * 6);
+}
+
+/* Gleiche Box wie das Blatt, um --gutter eingerueckt: die Wortmarke steht damit
+   genau ueber dem A von "Anmelden". */
+.anmeldung__wortmarke {
+  width: calc(100% - var(--step) * 2);
+  max-width: var(--tuerbreite);
+  margin: 0;
+  /* +1px fuer den Rahmen des Blattes, sonst steht die Wortmarke genau um den
+     daneben. Gemessen, nicht geschaetzt. */
+  padding-left: calc(var(--gutter) + 1px);
+  font-size: var(--text-md);
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.anmeldung__blatt {
+  max-width: var(--tuerbreite);
+  margin: 0;
+  padding: calc(var(--step) * 4) var(--gutter);
+}
+
+.anmeldung__blatt .sheet__title {
+  margin-bottom: calc(var(--step) * 3);
+}
+
+/* Fehler ohne Rot, wie im ganzen Blatt: Tintenkante und ein gezeichnetes
+   Zeichen statt einer Signalfarbe. */
+.anmeldung__fehler {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--step);
+  margin: 0 0 calc(var(--step) * 3);
+  padding: calc(var(--step) * 1.5);
+  background: var(--surface);
+  border: 1px solid var(--ink);
+  border-radius: var(--radius);
+  font-size: var(--text-md);
+  font-weight: 500;
+}
+
+.anmeldung__fehler-icon {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-top: 3px;
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+}
+
+.anmeldung__tuer {
+  width: 100%;
+}
+
+/* Die zweite Tuer: ein Umriss, kein zweiter Tintenblock. --ink-soft statt
+   --rule-strong, damit die Kante die 3:1 fuer Bedienelemente erreicht. */
+.button--outline {
+  background: var(--surface-raised);
+  border-color: var(--ink-soft);
+  color: var(--ink);
+}
+
+.button--outline:hover {
+  background: var(--accent-wash);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Marken sind gefuellt, die gezeichneten Symbole der Anwendung sind gestrichen.
+   Zwei Klassen von Objekten, beide einfarbig in der Farbe der Beschriftung. */
+.anmeldung__marke {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  fill: currentcolor;
+}
+
+.anmeldung__oder {
+  display: flex;
+  align-items: center;
+  gap: var(--step);
+  margin: calc(var(--step) * 2) 0;
+  font-size: var(--text-sm);
+  color: var(--ink-soft);
+}
+
+.anmeldung__oder::before,
+.anmeldung__oder::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--rule);
+}
+
+/* Der Klick verlaesst die Anwendung. Bis der Anbieter antwortet, vergeht eine
+   sichtbare Pause - der Knopf sagt so lange, dass er angekommen ist. Dieselbe
+   Behandlung wie :disabled, nur greift die an einem <a> nicht. */
+.anmeldung__tuer.is-unterwegs {
+  background: var(--ink-soft);
+  border-color: var(--ink-soft);
+  color: var(--surface-raised);
+  cursor: progress;
+  transform: none;
+}
+
+.anmeldung__tuer.button--outline.is-unterwegs {
+  background: var(--surface);
+  border-color: var(--rule-strong);
+  color: var(--ink-soft);
+}
+
+@media (prefers-contrast: more) {
+  .button--outline {
+    border-color: var(--ink);
+  }
+
+  .anmeldung__oder::before,
+  .anmeldung__oder::after {
+    background: var(--rule-strong);
+  }
 }
