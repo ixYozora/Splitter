@@ -21,11 +21,12 @@
         "http://localhost:9000/login/oauth2/code/keycloak"
       ],
       "webOrigins": [
-        "http://localhost:9000"
+        "http://localhost:9000",
+        "http://localhost:3000"
       ],
       "frontchannelLogout": true,
       "attributes": {
-        "post.logout.redirect.uris": "http://localhost:9000"
+        "post.logout.redirect.uris": "http://localhost:9000##http://localhost:3000"
       }
     }
   ],
