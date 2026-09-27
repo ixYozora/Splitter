@@ -64,8 +64,11 @@ docker compose build
 docker compose up
 ----
 
-The first command builds the application image from source and only has to be repeated after a code
-change. Flyway applies the schema on startup, so there is nothing to import by hand.
+The first command builds the application image from source and only has to be repeated after a
+backend change: Java code, `application.yaml`, a migration or the build files. The UI is not part of
+the image. Compose mounts `templates/` and `static/` from `src/main/resources` into the container,
+so an edit to a template, a stylesheet or a script shows up on a plain browser refresh. Flyway
+applies the schema on startup, so there is nothing to import by hand.
 
 The application then answers at *http://localhost:9000*. It is bound to the loopback interface, so
 it is not published to your network.

@@ -48,6 +48,14 @@ services:
       - KEYCLOAK_CLIENT_SECRET=${KEYCLOAK_CLIENT_SECRET:-}
       - KEYCLOAK_ISSUER_URI=http://keycloak:8080/realms/splitter
       - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-}
+      # The image carries no UI: Spring renders it from the mounts below, uncached,
+      # so a browser refresh shows template and CSS edits without a rebuild.
+      - SPRING_THYMELEAF_PREFIX=file:/app/ui/templates/
+      - SPRING_THYMELEAF_CACHE=false
+      - SPRING_WEB_RESOURCES_STATICLOCATIONS=file:/app/ui/static/
+    volumes:
+      - ./src/main/resources/templates:/app/ui/templates:ro
+      - ./src/main/resources/static:/app/ui/static:ro
 
   keycloak:
     image: quay.io/keycloak/keycloak:26.7
