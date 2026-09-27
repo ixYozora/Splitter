@@ -64,8 +64,11 @@ docker compose build
 docker compose up
 ----
 
-The first command builds the application image from source and only has to be repeated after a code
-change. Flyway applies the schema on startup, so there is nothing to import by hand.
+The first command builds the application image from source and only has to be repeated after a
+backend change: Java code, `application.yaml`, a migration or the build files. The UI is not part of
+the image. Compose mounts `templates/` and `static/` from `src/main/resources` into the container,
+so an edit to a template, a stylesheet or a script shows up on a plain browser refresh. Flyway
+applies the schema on startup, so there is nothing to import by hand.
 
 The application then answers at *http://localhost:9000*. It is bound to the loopback interface, so
 it is not published to your network.
@@ -127,6 +130,49 @@ docker volume rm splitter_keycloak-data
 The Keycloak client registration lives in `application-keycloak.yaml` and only loads under the
 `keycloak` Spring profile. A plain `./gradlew bootRun`, the test suite and a compose run without
 the two switches therefore stay on GitHub alone and need no Keycloak running.
+
+=== Working on the UI
+
+The pages are rendered by Spring from Thymeleaf templates, with plain CSS and JavaScript next to
+them, and nothing is built. A small dev server sits in front of the running stack and refreshes the
+browser for you. It needs Node.js and npm in addition to Docker.
+
+Install the tooling once, then start the dev server while `docker compose up` is running:
+
+[source,bash]
+----
+npm install
+bun run dev    # or: npm run dev
+----
+
+Then open *http://localhost:3000*. Every request goes on to the application on port 9000.
+Stylesheet edits are swapped in without a reload, and template and script edits reload the page.
+
+Install with `npm install`, not `bun install`: `package-lock.json` is the lockfile CI installs
+from, and Bun would write a second one next to it. Running the script with `bun run dev` is fine.
+
+Signing in works from port 3000 too, with a detour. GitHub and Keycloak only accept the callback on
+port 9000, so the sign-in goes out through 9000 and the application sends you back to 3000
+afterwards. The session cookie does not care about the port, so you stay signed in. Open the site
+as `localhost`, not `127.0.0.1`, or the cookie does not carry over.
+
+When you work on the machine over SSH, forward *both* ports, since the callback lands on 9000 even
+though you browse on 3000. With Keycloak, forward 8080 as well:
+
+[source,bash]
+----
+ssh -L 3000:localhost:3000 -L 9000:localhost:9000 <host>
+----
+
+The dev server is meant to run against the compose stack. Under `./gradlew bootRun` the
+application reads templates and static files from the build output rather than the source tree, so
+edits do not show up live there.
+
+With Keycloak, signing out from port 3000 needs `http://localhost:3000` among the client's
+post-logout redirect URIs. `splitter-realm.json` lists it, but the import only runs on Keycloak's
+first start, so an existing `splitter_keycloak-data` volume does not have it and Keycloak rejects
+the sign-out. Either remove the volume as described in step 5, or add the address in the admin
+console under *Clients > your `KEYCLOAK_CLIENT_ID` > Valid post logout redirect URIs*.
 
 == Guide to the Web Interface
 
