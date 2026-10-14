@@ -44,7 +44,7 @@ jobs:
 
       - name: validate gradle wrapper
         if: matrix.build-mode == 'manual'
-        uses: gradle/actions/wrapper-validation@v6.3.0
+        uses: gradle/actions/wrapper-validation@v6.4.0
 
       - name: install latest jdk
         if: matrix.build-mode == 'manual'
