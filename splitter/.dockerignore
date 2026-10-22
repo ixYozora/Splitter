@@ -4,3 +4,6 @@
 build/
 run_tests.jar
 *.log
+# Compose mounts the UI instead, so UI edits leave the image's build cache alone.
+src/main/resources/templates/
+src/main/resources/static/
